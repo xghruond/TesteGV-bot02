@@ -86,7 +86,7 @@ App.renderGuide = function(state) {
             '<span class="flex items-center gap-2">' + App.icons.key + ' Gerador de Senha Segura</span>' +
             '<span class="text-xs text-gray-400">clique para abrir</span>' +
           '</button>' +
-          '<div id="password-tool-body" class="hidden mt-3">' +
+          '<div id="password-tool-body" style="display:none" class="mt-3">' +
             '<div class="flex gap-2">' +
               '<input type="text" id="generated-password" readonly class="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-mono text-gray-900" placeholder="Clique em Gerar" />' +
               '<button data-action="generate-password" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 transition-colors whitespace-nowrap">Gerar</button>' +

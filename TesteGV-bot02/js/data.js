@@ -1,5 +1,15 @@
 var App = App || {};
 
+// Separa nome completo em primeiro nome e sobrenome
+App.splitName = function(fullName) {
+  if (!fullName) return { first: '', last: '' };
+  var parts = fullName.trim().split(/\s+/);
+  return {
+    first: parts[0] || '',
+    last: parts.length > 1 ? parts.slice(1).join(' ') : ''
+  };
+};
+
 App.escapeHtml = function(text) {
   if (!text) return '';
   var map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
@@ -128,24 +138,48 @@ App.formatElapsedTime = function(startIso) {
 
 App.generateSummaryText = function(state) {
   var deptLabel = App.departmentLabels[state.employee.departamento] || state.employee.departamento || '-';
+  var email = (state.employee.emailDesejado || '-') + '@gmail.com';
+  var username = '@' + (state.employee.emailDesejado || '-');
+  var senha = state.suggestedPassword || '-';
   var lines = [
     '=== RELATORIO DE ONBOARDING ===',
     '',
     'DADOS DO FUNCIONARIO',
     'Nome: ' + (state.employee.nomeCompleto || '-'),
-    'Email: ' + (state.employee.emailDesejado || '-') + '@gmail.com',
+    'Email: ' + email,
     'Telefone: ' + (state.employee.telefone || '-'),
     'Data de Nascimento: ' + App.formatDateBR(state.employee.dataNascimento),
     'Cargo: ' + (state.employee.cargo || '-'),
     'Departamento: ' + deptLabel,
     'Data de Admissao: ' + App.formatDateBR(state.employee.dataAdmissao),
     '',
-    'CONTAS CRIADAS'
+    'CREDENCIAIS DAS CONTAS',
+    '---',
+    'Gmail (Google)',
+    '  Email: ' + email,
+    '  Senha: ' + senha,
+    '---',
+    'Instagram',
+    '  Username: ' + username,
+    '  Email de cadastro: ' + email,
+    '  Senha: ' + senha,
+    '---',
+    'Facebook',
+    '  Conta: ' + (state.platforms.facebook.accountInfo || '-'),
+    '  Email de cadastro: ' + email,
+    '  Senha: ' + senha,
+    '---',
+    'TikTok',
+    '  Username: ' + username,
+    '  Email de cadastro: ' + email,
+    '  Senha: ' + senha,
+    '',
+    'STATUS'
   ];
   Object.keys(App.platforms).forEach(function(id) {
     var p = App.platforms[id];
     var s = state.platforms[id];
-    lines.push(p.name + ': ' + (s.completed ? s.accountInfo || 'Criada' : 'Pendente'));
+    lines.push(p.name + ': ' + (s.completed ? 'Criada' : 'Pendente'));
   });
   lines.push('');
   lines.push('Inicio: ' + App.formatDateTimeBR(state.startedAt));

@@ -6,30 +6,85 @@ App.renderSummary = function(state) {
     ? App.formatDateTimeBR(state.completedAt)
     : App.formatDateTimeBR(new Date().toISOString());
 
-  var accountRows = Object.values(App.platforms).map(function(platform) {
+  var email = state.employee.emailDesejado ? state.employee.emailDesejado + '@gmail.com' : '-';
+  var username = state.employee.emailDesejado ? '@' + state.employee.emailDesejado : '-';
+  var senha = state.suggestedPassword || '-';
+
+  function copyBtn(text) {
+    if (!text || text === '-') return '';
+    return '<button data-action="copy" data-copy-text="' + esc(text) + '" class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors" title="Copiar">' + App.icons.copy + '</button>';
+  }
+
+  function credRow(label, value) {
+    if (!value || value === '-') return '';
+    return '' +
+      '<div class="flex items-center justify-between gap-2">' +
+        '<span class="text-xs text-gray-500">' + label + '</span>' +
+        '<span class="flex items-center gap-1 text-sm font-medium text-gray-900">' + esc(value) + ' ' + copyBtn(value) + '</span>' +
+      '</div>';
+  }
+
+  var platformDetails = {
+    gmail: {
+      credentials: [
+        { label: 'E-mail', value: email },
+        { label: 'Senha', value: senha }
+      ]
+    },
+    instagram: {
+      credentials: [
+        { label: 'Username', value: username },
+        { label: 'E-mail de cadastro', value: email },
+        { label: 'Senha', value: senha }
+      ]
+    },
+    facebook: {
+      credentials: [
+        { label: 'Conta', value: state.platforms.facebook.accountInfo || '-' },
+        { label: 'E-mail de cadastro', value: email },
+        { label: 'Senha', value: senha }
+      ]
+    },
+    tiktok: {
+      credentials: [
+        { label: 'Username', value: username },
+        { label: 'E-mail de cadastro', value: email },
+        { label: 'Senha', value: senha }
+      ]
+    }
+  };
+
+  var accountCards = Object.values(App.platforms).map(function(platform) {
     var pState = state.platforms[platform.id];
-    var statusHtml = pState.completed
-      ? '<span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">' + App.icons.check + ' Criada</span>'
-      : '<span class="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">Pendente</span>';
+    var details = platformDetails[platform.id];
+    var isCompleted = pState.completed;
+
+    var statusBadge = isCompleted
+      ? '<span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">' + App.icons.check + ' Criada</span>'
+      : '<span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">Pendente</span>';
+
+    var credRows = details.credentials.map(function(c) {
+      return credRow(c.label, c.value);
+    }).join('');
 
     return '' +
-      '<tr class="border-b border-gray-100">' +
-        '<td class="py-3 pr-4">' +
+      '<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">' +
+        '<div class="flex items-center justify-between mb-3">' +
           '<div class="flex items-center gap-2">' +
-            '<div class="flex h-8 w-8 items-center justify-center rounded-lg ' + platform.color.light + ' [&>svg]:w-4 [&>svg]:h-4">' + platform.icon + '</div>' +
-            '<span class="font-medium text-gray-900">' + platform.name + '</span>' +
+            '<div class="flex h-9 w-9 items-center justify-center rounded-lg ' + platform.color.light + ' [&>svg]:w-4 [&>svg]:h-4">' + platform.icon + '</div>' +
+            '<span class="font-semibold text-gray-900">' + platform.name + '</span>' +
           '</div>' +
-        '</td>' +
-        '<td class="py-3 pr-4 text-sm text-gray-700">' +
           '<div class="flex items-center gap-2">' +
-            esc(pState.accountInfo || '-') +
-            (pState.accountInfo
-              ? '<button data-action="copy" data-copy-text="' + esc(pState.accountInfo) + '" class="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors" title="Copiar">' + App.icons.copy + '</button>'
-              : '') +
+            statusBadge +
+            '<a href="' + platform.registerUrl + '" target="_blank" rel="noopener noreferrer" class="no-print inline-flex items-center gap-1 rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors">' +
+              App.icons.externalLink + ' Acessar' +
+            '</a>' +
           '</div>' +
-        '</td>' +
-        '<td class="py-3">' + statusHtml + '</td>' +
-      '</tr>';
+        '</div>' +
+        '<div class="space-y-1.5 rounded-lg bg-gray-50 p-3">' +
+          credRows +
+        '</div>' +
+      '</div>';
   }).join('');
 
   var deptLabel = App.departmentLabels[state.employee.departamento] || state.employee.departamento || '-';
@@ -53,7 +108,7 @@ App.renderSummary = function(state) {
         '<h3 class="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">' + App.icons.user + ' Dados do Funcionário</h3>' +
         '<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">' +
           '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">Nome completo</p><p class="text-base font-medium text-gray-900">' + esc(state.employee.nomeCompleto || '-') + '</p></div>' +
-          '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">E-mail desejado</p><p class="text-base font-medium text-gray-900">' + esc(state.employee.emailDesejado || '-') + '@gmail.com</p></div>' +
+          '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">E-mail</p><p class="text-base font-medium text-gray-900">' + esc(email) + '</p></div>' +
           '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">Telefone</p><p class="text-base font-medium text-gray-900">' + esc(state.employee.telefone || '-') + '</p></div>' +
           '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">Data de nascimento</p><p class="text-base font-medium text-gray-900">' + dataNascFormatted + '</p></div>' +
           '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">Cargo</p><p class="text-base font-medium text-gray-900">' + esc(state.employee.cargo || '-') + '</p></div>' +
@@ -62,18 +117,9 @@ App.renderSummary = function(state) {
           '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">Onboarding realizado em</p><p class="text-base font-medium text-gray-900">' + completedAt + '</p></div>' +
         '</div>' +
       '</div>' +
-      '<div class="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">' +
+      '<div class="mb-6">' +
         '<h3 class="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">' + App.icons.listChecks + ' Contas Criadas</h3>' +
-        '<div class="overflow-x-auto">' +
-          '<table class="w-full text-left">' +
-            '<thead><tr class="border-b border-gray-200">' +
-              '<th class="pb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Plataforma</th>' +
-              '<th class="pb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Conta</th>' +
-              '<th class="pb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Status</th>' +
-            '</tr></thead>' +
-            '<tbody>' + accountRows + '</tbody>' +
-          '</table>' +
-        '</div>' +
+        '<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">' + accountCards + '</div>' +
       '</div>' +
       '<div class="flex flex-col gap-3 no-print sm:flex-row sm:flex-wrap">' +
         '<button data-action="export-txt" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-300 px-6 py-3 text-base font-medium text-gray-700 transition-colors hover:bg-gray-50">' +

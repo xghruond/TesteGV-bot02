@@ -42,7 +42,7 @@ App.renderForm = function(state) {
         '</div>' +
         (field.helpText ? '<p id="' + field.id + '-help" class="mt-1 text-xs text-gray-500">' + field.helpText + '</p>' : '') +
         (field.id === 'emailDesejado'
-          ? '<div id="email-suggestion" class="mt-1.5 hidden">' +
+          ? '<div id="email-suggestion" style="display:none" class="mt-1.5">' +
               '<button type="button" data-action="use-email-suggestion" class="inline-flex items-center gap-1 rounded-lg bg-brand-50 border border-brand-200 px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100 transition-colors">' +
                 App.icons.sparkles + ' <span id="email-suggestion-text"></span>' +
               '</button>' +
@@ -60,9 +60,14 @@ App.renderForm = function(state) {
       '</div>' +
       '<form id="employee-form" class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">' +
         '<div class="space-y-4">' + fieldsHtml + '</div>' +
-        '<button type="submit" class="mt-6 w-full rounded-xl bg-brand-600 px-6 py-3.5 text-base font-semibold text-white shadow-md shadow-brand-600/20 transition-all hover:bg-brand-700 hover:shadow-lg active:scale-[0.98]">' +
-          'Continuar' +
-        '</button>' +
+        '<div class="mt-4 flex gap-3">' +
+          '<button type="button" data-action="auto-fill-form" class="flex-1 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3.5 text-sm font-semibold text-brand-700 transition-all hover:bg-brand-100">' +
+            App.icons.sparkles + ' Gerar Dados de Teste' +
+          '</button>' +
+          '<button type="submit" class="flex-[2] rounded-xl bg-brand-600 px-6 py-3.5 text-base font-semibold text-white shadow-md shadow-brand-600/20 transition-all hover:bg-brand-700 hover:shadow-lg active:scale-[0.98]">' +
+            'Continuar' +
+          '</button>' +
+        '</div>' +
       '</form>' +
     '</div>';
 };

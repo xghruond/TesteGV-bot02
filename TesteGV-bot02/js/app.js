@@ -21,6 +21,7 @@ var App = App || {};
       facebook: { completed: false, accountInfo: '' },
       tiktok: { completed: false, accountInfo: '' }
     },
+    suggestedPassword: null,
     startedAt: null,
     completedAt: null,
     viewingHistoryId: null
@@ -128,6 +129,35 @@ var App = App || {};
       e.returnValue = '';
     }
   });
+
+  // ============================================================
+  // === Event Delegation — um único listener no document      ===
+  // === Captura cliques em qualquer [data-action] ou          ===
+  // === [data-platform], mesmo gerados dinamicamente.         ===
+  // ============================================================
+  var actionHandlers = {};
+
+  document.addEventListener('click', function(e) {
+    // 1) data-action
+    var actionEl = e.target.closest('[data-action]');
+    if (actionEl) {
+      var action = actionEl.getAttribute('data-action');
+      if (actionHandlers[action]) {
+        actionHandlers[action](e, actionEl);
+      }
+      return;
+    }
+
+    // 2) data-platform (cards de plataforma)
+    var platformEl = e.target.closest('[data-platform]');
+    if (platformEl) {
+      navigateTo('guide', { guide: platformEl.getAttribute('data-platform'), step: 0 });
+    }
+  });
+
+  function bindAction(name, handler) {
+    actionHandlers[name] = handler;
+  }
 
   // === Tela de boas-vindas ===
   function renderWelcome() {
@@ -297,7 +327,7 @@ var App = App || {};
       firstChild.focus({ preventScroll: true });
     }
 
-    bindEvents();
+    bindFormEvents();
 
     // Timer: ativo durante form, platforms e guide
     if (state.currentScreen === 'form' || state.currentScreen === 'platforms' || state.currentScreen === 'guide') {
@@ -307,25 +337,245 @@ var App = App || {};
     }
   }
 
-  // === Bind de todos os eventos ===
-  function bindEvents() {
-    bindAction('start', function() {
-      state.startedAt = new Date().toISOString();
-      navigateTo('form');
-    });
+  // ============================================================
+  // === Registro de handlers (delegados pelo listener global) ===
+  // ============================================================
 
-    bindAction('continue', function() {
-      var saved = App.storage.load();
-      if (saved) {
-        state = mergeDeep(JSON.parse(JSON.stringify(defaultState)), saved);
-        render();
+  bindAction('start', function() {
+    state.startedAt = new Date().toISOString();
+    navigateTo('form');
+  });
+
+  bindAction('continue', function() {
+    var saved = App.storage.load();
+    if (saved) {
+      state = mergeDeep(JSON.parse(JSON.stringify(defaultState)), saved);
+      render();
+    }
+  });
+
+  bindAction('back-platforms', function() {
+    navigateTo('platforms');
+  });
+
+  bindAction('use-email-suggestion', function() {
+    var nameInput = document.querySelector('[name="nomeCompleto"]');
+    var emailInput = document.querySelector('[name="emailDesejado"]');
+    if (nameInput && emailInput) {
+      var suggestion = App.generateEmailFromName(nameInput.value);
+      if (suggestion) {
+        emailInput.value = suggestion;
+        emailInput.focus();
       }
-    });
+    }
+  });
 
-    bindAction('back-platforms', function() {
-      navigateTo('platforms');
-    });
+  // Gerar dados de teste no formulário
+  bindAction('auto-fill-form', function() {
+    var nomes = ['Lucas Oliveira', 'Maria Santos', 'Pedro Costa', 'Ana Ferreira', 'João Souza', 'Carla Lima', 'Rafael Almeida', 'Juliana Rocha'];
+    var cargos = ['Analista de Marketing', 'Desenvolvedor Web', 'Designer Gráfico', 'Gerente de Vendas', 'Assistente Administrativo', 'Analista de RH'];
+    var deptos = ['marketing', 'vendas', 'ti', 'rh', 'financeiro', 'operacoes', 'administrativo'];
 
+    var nome = nomes[Math.floor(Math.random() * nomes.length)];
+    var cargo = cargos[Math.floor(Math.random() * cargos.length)];
+    var depto = deptos[Math.floor(Math.random() * deptos.length)];
+    var ddd = ['11','21','31','41','51','61','71','85'][Math.floor(Math.random() * 8)];
+    var tel = '(' + ddd + ') 9' + Math.floor(1000 + Math.random() * 9000) + '-' + Math.floor(1000 + Math.random() * 9000);
+
+    var year = 1985 + Math.floor(Math.random() * 20);
+    var month = String(1 + Math.floor(Math.random() * 12)).padStart(2, '0');
+    var day = String(1 + Math.floor(Math.random() * 28)).padStart(2, '0');
+    var dataNasc = year + '-' + month + '-' + day;
+
+    var hoje = new Date();
+    var dataAdm = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0') + '-' + String(hoje.getDate()).padStart(2, '0');
+
+    var emailSuggestion = App.generateEmailFromName(nome);
+
+    var fields = {
+      nomeCompleto: nome,
+      emailDesejado: emailSuggestion,
+      telefone: tel,
+      dataNascimento: dataNasc,
+      cargo: cargo,
+      departamento: depto,
+      dataAdmissao: dataAdm
+    };
+
+    for (var key in fields) {
+      var input = document.querySelector('[name="' + key + '"]');
+      if (input) input.value = fields[key];
+    }
+  });
+
+  // Abrir todos os cadastros pendentes
+  bindAction('open-all-registers', function() {
+    var pending = Object.keys(state.platforms).filter(function(id) {
+      return !state.platforms[id].completed && App.platforms[id];
+    });
+    pending.forEach(function(id, index) {
+      setTimeout(function() {
+        var link = document.createElement('a');
+        link.href = App.platforms[id].registerUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.click();
+      }, index * 300);
+    });
+  });
+
+  // Toggle batch fill
+  bindAction('toggle-batch-fill', function() {
+    var panel = document.getElementById('batch-fill-panel');
+    if (panel) {
+      var isHidden = panel.style.display === 'none';
+      panel.style.display = isHidden ? '' : 'none';
+    }
+  });
+
+  // Guia passo a passo
+  bindAction('guide-next', function() {
+    var platform = App.platforms[state.currentGuide];
+    if (!platform) return;
+    if (state.currentStep < platform.steps.length - 1) {
+      state.currentStep++;
+      App.storage.save(state);
+      render();
+    }
+  });
+
+  bindAction('guide-prev', function() {
+    if (state.currentStep > 0) {
+      state.currentStep--;
+      App.storage.save(state);
+      render();
+    }
+  });
+
+  // Abrir link de cadastro
+  bindAction('open-register', function() {
+    var platform = App.platforms[state.currentGuide];
+    if (!platform) return;
+    var link = document.createElement('a');
+    link.href = platform.registerUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.click();
+  });
+
+  // Gerador de senha
+  bindAction('toggle-password-tool', function() {
+    var body = document.getElementById('password-tool-body');
+    if (body) {
+      var isHidden = body.style.display === 'none';
+      body.style.display = isHidden ? '' : 'none';
+    }
+  });
+
+  bindAction('generate-password', function() {
+    var field = document.getElementById('generated-password');
+    if (field) field.value = App.generatePassword(14);
+  });
+
+  bindAction('copy-password', function(e, el) {
+    var field = document.getElementById('generated-password');
+    if (field && field.value) App.copyToClipboard(field.value, el);
+  });
+
+  // Auto-preencher campo de conta com sugestão
+  bindAction('use-account-suggestion', function(e, el) {
+    var input = document.querySelector('[name="accountInfo"]');
+    if (el && input) {
+      input.value = el.getAttribute('data-suggestion');
+      input.focus();
+    }
+  });
+
+  // Resumo
+  bindAction('view-summary', function() {
+    state.completedAt = new Date().toISOString();
+    App.storage.save(state);
+    App.storage.saveHistory({
+      employee: JSON.parse(JSON.stringify(state.employee)),
+      platforms: JSON.parse(JSON.stringify(state.platforms)),
+      startedAt: state.startedAt,
+      completedAt: state.completedAt
+    });
+    navigateTo('summary');
+  });
+
+  // Copiar genérico (data-copy-text)
+  bindAction('copy', function(e, el) {
+    e.stopPropagation();
+    var text = el.getAttribute('data-copy-text');
+    if (text) App.copyToClipboard(text, el);
+  });
+
+  // Copiar resumo completo
+  bindAction('copy-summary', function(e, el) {
+    var text = App.generateSummaryText(state);
+    App.copyToClipboard(text, el);
+  });
+
+  // Exportar TXT
+  bindAction('export-txt', function() {
+    var text = App.generateSummaryText(state);
+    var fileName = 'onboarding-' + (state.employee.nomeCompleto || 'relatorio').replace(/\s+/g, '-').toLowerCase() + '.txt';
+    var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // Imprimir
+  bindAction('print', function() {
+    window.print();
+  });
+
+  // Resetar
+  bindAction('reset', function() {
+    if (confirm('Tem certeza que deseja começar um novo onboarding? Todos os dados serão apagados.')) {
+      resetApp();
+      navigateTo('welcome');
+    }
+  });
+
+  // Toggle checklist
+  bindAction('toggle-checklist', function() {
+    var overlay = document.querySelector('.checklist-overlay');
+    var drawer = document.querySelector('.checklist-drawer');
+    if (overlay && drawer) {
+      overlay.classList.toggle('active');
+      drawer.classList.toggle('active');
+    }
+  });
+
+  // Histórico
+  bindAction('view-history', function() {
+    navigateTo('history');
+  });
+
+  bindAction('back-welcome', function() {
+    navigateTo('welcome');
+  });
+
+  bindAction('back-history', function() {
+    navigateTo('history');
+  });
+
+  bindAction('view-history-item', function(e, el) {
+    state.viewingHistoryId = el.getAttribute('data-history-id');
+    navigateTo('history-detail');
+  });
+
+  // ============================================================
+  // === Bind de eventos de formulário (precisam re-bindar     ===
+  // === após cada render pois os elementos são recriados)     ===
+  // ============================================================
+  function bindFormEvents() {
     // === Formulário do funcionário ===
     var form = document.getElementById('employee-form');
     if (form) {
@@ -351,6 +601,9 @@ var App = App || {};
 
         for (var key in data) {
           if (data.hasOwnProperty(key)) state.employee[key] = data[key];
+        }
+        if (!state.suggestedPassword) {
+          state.suggestedPassword = App.generatePassword(14);
         }
         App.storage.save(state);
         navigateTo('platforms');
@@ -383,57 +636,16 @@ var App = App || {};
           if (suggestionContainer && suggestionText) {
             if (suggestion) {
               suggestionText.textContent = 'Usar: ' + suggestion;
-              suggestionContainer.classList.remove('hidden');
+              suggestionContainer.style.display = '';
             } else {
-              suggestionContainer.classList.add('hidden');
+              suggestionContainer.style.display = 'none';
             }
           }
         });
       }
     }
 
-    bindAction('use-email-suggestion', function() {
-      var nameInput = document.querySelector('[name="nomeCompleto"]');
-      var emailInput = document.querySelector('[name="emailDesejado"]');
-      if (nameInput && emailInput) {
-        var suggestion = App.generateEmailFromName(nameInput.value);
-        if (suggestion) {
-          emailInput.value = suggestion;
-          emailInput.focus();
-        }
-      }
-    });
-
-    // === Plataformas ===
-    var platformCards = document.querySelectorAll('[data-platform]');
-    platformCards.forEach(function(card) {
-      card.addEventListener('click', function() {
-        navigateTo('guide', { guide: card.dataset.platform, step: 0 });
-      });
-    });
-
-    // Abrir todos os cadastros pendentes
-    bindAction('open-all-registers', function() {
-      var pending = Object.keys(state.platforms).filter(function(id) {
-        return !state.platforms[id].completed && App.platforms[id];
-      });
-      pending.forEach(function(id, index) {
-        setTimeout(function() {
-          var link = document.createElement('a');
-          link.href = App.platforms[id].registerUrl;
-          link.target = '_blank';
-          link.rel = 'noopener noreferrer';
-          link.click();
-        }, index * 300);
-      });
-    });
-
-    // Toggle e submit do batch fill
-    bindAction('toggle-batch-fill', function() {
-      var panel = document.getElementById('batch-fill-panel');
-      if (panel) panel.classList.toggle('hidden');
-    });
-
+    // === Batch fill form submit ===
     var batchForm = document.getElementById('batch-fill-form');
     if (batchForm) {
       batchForm.addEventListener('submit', function(e) {
@@ -456,64 +668,7 @@ var App = App || {};
       });
     }
 
-    // === Guia passo a passo ===
-    bindAction('guide-next', function() {
-      var platform = App.platforms[state.currentGuide];
-      if (!platform) return;
-      if (state.currentStep < platform.steps.length - 1) {
-        state.currentStep++;
-        App.storage.save(state);
-        render();
-      }
-    });
-
-    bindAction('guide-prev', function() {
-      if (state.currentStep > 0) {
-        state.currentStep--;
-        App.storage.save(state);
-        render();
-      }
-    });
-
-    // Abrir link de cadastro
-    bindAction('open-register', function() {
-      var platform = App.platforms[state.currentGuide];
-      if (!platform) return;
-      var link = document.createElement('a');
-      link.href = platform.registerUrl;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      link.click();
-    });
-
-    // Gerador de senha
-    bindAction('toggle-password-tool', function() {
-      var body = document.getElementById('password-tool-body');
-      if (body) body.classList.toggle('hidden');
-    });
-
-    bindAction('generate-password', function() {
-      var field = document.getElementById('generated-password');
-      if (field) field.value = App.generatePassword(14);
-    });
-
-    bindAction('copy-password', function() {
-      var field = document.getElementById('generated-password');
-      var btn = document.querySelector('[data-action="copy-password"]');
-      if (field && field.value) App.copyToClipboard(field.value, btn);
-    });
-
-    // Auto-preencher campo de conta com sugestão
-    bindAction('use-account-suggestion', function() {
-      var btn = document.querySelector('[data-action="use-account-suggestion"]');
-      var input = document.querySelector('[name="accountInfo"]');
-      if (btn && input) {
-        input.value = btn.getAttribute('data-suggestion');
-        input.focus();
-      }
-    });
-
-    // Marcar plataforma como concluída
+    // === Marcar plataforma como concluída ===
     var completeForm = document.getElementById('complete-platform-form');
     if (completeForm) {
       completeForm.addEventListener('submit', function(e) {
@@ -527,101 +682,6 @@ var App = App || {};
         }
       });
     }
-
-    // === Resumo ===
-    bindAction('view-summary', function() {
-      state.completedAt = new Date().toISOString();
-      App.storage.save(state);
-      // Salvar no histórico
-      App.storage.saveHistory({
-        employee: JSON.parse(JSON.stringify(state.employee)),
-        platforms: JSON.parse(JSON.stringify(state.platforms)),
-        startedAt: state.startedAt,
-        completedAt: state.completedAt
-      });
-      navigateTo('summary');
-    });
-
-    // Copiar genérico (data-copy-text)
-    var copyButtons = document.querySelectorAll('[data-action="copy"]');
-    copyButtons.forEach(function(btn) {
-      btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var text = btn.getAttribute('data-copy-text');
-        if (text) App.copyToClipboard(text, btn);
-      });
-    });
-
-    // Copiar resumo completo
-    bindAction('copy-summary', function() {
-      var text = App.generateSummaryText(state);
-      var btn = document.querySelector('[data-action="copy-summary"]');
-      App.copyToClipboard(text, btn);
-    });
-
-    // Exportar TXT
-    bindAction('export-txt', function() {
-      var text = App.generateSummaryText(state);
-      var fileName = 'onboarding-' + (state.employee.nomeCompleto || 'relatorio').replace(/\s+/g, '-').toLowerCase() + '.txt';
-      var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-
-    // Imprimir
-    bindAction('print', function() {
-      window.print();
-    });
-
-    // Resetar
-    bindAction('reset', function() {
-      if (confirm('Tem certeza que deseja começar um novo onboarding? Todos os dados serão apagados.')) {
-        resetApp();
-        navigateTo('welcome');
-      }
-    });
-
-    // Toggle checklist
-    bindAction('toggle-checklist', function() {
-      var overlay = document.querySelector('.checklist-overlay');
-      var drawer = document.querySelector('.checklist-drawer');
-      if (overlay && drawer) {
-        overlay.classList.toggle('active');
-        drawer.classList.toggle('active');
-      }
-    });
-
-    // === Histórico ===
-    bindAction('view-history', function() {
-      navigateTo('history');
-    });
-
-    bindAction('back-welcome', function() {
-      navigateTo('welcome');
-    });
-
-    bindAction('back-history', function() {
-      navigateTo('history');
-    });
-
-    var historyItems = document.querySelectorAll('[data-action="view-history-item"]');
-    historyItems.forEach(function(item) {
-      item.addEventListener('click', function() {
-        state.viewingHistoryId = item.getAttribute('data-history-id');
-        navigateTo('history-detail');
-      });
-    });
-  }
-
-  function bindAction(actionName, handler) {
-    var elements = document.querySelectorAll('[data-action="' + actionName + '"]');
-    elements.forEach(function(el) {
-      el.addEventListener('click', handler);
-    });
   }
 
   // Iniciar a aplicação
