@@ -1,0 +1,151 @@
+/* ===== Transições de tela ===== */
+.screen-enter {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== Máscara de telefone ===== */
+input[type="tel"]::placeholder {
+  letter-spacing: 0.5px;
+}
+
+/* ===== Scrollbar customizada ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ===== Checklist flutuante mobile ===== */
+.checklist-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 40;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.checklist-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.checklist-drawer {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 320px;
+  max-width: 85vw;
+  background: white;
+  z-index: 50;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+}
+.checklist-drawer.active {
+  transform: translateX(0);
+}
+
+/* ===== Botão flutuante do checklist ===== */
+.checklist-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 30;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #16a34a;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: none;
+}
+.checklist-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.5);
+}
+
+/* ===== Pulse animation para badge ===== */
+.pulse-badge {
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ===== Print styles ===== */
+@media print {
+  #app-header,
+  #app-checklist,
+  .checklist-fab,
+  .no-print {
+    display: none !important;
+  }
+  #app-content {
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  body {
+    background: white;
+    font-size: 12pt;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .rounded-lg, .rounded-xl {
+    border-radius: 0 !important;
+  }
+  .shadow-sm, .shadow-md, .shadow-lg {
+    box-shadow: none !important;
+  }
+}
+
+.print-only {
+  display: none;
+}
+
+/* ===== Platform card hover effect ===== */
+.platform-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.platform-card:hover {
+  transform: translateY(-2px);
+}
+
+/* ===== Guide step image placeholder ===== */
+.step-image-placeholder {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 2px dashed #93c5fd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  border-radius: 12px;
+}
