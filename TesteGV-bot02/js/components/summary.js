@@ -20,7 +20,14 @@ App.renderSummary = function(state) {
             '<span class="font-medium text-gray-900">' + platform.name + '</span>' +
           '</div>' +
         '</td>' +
-        '<td class="py-3 pr-4 text-sm text-gray-700">' + esc(pState.accountInfo || '-') + '</td>' +
+        '<td class="py-3 pr-4 text-sm text-gray-700">' +
+          '<div class="flex items-center gap-2">' +
+            esc(pState.accountInfo || '-') +
+            (pState.accountInfo
+              ? '<button data-action="copy" data-copy-text="' + esc(pState.accountInfo) + '" class="inline-flex items-center rounded px-1.5 py-0.5 text-xs text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors" title="Copiar">' + App.icons.copy + '</button>'
+              : '') +
+          '</div>' +
+        '</td>' +
         '<td class="py-3">' + statusHtml + '</td>' +
       '</tr>';
   }).join('');
@@ -68,9 +75,13 @@ App.renderSummary = function(state) {
           '</table>' +
         '</div>' +
       '</div>' +
-      '<div class="flex flex-col gap-3 no-print sm:flex-row">' +
+      '<div class="flex flex-col gap-3 no-print sm:flex-row sm:flex-wrap">' +
+        '<button data-action="export-txt" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-300 px-6 py-3 text-base font-medium text-gray-700 transition-colors hover:bg-gray-50">' +
+          App.icons.download + ' Exportar TXT</button>' +
+        '<button data-action="copy-summary" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-300 px-6 py-3 text-base font-medium text-gray-700 transition-colors hover:bg-gray-50">' +
+          App.icons.copy + ' Copiar Resumo</button>' +
         '<button data-action="print" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-300 px-6 py-3 text-base font-medium text-gray-700 transition-colors hover:bg-gray-50">' +
-          App.icons.printer + ' Imprimir Relatório</button>' +
+          App.icons.printer + ' Imprimir</button>' +
         '<button data-action="reset" class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 py-3 text-base font-medium text-white transition-colors hover:bg-brand-700">' +
           App.icons.refresh + ' Novo Colaborador</button>' +
       '</div>' +

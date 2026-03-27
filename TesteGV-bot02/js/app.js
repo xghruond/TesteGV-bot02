@@ -22,7 +22,8 @@ var App = App || {};
       tiktok: { completed: false, accountInfo: '' }
     },
     startedAt: null,
-    completedAt: null
+    completedAt: null,
+    viewingHistoryId: null
   };
 
   // Estado atual
@@ -48,6 +49,26 @@ var App = App || {};
       }
     }
     return target;
+  }
+
+  // === Timer ===
+  var timerInterval = null;
+
+  function startTimer() {
+    stopTimer();
+    timerInterval = setInterval(function() {
+      var el = document.getElementById('elapsed-timer');
+      if (el && state.startedAt) {
+        el.textContent = App.formatElapsedTime(state.startedAt);
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
   }
 
   // Validação do formulário
@@ -101,14 +122,21 @@ var App = App || {};
 
   // Proteção contra perda de dados
   window.addEventListener('beforeunload', function(e) {
-    if (state.currentScreen !== 'welcome' && state.currentScreen !== 'summary') {
+    if (state.currentScreen !== 'welcome' && state.currentScreen !== 'summary' &&
+        state.currentScreen !== 'history' && state.currentScreen !== 'history-detail') {
       e.preventDefault();
       e.returnValue = '';
     }
   });
 
-  // Tela de boas-vindas
+  // === Tela de boas-vindas ===
   function renderWelcome() {
+    var historyCount = App.storage.loadHistory().length;
+    var historyButton = historyCount > 0
+      ? '<button data-action="view-history" class="mt-3 w-full rounded-xl border border-gray-200 px-8 py-3 text-base font-medium text-gray-600 transition-all hover:bg-gray-100">' +
+          App.icons.clipboard + ' Histórico (' + historyCount + ')</button>'
+      : '';
+
     return '' +
       '<div class="flex min-h-[80vh] items-center justify-center">' +
         '<div class="w-full max-w-lg text-center">' +
@@ -134,6 +162,7 @@ var App = App || {};
           (hasSavedState
             ? '<button data-action="continue" class="mt-3 w-full rounded-xl border border-brand-200 bg-brand-50 px-8 py-3 text-base font-medium text-brand-700 transition-all hover:bg-brand-100">Continuar de onde parei</button>'
             : '') +
+          historyButton +
         '</div>' +
       '</div>';
   }
@@ -151,13 +180,78 @@ var App = App || {};
       '</div>';
   }
 
-  // Renderização principal
+  // === Tela de histórico ===
+  function renderHistory() {
+    var history = App.storage.loadHistory();
+    if (history.length === 0) {
+      return '' +
+        '<div class="flex min-h-[60vh] items-center justify-center">' +
+          '<div class="text-center">' +
+            '<p class="text-lg text-gray-500 mb-4">Nenhum onboarding realizado ainda.</p>' +
+            '<button data-action="back-welcome" class="rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50">Voltar</button>' +
+          '</div>' +
+        '</div>';
+    }
+
+    var rows = history.slice().reverse().map(function(record) {
+      var completedCount = Object.values(record.platforms).filter(function(p) { return p.completed; }).length;
+      var total = Object.keys(record.platforms).length;
+      return '' +
+        '<div class="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:border-brand-300 transition-colors cursor-pointer" data-action="view-history-item" data-history-id="' + record.id + '">' +
+          '<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600">' + App.icons.user + '</div>' +
+          '<div class="flex-1 min-w-0">' +
+            '<p class="font-semibold text-gray-900 truncate">' + App.escapeHtml(record.employee.nomeCompleto) + '</p>' +
+            '<p class="text-xs text-gray-500">' + App.escapeHtml(record.employee.emailDesejado) + '@gmail.com &bull; ' + completedCount + '/' + total + ' contas</p>' +
+          '</div>' +
+          '<div class="text-right shrink-0">' +
+            '<p class="text-xs text-gray-400">' + App.formatDateTimeBR(record.completedAt) + '</p>' +
+          '</div>' +
+        '</div>';
+    }).join('');
+
+    return '' +
+      '<div>' +
+        '<div class="mb-6 flex items-center justify-between">' +
+          '<div>' +
+            '<h2 class="text-2xl font-bold text-gray-900">Histórico de Onboardings</h2>' +
+            '<p class="mt-1 text-gray-500">' + history.length + ' onboarding(s) realizado(s)</p>' +
+          '</div>' +
+          '<button data-action="back-welcome" class="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Voltar</button>' +
+        '</div>' +
+        '<div class="space-y-3">' + rows + '</div>' +
+      '</div>';
+  }
+
+  function renderHistoryDetail(recordId) {
+    var history = App.storage.loadHistory();
+    var record = null;
+    for (var i = 0; i < history.length; i++) {
+      if (history[i].id === recordId) { record = history[i]; break; }
+    }
+    if (!record) return '<p>Registro não encontrado.</p>';
+
+    var pseudoState = {
+      employee: record.employee,
+      platforms: record.platforms,
+      startedAt: record.startedAt,
+      completedAt: record.completedAt
+    };
+
+    return '' +
+      '<div>' +
+        '<button data-action="back-history" class="mb-4 flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-700">' +
+          App.icons.chevronLeft + ' Voltar ao Histórico</button>' +
+        App.renderSummary(pseudoState) +
+      '</div>';
+  }
+
+  // === Renderização principal ===
   function render() {
     var header = document.getElementById('app-header');
     var content = document.getElementById('app-content');
     var checklistContainer = document.getElementById('app-checklist');
 
-    if (state.currentScreen === 'welcome') {
+    if (state.currentScreen === 'welcome' || state.currentScreen === 'history' || state.currentScreen === 'history-detail') {
       header.innerHTML = '';
     } else {
       header.innerHTML = App.renderHeader(state);
@@ -179,6 +273,12 @@ var App = App || {};
       case 'summary':
         content.innerHTML = App.renderSummary(state);
         break;
+      case 'history':
+        content.innerHTML = renderHistory();
+        break;
+      case 'history-detail':
+        content.innerHTML = renderHistoryDetail(state.viewingHistoryId);
+        break;
       default:
         content.innerHTML = renderWelcome();
     }
@@ -198,9 +298,16 @@ var App = App || {};
     }
 
     bindEvents();
+
+    // Timer: ativo durante form, platforms e guide
+    if (state.currentScreen === 'form' || state.currentScreen === 'platforms' || state.currentScreen === 'guide') {
+      startTimer();
+    } else {
+      stopTimer();
+    }
   }
 
-  // Bind de todos os eventos
+  // === Bind de todos os eventos ===
   function bindEvents() {
     bindAction('start', function() {
       state.startedAt = new Date().toISOString();
@@ -219,7 +326,7 @@ var App = App || {};
       navigateTo('platforms');
     });
 
-    // Formulário do funcionário com validação
+    // === Formulário do funcionário ===
     var form = document.getElementById('employee-form');
     if (form) {
       form.addEventListener('submit', function(e) {
@@ -229,7 +336,6 @@ var App = App || {};
         formData.forEach(function(value, key) { data[key] = value; });
 
         var errors = validateForm(data);
-        // Remover erros anteriores
         var oldError = form.querySelector('.form-error');
         if (oldError) oldError.remove();
 
@@ -266,9 +372,39 @@ var App = App || {};
           e.target.value = value;
         });
       }
+
+      // Auto-sugestão de email a partir do nome
+      var nameInput = form.querySelector('[name="nomeCompleto"]');
+      if (nameInput) {
+        nameInput.addEventListener('input', function() {
+          var suggestion = App.generateEmailFromName(nameInput.value);
+          var suggestionContainer = document.getElementById('email-suggestion');
+          var suggestionText = document.getElementById('email-suggestion-text');
+          if (suggestionContainer && suggestionText) {
+            if (suggestion) {
+              suggestionText.textContent = 'Usar: ' + suggestion;
+              suggestionContainer.classList.remove('hidden');
+            } else {
+              suggestionContainer.classList.add('hidden');
+            }
+          }
+        });
+      }
     }
 
-    // Clique nas plataformas
+    bindAction('use-email-suggestion', function() {
+      var nameInput = document.querySelector('[name="nomeCompleto"]');
+      var emailInput = document.querySelector('[name="emailDesejado"]');
+      if (nameInput && emailInput) {
+        var suggestion = App.generateEmailFromName(nameInput.value);
+        if (suggestion) {
+          emailInput.value = suggestion;
+          emailInput.focus();
+        }
+      }
+    });
+
+    // === Plataformas ===
     var platformCards = document.querySelectorAll('[data-platform]');
     platformCards.forEach(function(card) {
       card.addEventListener('click', function() {
@@ -276,7 +412,51 @@ var App = App || {};
       });
     });
 
-    // Navegação do guia com validação de bounds
+    // Abrir todos os cadastros pendentes
+    bindAction('open-all-registers', function() {
+      var pending = Object.keys(state.platforms).filter(function(id) {
+        return !state.platforms[id].completed && App.platforms[id];
+      });
+      pending.forEach(function(id, index) {
+        setTimeout(function() {
+          var link = document.createElement('a');
+          link.href = App.platforms[id].registerUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.click();
+        }, index * 300);
+      });
+    });
+
+    // Toggle e submit do batch fill
+    bindAction('toggle-batch-fill', function() {
+      var panel = document.getElementById('batch-fill-panel');
+      if (panel) panel.classList.toggle('hidden');
+    });
+
+    var batchForm = document.getElementById('batch-fill-form');
+    if (batchForm) {
+      batchForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var platformIds = Object.keys(state.platforms);
+        var anyFilled = false;
+        platformIds.forEach(function(id) {
+          if (!state.platforms[id].completed) {
+            var input = batchForm.querySelector('[name="batch-' + id + '"]');
+            if (input && input.value.trim()) {
+              state.platforms[id] = { completed: true, accountInfo: input.value.trim() };
+              anyFilled = true;
+            }
+          }
+        });
+        if (anyFilled) {
+          App.storage.save(state);
+          render();
+        }
+      });
+    }
+
+    // === Guia passo a passo ===
     bindAction('guide-next', function() {
       var platform = App.platforms[state.currentGuide];
       if (!platform) return;
@@ -295,7 +475,7 @@ var App = App || {};
       }
     });
 
-    // Abrir link de cadastro (seguro com noopener)
+    // Abrir link de cadastro
     bindAction('open-register', function() {
       var platform = App.platforms[state.currentGuide];
       if (!platform) return;
@@ -304,6 +484,33 @@ var App = App || {};
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
       link.click();
+    });
+
+    // Gerador de senha
+    bindAction('toggle-password-tool', function() {
+      var body = document.getElementById('password-tool-body');
+      if (body) body.classList.toggle('hidden');
+    });
+
+    bindAction('generate-password', function() {
+      var field = document.getElementById('generated-password');
+      if (field) field.value = App.generatePassword(14);
+    });
+
+    bindAction('copy-password', function() {
+      var field = document.getElementById('generated-password');
+      var btn = document.querySelector('[data-action="copy-password"]');
+      if (field && field.value) App.copyToClipboard(field.value, btn);
+    });
+
+    // Auto-preencher campo de conta com sugestão
+    bindAction('use-account-suggestion', function() {
+      var btn = document.querySelector('[data-action="use-account-suggestion"]');
+      var input = document.querySelector('[name="accountInfo"]');
+      if (btn && input) {
+        input.value = btn.getAttribute('data-suggestion');
+        input.focus();
+      }
     });
 
     // Marcar plataforma como concluída
@@ -321,11 +528,48 @@ var App = App || {};
       });
     }
 
-    // Ver resumo
+    // === Resumo ===
     bindAction('view-summary', function() {
       state.completedAt = new Date().toISOString();
       App.storage.save(state);
+      // Salvar no histórico
+      App.storage.saveHistory({
+        employee: JSON.parse(JSON.stringify(state.employee)),
+        platforms: JSON.parse(JSON.stringify(state.platforms)),
+        startedAt: state.startedAt,
+        completedAt: state.completedAt
+      });
       navigateTo('summary');
+    });
+
+    // Copiar genérico (data-copy-text)
+    var copyButtons = document.querySelectorAll('[data-action="copy"]');
+    copyButtons.forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var text = btn.getAttribute('data-copy-text');
+        if (text) App.copyToClipboard(text, btn);
+      });
+    });
+
+    // Copiar resumo completo
+    bindAction('copy-summary', function() {
+      var text = App.generateSummaryText(state);
+      var btn = document.querySelector('[data-action="copy-summary"]');
+      App.copyToClipboard(text, btn);
+    });
+
+    // Exportar TXT
+    bindAction('export-txt', function() {
+      var text = App.generateSummaryText(state);
+      var fileName = 'onboarding-' + (state.employee.nomeCompleto || 'relatorio').replace(/\s+/g, '-').toLowerCase() + '.txt';
+      var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
     });
 
     // Imprimir
@@ -333,7 +577,7 @@ var App = App || {};
       window.print();
     });
 
-    // Resetar (limpa localStorage)
+    // Resetar
     bindAction('reset', function() {
       if (confirm('Tem certeza que deseja começar um novo onboarding? Todos os dados serão apagados.')) {
         resetApp();
@@ -349,6 +593,27 @@ var App = App || {};
         overlay.classList.toggle('active');
         drawer.classList.toggle('active');
       }
+    });
+
+    // === Histórico ===
+    bindAction('view-history', function() {
+      navigateTo('history');
+    });
+
+    bindAction('back-welcome', function() {
+      navigateTo('welcome');
+    });
+
+    bindAction('back-history', function() {
+      navigateTo('history');
+    });
+
+    var historyItems = document.querySelectorAll('[data-action="view-history-item"]');
+    historyItems.forEach(function(item) {
+      item.addEventListener('click', function() {
+        state.viewingHistoryId = item.getAttribute('data-history-id');
+        navigateTo('history-detail');
+      });
     });
   }
 

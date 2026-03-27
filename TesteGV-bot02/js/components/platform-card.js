@@ -56,6 +56,48 @@ App.renderPlatformCards = function(state) {
         '</div>' +
       '</div>' +
       '<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">' + cardsHtml + '</div>' +
+      (function() {
+        var hasPending = Object.values(state.platforms).some(function(p) { return !p.completed; });
+        if (!hasPending) return '';
+
+        var openAllBtn = '<div class="mt-4 text-center">' +
+          '<button data-action="open-all-registers" class="inline-flex items-center gap-2 rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:border-gray-400">' +
+            App.icons.externalLink + ' Abrir todos os cadastros pendentes' +
+          '</button>' +
+        '</div>';
+
+        var batchInputs = Object.values(App.platforms).map(function(platform) {
+          var pState = state.platforms[platform.id];
+          if (pState.completed) return '';
+          var suggestion = App.suggestAccountInfo(platform.id, state.employee.emailDesejado);
+          return '' +
+            '<div class="flex items-center gap-3">' +
+              '<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ' + platform.color.light + ' [&>svg]:w-4 [&>svg]:h-4">' + platform.icon + '</div>' +
+              '<div class="flex-1">' +
+                '<label class="block text-xs font-medium text-gray-600 mb-1">' + platform.name + '</label>' +
+                '<input type="text" name="batch-' + platform.id + '" value="' + App.escapeHtml(suggestion) + '"' +
+                  ' placeholder="Conta criada" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />' +
+              '</div>' +
+            '</div>';
+        }).join('');
+
+        var batchFill = '<div class="mt-4">' +
+          '<button data-action="toggle-batch-fill" class="w-full text-center text-sm font-medium text-brand-600 hover:text-brand-700 py-2 transition-colors">' +
+            App.icons.sparkles + ' Preencher todas as contas de uma vez' +
+          '</button>' +
+          '<div id="batch-fill-panel" class="hidden mt-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">' +
+            '<h4 class="mb-4 text-sm font-bold text-gray-900">Preencher contas pendentes</h4>' +
+            '<form id="batch-fill-form" class="space-y-3">' +
+              batchInputs +
+              '<button type="submit" class="mt-2 w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-semibold text-white hover:bg-brand-700 transition-colors">' +
+                'Marcar todas como concluídas' +
+              '</button>' +
+            '</form>' +
+          '</div>' +
+        '</div>';
+
+        return openAllBtn + batchFill;
+      })() +
       summaryButton +
     '</div>';
 };

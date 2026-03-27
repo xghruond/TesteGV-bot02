@@ -23,6 +23,138 @@ App.formatDateTimeBR = function(isoString) {
     ('0' + d.getMinutes()).slice(-2);
 };
 
+// === Utilidades de automação ===
+
+App.removeAccents = function(str) {
+  var accents = {
+    'a': /[\u00e0\u00e1\u00e2\u00e3\u00e4]/g,
+    'e': /[\u00e8\u00e9\u00ea\u00eb]/g,
+    'i': /[\u00ec\u00ed\u00ee\u00ef]/g,
+    'o': /[\u00f2\u00f3\u00f4\u00f5\u00f6]/g,
+    'u': /[\u00f9\u00fa\u00fb\u00fc]/g,
+    'c': /[\u00e7]/g,
+    'n': /[\u00f1]/g
+  };
+  var result = str.toLowerCase();
+  for (var letter in accents) {
+    if (accents.hasOwnProperty(letter)) {
+      result = result.replace(accents[letter], letter);
+    }
+  }
+  return result;
+};
+
+App.generateEmailFromName = function(fullName) {
+  if (!fullName || fullName.trim().length < 3) return '';
+  var prepositions = ['da', 'de', 'do', 'das', 'dos', 'e'];
+  var parts = fullName.trim().split(/\s+/).filter(function(word) {
+    return prepositions.indexOf(word.toLowerCase()) === -1;
+  });
+  if (parts.length === 0) return '';
+  var clean = parts.map(function(p) {
+    return App.removeAccents(p).replace(/[^a-z0-9]/g, '');
+  }).filter(function(p) { return p.length > 0; });
+  return clean.join('.');
+};
+
+App.copyToClipboard = function(text, buttonEl) {
+  // Fallback para file:// protocol
+  var textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try { document.execCommand('copy'); } catch (e) { /* ignore */ }
+  document.body.removeChild(textarea);
+  // Feedback visual
+  if (buttonEl) {
+    var original = buttonEl.innerHTML;
+    buttonEl.innerHTML = App.icons.check + ' Copiado!';
+    buttonEl.classList.add('text-green-600');
+    setTimeout(function() {
+      buttonEl.innerHTML = original;
+      buttonEl.classList.remove('text-green-600');
+    }, 2000);
+  }
+};
+
+App.generatePassword = function(length) {
+  length = length || 14;
+  var upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var lower = 'abcdefghijklmnopqrstuvwxyz';
+  var digits = '0123456789';
+  var symbols = '!@#$%&*?';
+  var all = upper + lower + digits + symbols;
+  var array = new Uint32Array(length);
+  crypto.getRandomValues(array);
+  var password = [
+    upper[array[0] % upper.length],
+    lower[array[1] % lower.length],
+    digits[array[2] % digits.length],
+    symbols[array[3] % symbols.length]
+  ];
+  for (var i = 4; i < length; i++) {
+    password.push(all[array[i] % all.length]);
+  }
+  for (var j = password.length - 1; j > 0; j--) {
+    var k = array[j % array.length] % (j + 1);
+    var tmp = password[j];
+    password[j] = password[k];
+    password[k] = tmp;
+  }
+  return password.join('');
+};
+
+App.suggestAccountInfo = function(platformId, emailDesejado) {
+  if (!emailDesejado) return '';
+  switch (platformId) {
+    case 'gmail': return emailDesejado + '@gmail.com';
+    case 'instagram': return '@' + emailDesejado;
+    case 'facebook': return 'facebook.com/' + emailDesejado;
+    case 'tiktok': return '@' + emailDesejado;
+    default: return '';
+  }
+};
+
+App.formatElapsedTime = function(startIso) {
+  if (!startIso) return '0min 00s';
+  var elapsed = Math.floor((Date.now() - new Date(startIso).getTime()) / 1000);
+  if (elapsed < 0) elapsed = 0;
+  var mins = Math.floor(elapsed / 60);
+  var secs = elapsed % 60;
+  return mins + 'min ' + ('0' + secs).slice(-2) + 's';
+};
+
+App.generateSummaryText = function(state) {
+  var deptLabel = App.departmentLabels[state.employee.departamento] || state.employee.departamento || '-';
+  var lines = [
+    '=== RELATORIO DE ONBOARDING ===',
+    '',
+    'DADOS DO FUNCIONARIO',
+    'Nome: ' + (state.employee.nomeCompleto || '-'),
+    'Email: ' + (state.employee.emailDesejado || '-') + '@gmail.com',
+    'Telefone: ' + (state.employee.telefone || '-'),
+    'Data de Nascimento: ' + App.formatDateBR(state.employee.dataNascimento),
+    'Cargo: ' + (state.employee.cargo || '-'),
+    'Departamento: ' + deptLabel,
+    'Data de Admissao: ' + App.formatDateBR(state.employee.dataAdmissao),
+    '',
+    'CONTAS CRIADAS'
+  ];
+  Object.keys(App.platforms).forEach(function(id) {
+    var p = App.platforms[id];
+    var s = state.platforms[id];
+    lines.push(p.name + ': ' + (s.completed ? s.accountInfo || 'Criada' : 'Pendente'));
+  });
+  lines.push('');
+  lines.push('Inicio: ' + App.formatDateTimeBR(state.startedAt));
+  lines.push('Conclusao: ' + App.formatDateTimeBR(state.completedAt));
+  lines.push('');
+  lines.push('=== FIM DO RELATORIO ===');
+  return lines.join('\n');
+};
+
 App.icons = {
   user: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
   mail: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>',
@@ -42,7 +174,10 @@ App.icons = {
   listChecks: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>',
   close: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>',
   users: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-  checkCircle: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+  checkCircle: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+  copy: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+  key: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
+  download: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>'
 };
 
 App.platforms = {

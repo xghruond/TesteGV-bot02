@@ -39,6 +39,9 @@ App.renderChecklist = function(state) {
         (state.employee.nomeCompleto
           ? '<div class="mb-4 rounded-lg bg-gray-50 p-3"><p class="text-xs text-gray-500">Funcionário</p><p class="text-sm font-semibold text-gray-900">' + App.escapeHtml(state.employee.nomeCompleto) + '</p></div>'
           : '') +
+        (state.startedAt
+          ? '<div class="mb-4 rounded-lg bg-brand-50 p-3"><p class="text-xs text-gray-500">Tempo decorrido</p><p id="elapsed-timer" class="text-sm font-semibold text-brand-700">' + App.formatElapsedTime(state.startedAt) + '</p></div>'
+          : '') +
         '<div class="mb-4">' +
           '<div class="mb-2 flex items-center justify-between text-sm">' +
             '<span class="text-gray-600">' + completedCount + ' de ' + totalCount + '</span>' +

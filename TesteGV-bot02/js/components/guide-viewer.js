@@ -29,9 +29,16 @@ App.renderGuide = function(state) {
     tiktok: 'Ex: @seunome'
   };
 
+  var accountSuggestion = App.suggestAccountInfo(platform.id, state.employee.emailDesejado);
+
   var finishForm = step.action === 'finish'
     ? '<div class="mt-6 rounded-xl border-2 border-brand-200 bg-brand-50 p-5">' +
         '<h4 class="mb-2 font-semibold text-brand-800">Registre sua conta criada</h4>' +
+        (accountSuggestion
+          ? '<button type="button" data-action="use-account-suggestion" data-suggestion="' + App.escapeHtml(accountSuggestion) + '" class="mb-3 inline-flex items-center gap-1.5 rounded-lg border border-brand-300 bg-white px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100 transition-colors">' +
+              App.icons.sparkles + ' Usar sugestão: <strong>' + App.escapeHtml(accountSuggestion) + '</strong>' +
+            '</button>'
+          : '') +
         '<form id="complete-platform-form" class="flex flex-col gap-3 sm:flex-row">' +
           '<input type="text" name="accountInfo" placeholder="' + (placeholders[platform.id] || 'Digite sua conta') + '"' +
             ' required value="' + (isCompleted ? App.escapeHtml(state.platforms[platform.id].accountInfo) : '') + '"' +
@@ -74,6 +81,20 @@ App.renderGuide = function(state) {
           ? '<div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">' +
               '<p class="text-sm text-amber-800"><strong class="font-semibold">&#128161; Dica:</strong> ' + step.tip + '</p></div>'
           : '') +
+        '<div class="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-4">' +
+          '<button data-action="toggle-password-tool" class="flex w-full items-center justify-between text-sm font-medium text-gray-700">' +
+            '<span class="flex items-center gap-2">' + App.icons.key + ' Gerador de Senha Segura</span>' +
+            '<span class="text-xs text-gray-400">clique para abrir</span>' +
+          '</button>' +
+          '<div id="password-tool-body" class="hidden mt-3">' +
+            '<div class="flex gap-2">' +
+              '<input type="text" id="generated-password" readonly class="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-mono text-gray-900" placeholder="Clique em Gerar" />' +
+              '<button data-action="generate-password" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 transition-colors whitespace-nowrap">Gerar</button>' +
+              '<button data-action="copy-password" class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 transition-colors" title="Copiar">' + App.icons.copy + '</button>' +
+            '</div>' +
+            '<p class="mt-2 text-xs text-gray-500">14 caracteres com maiúsculas, minúsculas, números e símbolos.</p>' +
+          '</div>' +
+        '</div>' +
         finishForm +
         '<div class="mt-6 flex gap-3 no-print">' + prevButton + nextButton + '</div>' +
       '</div>' +

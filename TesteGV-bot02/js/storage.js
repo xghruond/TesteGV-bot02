@@ -23,5 +23,37 @@ App.storage = {
 
   clear: function() {
     localStorage.removeItem(this.KEY);
+  },
+
+  // === Histórico de onboardings ===
+  HISTORY_KEY: 'gv-onboarding-history',
+
+  saveHistory: function(record) {
+    try {
+      var history = this.loadHistory();
+      record.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      history.push(record);
+      localStorage.setItem(this.HISTORY_KEY, JSON.stringify(history));
+    } catch (e) {
+      console.warn('Não foi possível salvar histórico:', e);
+    }
+  },
+
+  loadHistory: function() {
+    try {
+      var raw = localStorage.getItem(this.HISTORY_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  deleteHistoryItem: function(id) {
+    try {
+      var history = this.loadHistory().filter(function(item) { return item.id !== id; });
+      localStorage.setItem(this.HISTORY_KEY, JSON.stringify(history));
+    } catch (e) {
+      console.warn('Erro ao remover do histórico:', e);
+    }
   }
 };

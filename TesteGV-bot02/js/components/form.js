@@ -41,6 +41,13 @@ App.renderForm = function(state) {
             ' class="block w-full rounded-xl border border-gray-300 bg-white py-3 pl-10 pr-4 text-base text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />' +
         '</div>' +
         (field.helpText ? '<p id="' + field.id + '-help" class="mt-1 text-xs text-gray-500">' + field.helpText + '</p>' : '') +
+        (field.id === 'emailDesejado'
+          ? '<div id="email-suggestion" class="mt-1.5 hidden">' +
+              '<button type="button" data-action="use-email-suggestion" class="inline-flex items-center gap-1 rounded-lg bg-brand-50 border border-brand-200 px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100 transition-colors">' +
+                App.icons.sparkles + ' <span id="email-suggestion-text"></span>' +
+              '</button>' +
+            '</div>'
+          : '') +
       '</div>';
   }).join('');
 
