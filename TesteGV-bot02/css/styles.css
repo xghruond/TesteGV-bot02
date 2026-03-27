@@ -1,3 +1,35 @@
+/* ===== Fallback: layout básico caso Tailwind CDN falhe ===== */
+.no-tailwind body {
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  background: #f9fafb;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+.no-tailwind #app-content {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+.no-tailwind button {
+  cursor: pointer;
+  font-family: inherit;
+}
+.no-tailwind input, .no-tailwind select {
+  font-family: inherit;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+.no-tailwind h1 { font-size: 1.875rem; font-weight: 800; margin-bottom: 0.75rem; }
+.no-tailwind h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+.no-tailwind h3 { font-size: 1.125rem; font-weight: 700; margin-bottom: 0.5rem; }
+.no-tailwind table { width: 100%; border-collapse: collapse; }
+.no-tailwind th, .no-tailwind td { padding: 0.75rem 0.5rem; text-align: left; border-bottom: 1px solid #e5e7eb; }
+
 /* ===== Transições de tela ===== */
 .screen-enter {
   animation: fadeIn 0.3s ease-out;

@@ -27,7 +27,7 @@ App.renderHeader = function(state) {
             '</div>' +
           '</div>' +
           '<div class="flex items-center gap-2">' +
-            (state.employee.nomeCompleto ? '<span class="hidden text-xs text-gray-500 sm:inline">' + state.employee.nomeCompleto + '</span>' : '') +
+            (state.employee.nomeCompleto ? '<span class="hidden text-xs text-gray-500 sm:inline">' + App.escapeHtml(state.employee.nomeCompleto) + '</span>' : '') +
             '<button data-action="reset" class="no-print flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500" title="Recomeçar">' +
               App.icons.refresh +
             '</button>' +

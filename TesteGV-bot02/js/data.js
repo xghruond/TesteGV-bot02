@@ -1,5 +1,28 @@
 var App = App || {};
 
+App.escapeHtml = function(text) {
+  if (!text) return '';
+  var map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+};
+
+App.formatDateBR = function(isoString) {
+  if (!isoString || !/^\d{4}-\d{2}-\d{2}$/.test(isoString)) return '-';
+  var parts = isoString.split('-');
+  return parts[2] + '/' + parts[1] + '/' + parts[0];
+};
+
+App.formatDateTimeBR = function(isoString) {
+  if (!isoString) return '-';
+  var d = new Date(isoString);
+  if (isNaN(d.getTime())) return '-';
+  return ('0' + d.getDate()).slice(-2) + '/' +
+    ('0' + (d.getMonth() + 1)).slice(-2) + '/' +
+    d.getFullYear() + ' ' +
+    ('0' + d.getHours()).slice(-2) + ':' +
+    ('0' + d.getMinutes()).slice(-2);
+};
+
 App.icons = {
   user: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
   mail: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>',

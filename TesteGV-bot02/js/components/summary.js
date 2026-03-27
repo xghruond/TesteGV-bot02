@@ -1,9 +1,10 @@
 var App = App || {};
 
 App.renderSummary = function(state) {
-  var completedAt = state.completedAt
-    ? new Date(state.completedAt).toLocaleString('pt-BR')
-    : new Date().toLocaleString('pt-BR');
+  var esc = App.escapeHtml;
+  var completedAt = App.formatDateTimeBR(state.completedAt) !== '-'
+    ? App.formatDateTimeBR(state.completedAt)
+    : App.formatDateTimeBR(new Date().toISOString());
 
   var accountRows = Object.values(App.platforms).map(function(platform) {
     var pState = state.platforms[platform.id];
@@ -19,20 +20,14 @@ App.renderSummary = function(state) {
             '<span class="font-medium text-gray-900">' + platform.name + '</span>' +
           '</div>' +
         '</td>' +
-        '<td class="py-3 pr-4 text-sm text-gray-700">' + (pState.accountInfo || '-') + '</td>' +
+        '<td class="py-3 pr-4 text-sm text-gray-700">' + esc(pState.accountInfo || '-') + '</td>' +
         '<td class="py-3">' + statusHtml + '</td>' +
       '</tr>';
   }).join('');
 
   var deptLabel = App.departmentLabels[state.employee.departamento] || state.employee.departamento || '-';
-
-  var dataNascFormatted = state.employee.dataNascimento
-    ? new Date(state.employee.dataNascimento + 'T12:00:00').toLocaleDateString('pt-BR')
-    : '-';
-
-  var dataAdmFormatted = state.employee.dataAdmissao
-    ? new Date(state.employee.dataAdmissao + 'T12:00:00').toLocaleDateString('pt-BR')
-    : '-';
+  var dataNascFormatted = App.formatDateBR(state.employee.dataNascimento);
+  var dataAdmFormatted = App.formatDateBR(state.employee.dataAdmissao);
 
   return '' +
     '<div>' +
@@ -50,12 +45,12 @@ App.renderSummary = function(state) {
       '<div class="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">' +
         '<h3 class="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">' + App.icons.user + ' Dados do Funcionário</h3>' +
         '<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">' +
-          '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">Nome completo</p><p class="text-base font-medium text-gray-900">' + (state.employee.nomeCompleto || '-') + '</p></div>' +
-          '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">E-mail desejado</p><p class="text-base font-medium text-gray-900">' + (state.employee.emailDesejado || '-') + '@gmail.com</p></div>' +
-          '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">Telefone</p><p class="text-base font-medium text-gray-900">' + (state.employee.telefone || '-') + '</p></div>' +
+          '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">Nome completo</p><p class="text-base font-medium text-gray-900">' + esc(state.employee.nomeCompleto || '-') + '</p></div>' +
+          '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">E-mail desejado</p><p class="text-base font-medium text-gray-900">' + esc(state.employee.emailDesejado || '-') + '@gmail.com</p></div>' +
+          '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">Telefone</p><p class="text-base font-medium text-gray-900">' + esc(state.employee.telefone || '-') + '</p></div>' +
           '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">Data de nascimento</p><p class="text-base font-medium text-gray-900">' + dataNascFormatted + '</p></div>' +
-          '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">Cargo</p><p class="text-base font-medium text-gray-900">' + (state.employee.cargo || '-') + '</p></div>' +
-          '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">Departamento</p><p class="text-base font-medium text-gray-900">' + deptLabel + '</p></div>' +
+          '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">Cargo</p><p class="text-base font-medium text-gray-900">' + esc(state.employee.cargo || '-') + '</p></div>' +
+          '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">Departamento</p><p class="text-base font-medium text-gray-900">' + esc(deptLabel) + '</p></div>' +
           '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">Data de admissão</p><p class="text-base font-medium text-gray-900">' + dataAdmFormatted + '</p></div>' +
           '<div><p class="text-xs font-medium uppercase tracking-wide text-gray-400">Onboarding realizado em</p><p class="text-base font-medium text-gray-900">' + completedAt + '</p></div>' +
         '</div>' +

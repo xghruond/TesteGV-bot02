@@ -13,7 +13,7 @@ App.renderChecklist = function(state) {
       : '<div class="h-6 w-6 rounded-full border-2 border-gray-300"></div>';
 
     var accountInfo = isCompleted && pState.accountInfo
-      ? '<span class="block truncate text-xs text-gray-500">' + pState.accountInfo + '</span>'
+      ? '<span class="block truncate text-xs text-gray-500">' + App.escapeHtml(pState.accountInfo) + '</span>'
       : '';
 
     return '' +
@@ -37,7 +37,7 @@ App.renderChecklist = function(state) {
           '</button>' +
         '</div>' +
         (state.employee.nomeCompleto
-          ? '<div class="mb-4 rounded-lg bg-gray-50 p-3"><p class="text-xs text-gray-500">Funcionário</p><p class="text-sm font-semibold text-gray-900">' + state.employee.nomeCompleto + '</p></div>'
+          ? '<div class="mb-4 rounded-lg bg-gray-50 p-3"><p class="text-xs text-gray-500">Funcionário</p><p class="text-sm font-semibold text-gray-900">' + App.escapeHtml(state.employee.nomeCompleto) + '</p></div>'
           : '') +
         '<div class="mb-4">' +
           '<div class="mb-2 flex items-center justify-between text-sm">' +

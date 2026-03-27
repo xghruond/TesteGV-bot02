@@ -33,13 +33,14 @@ App.renderForm = function(state) {
         '<div class="relative">' +
           '<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">' + iconHtml + '</div>' +
           '<input type="' + field.type + '" id="' + field.id + '" name="' + field.id + '"' +
-            ' value="' + value + '"' +
+            ' value="' + App.escapeHtml(value) + '"' +
             (field.placeholder ? ' placeholder="' + field.placeholder + '"' : '') +
             (field.required ? ' required' : '') +
             (field.minLength ? ' minlength="' + field.minLength + '"' : '') +
+            (field.helpText ? ' aria-describedby="' + field.id + '-help"' : '') +
             ' class="block w-full rounded-xl border border-gray-300 bg-white py-3 pl-10 pr-4 text-base text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />' +
         '</div>' +
-        (field.helpText ? '<p class="mt-1 text-xs text-gray-500">' + field.helpText + '</p>' : '') +
+        (field.helpText ? '<p id="' + field.id + '-help" class="mt-1 text-xs text-gray-500">' + field.helpText + '</p>' : '') +
       '</div>';
   }).join('');
 

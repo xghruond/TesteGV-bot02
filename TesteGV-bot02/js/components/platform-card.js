@@ -14,7 +14,7 @@ App.renderPlatformCards = function(state) {
       : '<span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500">Pendente</span>';
 
     var accountInfo = isCompleted && pState.accountInfo
-      ? '<p class="mt-1 text-xs text-gray-500 truncate max-w-[180px]">' + pState.accountInfo + '</p>'
+      ? '<p class="mt-1 text-xs text-gray-500 truncate max-w-[180px]">' + App.escapeHtml(pState.accountInfo) + '</p>'
       : '';
 
     var buttonText = isCompleted ? 'Ver novamente' : 'Criar conta';

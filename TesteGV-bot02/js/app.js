@@ -50,11 +50,42 @@ var App = App || {};
     return target;
   }
 
-  // Funções de navegação e estado
+  // Validação do formulário
+  function validateForm(data) {
+    var errors = [];
+    if (!data.nomeCompleto || data.nomeCompleto.trim().length < 3) {
+      errors.push('Nome completo deve ter pelo menos 3 caracteres.');
+    }
+    if (!data.emailDesejado || !/^[a-zA-Z0-9._-]+$/.test(data.emailDesejado)) {
+      errors.push('E-mail desejado deve conter apenas letras, números, pontos e hífens.');
+    }
+    var phoneDigits = (data.telefone || '').replace(/\D/g, '');
+    if (phoneDigits.length < 10 || phoneDigits.length > 11) {
+      errors.push('Telefone deve ter 10 ou 11 dígitos (com DDD).');
+    }
+    if (!data.dataNascimento) {
+      errors.push('Data de nascimento é obrigatória.');
+    }
+    if (!data.cargo || data.cargo.trim().length < 2) {
+      errors.push('Cargo é obrigatório.');
+    }
+    if (!data.departamento) {
+      errors.push('Selecione um departamento.');
+    }
+    if (!data.dataAdmissao) {
+      errors.push('Data de admissão é obrigatória.');
+    }
+    return errors;
+  }
+
+  // Navegação
   function navigateTo(screen, options) {
     options = options || {};
     state.currentScreen = screen;
-    if (options.guide) state.currentGuide = options.guide;
+    if (options.guide) {
+      if (!App.platforms[options.guide]) return;
+      state.currentGuide = options.guide;
+    }
     if (options.step !== undefined) state.currentStep = options.step;
     App.storage.save(state);
     render();
@@ -67,6 +98,14 @@ var App = App || {};
     hasSavedState = false;
     render();
   }
+
+  // Proteção contra perda de dados
+  window.addEventListener('beforeunload', function(e) {
+    if (state.currentScreen !== 'welcome' && state.currentScreen !== 'summary') {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
 
   // Tela de boas-vindas
   function renderWelcome() {
@@ -150,21 +189,24 @@ var App = App || {};
       checklistContainer.innerHTML = '';
     }
 
+    // Animação + foco automático
     var firstChild = content.querySelector(':first-child');
-    if (firstChild) firstChild.classList.add('screen-enter');
+    if (firstChild) {
+      firstChild.classList.add('screen-enter');
+      firstChild.setAttribute('tabindex', '-1');
+      firstChild.focus({ preventScroll: true });
+    }
 
     bindEvents();
   }
 
   // Bind de todos os eventos
   function bindEvents() {
-    // Iniciar
     bindAction('start', function() {
       state.startedAt = new Date().toISOString();
       navigateTo('form');
     });
 
-    // Continuar
     bindAction('continue', function() {
       var saved = App.storage.load();
       if (saved) {
@@ -173,20 +215,37 @@ var App = App || {};
       }
     });
 
-    // Voltar para plataformas
     bindAction('back-platforms', function() {
       navigateTo('platforms');
     });
 
-    // Formulário do funcionário
+    // Formulário do funcionário com validação
     var form = document.getElementById('employee-form');
     if (form) {
       form.addEventListener('submit', function(e) {
         e.preventDefault();
         var formData = new FormData(form);
-        formData.forEach(function(value, key) {
-          state.employee[key] = value;
-        });
+        var data = {};
+        formData.forEach(function(value, key) { data[key] = value; });
+
+        var errors = validateForm(data);
+        // Remover erros anteriores
+        var oldError = form.querySelector('.form-error');
+        if (oldError) oldError.remove();
+
+        if (errors.length > 0) {
+          var errorHtml = '<div class="form-error mt-4 rounded-lg border border-red-200 bg-red-50 p-4">' +
+            '<p class="text-sm font-semibold text-red-700 mb-1">Corrija os seguintes erros:</p>' +
+            '<ul class="list-disc pl-5 text-sm text-red-600">' +
+            errors.map(function(err) { return '<li>' + err + '</li>'; }).join('') +
+            '</ul></div>';
+          form.querySelector('button[type="submit"]').insertAdjacentHTML('beforebegin', errorHtml);
+          return;
+        }
+
+        for (var key in data) {
+          if (data.hasOwnProperty(key)) state.employee[key] = data[key];
+        }
         App.storage.save(state);
         navigateTo('platforms');
       });
@@ -217,9 +276,10 @@ var App = App || {};
       });
     });
 
-    // Navegação do guia
+    // Navegação do guia com validação de bounds
     bindAction('guide-next', function() {
       var platform = App.platforms[state.currentGuide];
+      if (!platform) return;
       if (state.currentStep < platform.steps.length - 1) {
         state.currentStep++;
         App.storage.save(state);
@@ -235,10 +295,15 @@ var App = App || {};
       }
     });
 
-    // Abrir link de cadastro
+    // Abrir link de cadastro (seguro com noopener)
     bindAction('open-register', function() {
       var platform = App.platforms[state.currentGuide];
-      window.open(platform.registerUrl, '_blank');
+      if (!platform) return;
+      var link = document.createElement('a');
+      link.href = platform.registerUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.click();
     });
 
     // Marcar plataforma como concluída
@@ -268,7 +333,7 @@ var App = App || {};
       window.print();
     });
 
-    // Resetar
+    // Resetar (limpa localStorage)
     bindAction('reset', function() {
       if (confirm('Tem certeza que deseja começar um novo onboarding? Todos os dados serão apagados.')) {
         resetApp();

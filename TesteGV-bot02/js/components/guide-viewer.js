@@ -34,7 +34,7 @@ App.renderGuide = function(state) {
         '<h4 class="mb-2 font-semibold text-brand-800">Registre sua conta criada</h4>' +
         '<form id="complete-platform-form" class="flex flex-col gap-3 sm:flex-row">' +
           '<input type="text" name="accountInfo" placeholder="' + (placeholders[platform.id] || 'Digite sua conta') + '"' +
-            ' required value="' + (isCompleted ? state.platforms[platform.id].accountInfo : '') + '"' +
+            ' required value="' + (isCompleted ? App.escapeHtml(state.platforms[platform.id].accountInfo) : '') + '"' +
             ' class="flex-1 rounded-lg border border-brand-300 bg-white px-4 py-3 text-base placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />' +
           '<button type="submit" class="rounded-lg ' + (isCompleted ? 'bg-green-600 hover:bg-green-700' : 'bg-brand-600 hover:bg-brand-700') +
             ' px-6 py-3 text-sm font-semibold text-white transition-colors whitespace-nowrap">' +
