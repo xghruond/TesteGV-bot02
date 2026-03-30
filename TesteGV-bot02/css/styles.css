@@ -140,7 +140,8 @@ input[type="tel"]::placeholder {
   .no-print {
     display: none !important;
   }
-  .bg-overlay {
+  .bg-overlay,
+  #particle-canvas {
     display: none !important;
   }
   #app-content {
@@ -214,12 +215,20 @@ input[type="tel"]::placeholder {
   z-index: 1;
   background: linear-gradient(
     180deg,
-    rgba(2, 6, 23, 0.82) 0%,
-    rgba(2, 6, 23, 0.75) 30%,
-    rgba(2, 6, 23, 0.70) 60%,
-    rgba(2, 6, 23, 0.80) 100%
+    rgba(2, 8, 20, 0.78) 0%,
+    rgba(2, 12, 18, 0.70) 30%,
+    rgba(0, 15, 10, 0.65) 60%,
+    rgba(2, 8, 20, 0.75) 100%
   );
   backdrop-filter: blur(1px);
+  pointer-events: none;
+}
+
+/* Particle canvas */
+#particle-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
   pointer-events: none;
 }
 
@@ -233,6 +242,185 @@ input[type="tel"]::placeholder {
 
 .logo-glow {
   box-shadow: 0 0 60px rgba(34, 197, 94, 0.4), 0 0 120px rgba(34, 197, 94, 0.2), 0 0 200px rgba(34, 197, 94, 0.08);
+}
+.logo-glow:hover {
+  box-shadow: 0 0 80px rgba(34, 197, 94, 0.6), 0 0 150px rgba(34, 197, 94, 0.3), 0 0 250px rgba(34, 197, 94, 0.12);
+  transition: box-shadow 0.4s ease;
+}
+
+/* ===== Pulse Rings (anéis ao redor do logo) ===== */
+.pulse-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  animation: pulseRing 3s ease-out infinite;
+}
+.pulse-ring:nth-child(1) { animation-delay: 0s; }
+.pulse-ring:nth-child(2) { animation-delay: 1s; }
+.pulse-ring:nth-child(3) { animation-delay: 2s; }
+
+@keyframes pulseRing {
+  0% {
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0.6;
+  }
+  100% {
+    width: 250%;
+    height: 250%;
+    top: -75%;
+    left: -75%;
+    opacity: 0;
+  }
+}
+
+/* ===== Neon Text Glow ===== */
+.neon-text {
+  text-shadow:
+    0 0 10px rgba(34, 197, 94, 0.5),
+    0 0 20px rgba(34, 197, 94, 0.3),
+    0 0 40px rgba(34, 197, 94, 0.15),
+    0 0 80px rgba(34, 197, 94, 0.05);
+}
+
+/* ===== Typewriter cursor ===== */
+.typewriter-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.2em;
+  background: #22c55e;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 0.8s infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ===== Staggered card entrance ===== */
+.stagger-in {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+  animation: staggerFadeIn 0.5s ease-out forwards;
+}
+@keyframes staggerFadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ===== Futuristic card hover with border glow ===== */
+.futuristic-card {
+  position: relative;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.4);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.futuristic-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 16px;
+  padding: 1px;
+  background: linear-gradient(135deg, transparent 30%, rgba(34, 197, 94, 0.4), transparent 70%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.futuristic-card:hover {
+  transform: translateY(-4px) scale(1.03);
+  border-color: rgba(34, 197, 94, 0.3);
+  box-shadow: 0 8px 30px rgba(34, 197, 94, 0.15), 0 0 60px rgba(34, 197, 94, 0.05);
+}
+.futuristic-card:hover::before {
+  opacity: 1;
+}
+
+/* Scan line effect inside cards on hover */
+.futuristic-card::after {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(34, 197, 94, 0.03) 50%,
+    transparent 100%
+  );
+  transition: top 0.6s ease;
+  pointer-events: none;
+}
+.futuristic-card:hover::after {
+  top: 100%;
+}
+
+/* ===== Animated gradient button ===== */
+.btn-futuristic {
+  background: linear-gradient(135deg, #22c55e 0%, #059669 25%, #22c55e 50%, #10b981 75%, #22c55e 100%);
+  background-size: 300% 300%;
+  animation: gradientShift 4s ease infinite;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+.btn-futuristic:hover {
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.4), 0 8px 30px rgba(34, 197, 94, 0.3);
+  transform: translateY(-2px);
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Ripple effect */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(0);
+  animation: rippleExpand 0.6s ease-out;
+  pointer-events: none;
+}
+@keyframes rippleExpand {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* ===== Decorative separator ===== */
+.futuristic-separator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.futuristic-separator::before,
+.futuristic-separator::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.3), transparent);
+}
+.futuristic-separator .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+  animation: pulse 2s infinite;
 }
 
 /* Glass morphism containers */
@@ -253,10 +441,12 @@ input[type="tel"]::placeholder {
 }
 
 .welcome-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.3s ease, border-color 0.3s ease;
 }
 .welcome-card:hover {
-  transform: translateX(4px);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.3) !important;
 }
 
 .btn-gradient {

@@ -165,62 +165,97 @@ var App = App || {};
   function renderWelcome() {
     var historyCount = App.storage.loadHistory().length;
     var historyButton = historyCount > 0
-      ? '<button data-action="view-history" class="mt-4 w-full rounded-xl border border-dark-700 bg-dark-800/50 px-8 py-3.5 text-base font-medium text-dark-300 transition-all hover:bg-dark-800 hover:border-dark-600 hover:text-white">' +
-          App.icons.clipboard + ' Histórico (' + historyCount + ')</button>'
+      ? '<button data-action="view-history" class="mt-4 w-full rounded-xl border border-dark-700/50 bg-dark-800/40 px-8 py-3.5 text-base font-medium text-dark-300 backdrop-blur-sm transition-all hover:bg-dark-800/60 hover:border-brand-500/30 hover:text-white">' +
+          App.icons.clipboard + ' Hist\u00f3rico (' + historyCount + ')</button>'
       : '';
 
     return '' +
       '<div class="flex min-h-[90vh] items-center justify-center px-4">' +
         '<div class="w-full max-w-xl text-center">' +
 
-          // Logo com glow
+          // Logo com glow + anéis pulsantes
           '<div class="mb-10">' +
-            '<div class="mx-auto mb-8 flex h-28 w-28 items-center justify-center rounded-3xl bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600 text-white shadow-2xl logo-glow logo-float">' +
-              App.icons.robot +
+            '<div class="relative mx-auto mb-8 flex h-28 w-28 items-center justify-center">' +
+              '<div class="pulse-ring"></div>' +
+              '<div class="pulse-ring"></div>' +
+              '<div class="pulse-ring"></div>' +
+              '<div class="relative flex h-28 w-28 items-center justify-center rounded-3xl bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600 text-white shadow-2xl logo-glow logo-float">' +
+                App.icons.robot +
+              '</div>' +
             '</div>' +
-            '<h1 class="mb-3 text-5xl font-extrabold tracking-tight">' +
+            '<h1 class="mb-3 text-5xl font-extrabold tracking-tight neon-text">' +
               '<span class="text-gradient">Green BOT</span>' +
             '</h1>' +
-            '<p class="text-lg text-dark-400">Criação automática de contas profissionais</p>' +
+            '<p id="typewriter-text" class="text-lg text-dark-400 h-7"></p>' +
           '</div>' +
 
-          // Cards de plataformas
-          '<div class="mb-8 rounded-2xl border border-dark-700/40 bg-dark-800/70 p-6 text-left backdrop-blur-xl">' +
-            '<h3 class="mb-5 text-xs font-bold uppercase tracking-widest text-dark-500">Plataformas</h3>' +
-            '<div class="grid grid-cols-2 gap-3">' +
-              renderWelcomeItem('bg-red-500/10 text-red-400', App.platforms.gmail.icon, 'Gmail', 'E-mail profissional') +
-              renderWelcomeItem('bg-pink-500/10 text-pink-400', App.platforms.instagram.icon, 'Instagram', 'Rede social') +
-              renderWelcomeItem('bg-blue-500/10 text-blue-400', App.platforms.facebook.icon, 'Facebook', 'Rede social') +
-              renderWelcomeItem('bg-gray-500/10 text-gray-300', App.platforms.tiktok.icon, 'TikTok', 'Vídeos curtos') +
+          // Cards de plataformas - grid 4 colunas com stagger
+          '<div class="mb-8">' +
+            '<div class="futuristic-separator mb-5"><span class="dot"></span></div>' +
+            '<div class="grid grid-cols-4 gap-3">' +
+              renderWelcomeItem('bg-red-500/10 text-red-400', App.platforms.gmail.icon, 'Gmail', 0) +
+              renderWelcomeItem('bg-pink-500/10 text-pink-400', App.platforms.instagram.icon, 'Instagram', 1) +
+              renderWelcomeItem('bg-blue-500/10 text-blue-400', App.platforms.facebook.icon, 'Facebook', 2) +
+              renderWelcomeItem('bg-gray-500/10 text-gray-300', App.platforms.tiktok.icon, 'TikTok', 3) +
             '</div>' +
+            '<div class="futuristic-separator mt-5"><span class="dot"></span></div>' +
           '</div>' +
 
-          // Botões
-          '<button data-action="start" class="btn-gradient w-full rounded-xl px-8 py-4 text-lg font-bold text-white shadow-lg shadow-green-600/20 active:scale-[0.98] flex items-center justify-center gap-2">' +
+          // Botão Iniciar futurista
+          '<button data-action="start" class="btn-futuristic w-full rounded-xl px-8 py-4 text-lg font-bold text-white active:scale-[0.98] flex items-center justify-center gap-2">' +
             App.icons.arrowRight + ' Iniciar' +
           '</button>' +
           (hasSavedState
-            ? '<button data-action="continue" class="mt-3 w-full rounded-xl border border-brand-500/30 bg-brand-500/10 px-8 py-3.5 text-base font-semibold text-brand-400 transition-all hover:bg-brand-500/20 hover:border-brand-500/50">Continuar de onde parei</button>'
+            ? '<button data-action="continue" class="mt-3 w-full rounded-xl border border-brand-500/30 bg-brand-500/10 px-8 py-3.5 text-base font-semibold text-brand-400 backdrop-blur-sm transition-all hover:bg-brand-500/20 hover:border-brand-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)]">Continuar de onde parei</button>'
             : '') +
           historyButton +
 
-          // Versão
-          '<p class="mt-8 text-xs text-dark-600">Green BOT v1.0</p>' +
+          // Versão com separador
+          '<div class="futuristic-separator mt-8"><span class="dot"></span></div>' +
+          '<p class="mt-3 text-xs text-dark-600 tracking-widest uppercase">Green BOT v1.0</p>' +
         '</div>' +
       '</div>';
   }
 
-  function renderWelcomeItem(classes, icon, title, subtitle) {
+  function renderWelcomeItem(classes, icon, title, index) {
+    var delay = (0.3 + index * 0.12).toFixed(2);
     return '' +
-      '<div class="welcome-card flex items-center gap-3 rounded-xl border border-dark-700/40 bg-dark-900/50 px-4 py-3 cursor-default hover:border-dark-600">' +
-        '<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ' + classes + ' [&>svg]:w-5 [&>svg]:h-5">' +
+      '<div class="futuristic-card stagger-in welcome-card flex flex-col items-center gap-2 rounded-xl p-4 cursor-default text-center" style="animation-delay:' + delay + 's">' +
+        '<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ' + classes + ' [&>svg]:w-6 [&>svg]:h-6">' +
           icon +
         '</div>' +
-        '<div class="flex-1 min-w-0">' +
-          '<p class="font-semibold text-dark-100 text-sm">' + title + '</p>' +
-          '<p class="text-xs text-dark-500">' + subtitle + '</p>' +
-        '</div>' +
+        '<p class="font-semibold text-dark-100 text-sm">' + title + '</p>' +
       '</div>';
+  }
+
+  // Efeito typewriter
+  function startTypewriter() {
+    var el = document.getElementById('typewriter-text');
+    if (!el) return;
+    var text = 'Cria\u00e7\u00e3o autom\u00e1tica de contas profissionais';
+    var i = 0;
+    el.innerHTML = '<span class="typewriter-cursor"></span>';
+    var interval = setInterval(function() {
+      if (i < text.length) {
+        el.innerHTML = text.substring(0, i + 1) + '<span class="typewriter-cursor"></span>';
+        i++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 45);
+  }
+
+  // Ripple effect no botão
+  function createRipple(e, el) {
+    var rect = el.getBoundingClientRect();
+    var ripple = document.createElement('span');
+    var size = Math.max(rect.width, rect.height);
+    ripple.className = 'ripple';
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+    ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+    el.appendChild(ripple);
+    setTimeout(function() { ripple.remove(); }, 600);
   }
 
   // === Tela de histórico ===
@@ -372,6 +407,14 @@ var App = App || {};
 
     bindFormEvents();
 
+    // Partículas e typewriter na welcome
+    if (state.currentScreen === 'welcome') {
+      App.particles.init();
+      setTimeout(startTypewriter, 600);
+    } else {
+      App.particles.destroy();
+    }
+
     // Auto-copy ao entrar no wizard
     if (state.currentScreen === 'wizard') {
       var wizCurrent = App.getNextPendingPlatform(state, state.wizardPlatformIndex);
@@ -397,9 +440,10 @@ var App = App || {};
   // === Registro de handlers (delegados pelo listener global) ===
   // ============================================================
 
-  bindAction('start', function() {
+  bindAction('start', function(e, el) {
+    createRipple(e, el);
     state.startedAt = new Date().toISOString();
-    navigateTo('form');
+    setTimeout(function() { navigateTo('form'); }, 300);
   });
 
   bindAction('continue', function() {
