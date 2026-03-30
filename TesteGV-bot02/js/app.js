@@ -729,24 +729,160 @@ var App = App || {};
       });
   });
 
-  bindAction('twilio-purchase', function(e, el) {
-    var phone = el.getAttribute('data-phone');
-    if (!phone) return;
-    if (!confirm('Comprar o número ' + phone + '?\nEsta ação gerará cobrança na sua conta Twilio.')) return;
-    App.showToast('Comprando ' + phone + '...', 'info');
-    twilioFetch('/api/numbers/purchase', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phoneNumber: phone })
-    }).then(function(data) {
-      if (data.error) { App.showToast('Erro: ' + data.error, 'error'); return; }
-      App.showToast(data.message, 'success');
-      twilioState.searchResults = [];
-      twilioState.searchDone = false;
-      loadTwilioStatus();
-    }).catch(function() {
-      App.showToast('Erro ao comprar número', 'error');
+  // Hash SHA-256 da senha de autorização de compra (nunca armazenar o texto puro)
+  var PURCHASE_PASSWORD_HASH = 'b1dfdec95c76124d322254713c29f73995c80022a36d369121b5209bb4764e44';
+
+  function hashSHA256(str) {
+    var encoder = new TextEncoder();
+    return crypto.subtle.digest('SHA-256', encoder.encode(str)).then(function(buf) {
+      return Array.from(new Uint8Array(buf)).map(function(b) {
+        return b.toString(16).padStart(2, '0');
+      }).join('');
     });
+  }
+
+  function showPurchaseModal(phone, friendlyName, country, monthlyFee) {
+    // Remove modal anterior se existir
+    var old = document.getElementById('purchase-modal-overlay');
+    if (old) old.remove();
+
+    var overlay = document.createElement('div');
+    overlay.id = 'purchase-modal-overlay';
+    overlay.className = 'purchase-modal-overlay';
+    overlay.innerHTML =
+      '<div class="purchase-modal" role="dialog" aria-modal="true" aria-labelledby="purchase-modal-title">' +
+        '<div class="flex items-center gap-3 mb-5">' +
+          '<div class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+          '</div>' +
+          '<div>' +
+            '<h3 id="purchase-modal-title" class="text-lg font-bold text-dark-50">Confirmar Compra</h3>' +
+            '<p class="text-xs text-dark-500">Esta ação é irreversível</p>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="rounded-xl border border-amber-500/20 bg-amber-500/8 p-4 mb-5 space-y-2">' +
+          '<div class="flex justify-between text-sm">' +
+            '<span class="text-dark-400">Número</span>' +
+            '<span class="font-mono font-semibold text-dark-100">' + App.escapeHtml(friendlyName || phone) + '</span>' +
+          '</div>' +
+          '<div class="flex justify-between text-sm">' +
+            '<span class="text-dark-400">País</span>' +
+            '<span class="font-medium text-dark-200">' + App.escapeHtml(country) + '</span>' +
+          '</div>' +
+          '<div class="flex justify-between text-sm">' +
+            '<span class="text-dark-400">Custo mensal</span>' +
+            '<span class="font-semibold text-amber-400">' + App.escapeHtml(monthlyFee || '~$1.00') + '</span>' +
+          '</div>' +
+          '<div class="pt-2 border-t border-amber-500/20">' +
+            '<p class="text-xs text-amber-300/80">⚠️ O valor será debitado automaticamente da sua conta Twilio todos os meses até o número ser liberado.</p>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="mb-5">' +
+          '<label class="mb-2 block text-sm font-medium text-dark-200">Senha de autorização</label>' +
+          '<div class="relative">' +
+            '<input id="purchase-password-input" type="password" autocomplete="off" placeholder="Digite a senha para confirmar" ' +
+              'class="dark-input block w-full rounded-xl py-3 pl-4 pr-12 text-base focus:outline-none" />' +
+            '<button type="button" id="purchase-pw-toggle" tabindex="-1" class="password-toggle">' +
+              App.icons.eye +
+            '</button>' +
+          '</div>' +
+          '<p id="purchase-pw-error" class="mt-1.5 text-xs text-red-400 hidden">Senha incorreta. Tente novamente.</p>' +
+        '</div>' +
+
+        '<div class="flex gap-3">' +
+          '<button id="purchase-modal-cancel" class="flex-1 rounded-xl border border-dark-600 py-3 text-sm font-semibold text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">Cancelar</button>' +
+          '<button id="purchase-modal-confirm" class="flex-1 rounded-xl bg-amber-500 hover:bg-amber-400 py-3 text-sm font-semibold text-white transition-colors">Confirmar Compra</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    // Foco automático
+    setTimeout(function() {
+      var input = document.getElementById('purchase-password-input');
+      if (input) input.focus();
+    }, 50);
+
+    // Toggle visibilidade da senha
+    document.getElementById('purchase-pw-toggle').addEventListener('click', function() {
+      var input = document.getElementById('purchase-password-input');
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        this.innerHTML = App.icons.eyeOff;
+      } else {
+        input.type = 'password';
+        this.innerHTML = App.icons.eye;
+      }
+    });
+
+    // Cancelar
+    document.getElementById('purchase-modal-cancel').addEventListener('click', function() {
+      overlay.remove();
+    });
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) overlay.remove();
+    });
+
+    // Confirmar — verifica senha e compra
+    function doConfirm() {
+      var input = document.getElementById('purchase-password-input');
+      var errEl = document.getElementById('purchase-pw-error');
+      var pw = input ? input.value : '';
+      if (!pw) { errEl.classList.remove('hidden'); input.focus(); return; }
+
+      var confirmBtn = document.getElementById('purchase-modal-confirm');
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Verificando...';
+
+      hashSHA256(pw).then(function(hash) {
+        if (hash !== PURCHASE_PASSWORD_HASH) {
+          errEl.classList.remove('hidden');
+          input.value = '';
+          input.focus();
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Confirmar Compra';
+          return;
+        }
+        // Senha correta — executa compra
+        errEl.classList.add('hidden');
+        confirmBtn.textContent = 'Comprando...';
+        App.showToast('Comprando ' + phone + '...', 'info');
+
+        twilioFetch('/api/numbers/purchase', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phoneNumber: phone })
+        }).then(function(data) {
+          overlay.remove();
+          if (data.error) { App.showToast('Erro: ' + data.error, 'error'); return; }
+          App.showToast(data.message, 'success');
+          twilioState.searchResults = [];
+          twilioState.searchDone = false;
+          loadTwilioStatus();
+        }).catch(function() {
+          overlay.remove();
+          App.showToast('Erro ao comprar número.', 'error');
+        });
+      });
+    }
+
+    document.getElementById('purchase-modal-confirm').addEventListener('click', doConfirm);
+    document.getElementById('purchase-password-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') doConfirm();
+      if (e.key === 'Escape') overlay.remove();
+    });
+  }
+
+  bindAction('twilio-purchase', function(e, el) {
+    var phone       = el.getAttribute('data-phone');
+    var friendly    = el.getAttribute('data-friendly') || phone;
+    var country     = el.getAttribute('data-country') || '';
+    var fee         = el.getAttribute('data-fee') || '~$1.00';
+    if (!phone) return;
+    showPurchaseModal(phone, friendly, country, fee);
   });
 
   bindAction('twilio-set-active', function(e, el) {

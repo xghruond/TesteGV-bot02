@@ -168,8 +168,12 @@ App.renderTwilio = function(twilioState) {
                     '</div>' +
                   '</div>' +
                   '<span class="text-xs text-dark-500 shrink-0">' + App.escapeHtml(n.monthlyFee) + '/mês</span>' +
-                  '<button data-action="twilio-purchase" data-phone="' + App.escapeHtml(n.phoneNumber) + '" ' +
-                    'class="rounded-xl btn-gradient px-3 py-1.5 text-xs font-semibold text-white transition-all shrink-0">' +
+                  '<button data-action="twilio-purchase"' +
+                    ' data-phone="'   + App.escapeHtml(n.phoneNumber)  + '"' +
+                    ' data-friendly="'+ App.escapeHtml(n.friendlyName) + '"' +
+                    ' data-country="' + App.escapeHtml(n.isoCountry)   + '"' +
+                    ' data-fee="'     + App.escapeHtml(n.monthlyFee)   + '"' +
+                    ' class="rounded-xl btn-gradient px-3 py-1.5 text-xs font-semibold text-white transition-all shrink-0">' +
                     'Comprar' +
                   '</button>' +
                 '</div>';
