@@ -32,7 +32,7 @@
 
 /* ===== Transições de tela — Premium ===== */
 .screen-enter {
-  animation: screenSlideIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: screenSlideIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
   outline: none !important;
 }
 
@@ -55,7 +55,7 @@
 
 /* Transição de saída */
 #app-content.screen-exit {
-  animation: screenSlideOut 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: screenSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 @keyframes screenSlideOut {
@@ -82,7 +82,7 @@
   inset: 0;
   background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 5, 3, 0.4) 100%);
   opacity: var(--vignette-intensity, 0);
-  transition: opacity 1s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1);
   pointer-events: none;
 }
 
@@ -255,8 +255,8 @@ input[type="tel"]::placeholder {
   background-repeat: no-repeat;
   transform: scale(var(--forest-scale, 1)) translateY(var(--forest-y, 0px));
   filter: brightness(var(--forest-brightness, 1)) saturate(var(--forest-saturate, 1));
-  transition: transform 1.4s cubic-bezier(0.22, 1, 0.36, 1),
-              filter 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+              filter 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   will-change: transform, filter;
 }
 
@@ -274,7 +274,7 @@ input[type="tel"]::placeholder {
   backdrop-filter: blur(0.5px);
   pointer-events: none;
   opacity: var(--overlay-opacity, 1);
-  transition: opacity 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 /* Particle canvas */

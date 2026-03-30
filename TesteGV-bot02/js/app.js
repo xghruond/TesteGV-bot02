@@ -161,12 +161,12 @@ var App = App || {};
     if (headerEl) headerEl.classList.add('header-transitioning');
     updateForestDepth(screen);
 
-    // Phase 2: content fades out (100ms after bg starts — feels layered)
+    // Phase 2: content fades out (50ms after bg starts — feels layered)
     setTimeout(function() {
       content.classList.add('screen-exit');
-    }, 100);
+    }, 50);
 
-    // Phase 3: swap content after exit completes (100 + 480 = 580ms)
+    // Phase 3: swap content after exit completes (50 + 280 = 330ms)
     setTimeout(function() {
       content.classList.remove('screen-exit');
       if (headerEl) headerEl.classList.remove('header-transitioning');
@@ -175,7 +175,7 @@ var App = App || {};
       render();
       window.scrollTo({ top: 0 });
       isTransitioning = false;
-    }, 580);
+    }, 330);
   }
 
   function resetApp() {
