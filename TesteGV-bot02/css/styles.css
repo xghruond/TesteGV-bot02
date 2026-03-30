@@ -3,19 +3,29 @@
   position: fixed;
   inset: 0;
   z-index: 2000;
-  background:
-    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(20,80,40,0.28) 0%, transparent 70%),
-    #050d10;
+  background: #040c08;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
   cursor: pointer;
   overflow: hidden;
 }
 
+/* Fundo escuro com vinheta verde suave */
+#splash-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 55% at 50% 45%,
+    rgba(34,197,94,0.18) 0%,
+    rgba(34,197,94,0.06) 45%,
+    transparent 70%);
+  pointer-events: none;
+}
+
 #splash-screen.splash-exit {
-  animation: splashFadeOut 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: splashFadeOut 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes splashFadeOut {
@@ -23,109 +33,115 @@
   100% { opacity: 0; pointer-events: none; }
 }
 
-/* Container da logo — responsivo e grande */
+/* ── Logo ── */
 #splash-logo {
   position: relative;
-  width: min(600px, 88vw, 72vh);
-  animation: splashLogoIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
-  margin-bottom: 28px;
+  /* Limita pela ALTURA: logo nunca passa de 42vh nem de 340px */
+  height: min(42vh, 340px);
+  width: auto;
+  animation: splashLogoIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
-/* Glow sempre centrado atrás da logo */
+#splash-logo img {
+  display: block;
+  height: 100%;
+  width: auto;
+  max-width: 82vw;
+  position: relative;
+  z-index: 1;
+}
+
+/* Glow radial sempre atrás da logo */
 .splash-glow {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 220%;
-  height: 220%;
+  width: 280px;
+  height: 280px;
   border-radius: 50%;
   background: radial-gradient(circle,
-    rgba(34,197,94,0.30) 0%,
-    rgba(34,197,94,0.10) 40%,
-    rgba(34,197,94,0.02) 65%,
-    transparent 80%);
-  animation: splashGlowPulse 3s ease-in-out infinite;
+    rgba(34,197,94,0.40) 0%,
+    rgba(34,197,94,0.15) 40%,
+    rgba(34,197,94,0.03) 70%,
+    transparent 85%);
+  animation: splashGlowPulse 2.8s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
 }
 
 @keyframes splashGlowPulse {
   0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
-  50%       { opacity: 1;   transform: translate(-50%, -50%) scale(1.1); }
-}
-
-#splash-logo img {
-  display: block;
-  width: 100%;
-  height: auto;
-  position: relative;
-  z-index: 1;
-  filter: drop-shadow(0 4px 20px rgba(0,0,0,0.5));
+  50%       { opacity: 1;   transform: translate(-50%, -50%) scale(1.12); }
 }
 
 #splash-logo.logo-exit {
-  animation: splashLogoOut 0.7s cubic-bezier(0.4, 0, 1, 1) forwards;
+  animation: splashLogoOut 0.65s cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
 @keyframes splashLogoIn {
-  0%   { opacity: 0; transform: scale(0.82) translateY(20px); }
-  60%  { opacity: 1; }
-  100% { opacity: 1; transform: scale(1) translateY(0); }
+  0%   { opacity: 0; transform: translateY(18px) scale(0.88); }
+  55%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes splashLogoOut {
-  0%   { opacity: 1; transform: scale(1);    }
-  100% { opacity: 0; transform: scale(1.15); filter: blur(10px); }
+  0%   { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.12); filter: blur(8px); }
 }
 
-/* Linha verde + tagline */
+/* ── Linha divisória ── */
 .splash-divider {
   width: 0;
-  height: 1.5px;
-  background: linear-gradient(90deg, transparent, #22c55e, transparent);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(34,197,94,0.8), transparent);
   border-radius: 2px;
-  animation: splashLineGrow 0.8s 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  margin-bottom: 18px;
+  animation: splashLineGrow 0.7s 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  margin-bottom: 14px;
+  flex-shrink: 0;
 }
 
 @keyframes splashLineGrow {
-  0%   { width: 0;        opacity: 0; }
-  100% { width: min(220px, 40vw); opacity: 1; }
+  0%   { width: 0;   opacity: 0; }
+  100% { width: 180px; opacity: 1; }
 }
 
+/* ── Tagline ── */
 .splash-tagline {
   font-family: Inter, system-ui, sans-serif;
-  font-size: 10.5px;
+  font-size: 9px;
   font-weight: 500;
-  color: rgba(255,255,255,0.30);
-  letter-spacing: 4px;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 5px;
   text-transform: uppercase;
   opacity: 0;
-  animation: splashFadeUp 0.6s 1.2s forwards;
+  animation: splashFadeUp 0.5s 1.15s forwards;
   user-select: none;
+  flex-shrink: 0;
 }
 
-/* Barra de carregamento */
+/* ── Barra de progresso (absoluta, não afeta o flex) ── */
 .splash-bar-wrap {
   position: absolute;
-  bottom: 60px;
+  bottom: 52px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(200px, 36vw);
-  height: 1.5px;
-  background: rgba(255,255,255,0.07);
+  width: 160px;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
   border-radius: 2px;
   overflow: hidden;
   opacity: 0;
-  animation: splashFadeUp 0.4s 0.8s forwards;
+  animation: splashFadeUp 0.4s 0.75s forwards;
 }
 
 .splash-bar-fill {
   height: 100%;
   width: 0;
-  background: linear-gradient(90deg, #16a34a 0%, #4ade80 50%, #16a34a 100%);
-  animation: splashBarFill 2.4s 0.85s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  background: linear-gradient(90deg, #16a34a, #4ade80, #16a34a);
+  animation: splashBarFill 2.6s 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes splashBarFill {
@@ -133,11 +149,12 @@
   100% { width: 100%; }
 }
 
+/* ── "Toque para pular" ── */
 .splash-skip {
   position: absolute;
-  bottom: 24px;
-  font-size: 9.5px;
-  color: rgba(255,255,255,0.15);
+  bottom: 20px;
+  font-size: 9px;
+  color: rgba(255,255,255,0.12);
   letter-spacing: 3px;
   text-transform: uppercase;
   font-family: Inter, system-ui, sans-serif;
@@ -147,7 +164,7 @@
 }
 
 @keyframes splashFadeUp {
-  0%   { opacity: 0; transform: translateY(6px); }
+  0%   { opacity: 0; transform: translateY(5px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
