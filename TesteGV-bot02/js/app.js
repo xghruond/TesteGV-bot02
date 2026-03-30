@@ -915,9 +915,17 @@ var App = App || {};
   });
 
   bindAction('send-sms-credentials', function() {
-    var phone = state.employee.telefone ? state.employee.telefone.replace(/\D/g, '') : '';
-    var dest = prompt('Número do destinatário (com código do país, ex: +5511999999999):', phone ? '+55' + phone : '');
-    if (!dest) return;
+    // Usa o número real do funcionário cadastrado no formulário
+    var digits = state.employee.telefone ? state.employee.telefone.replace(/\D/g, '') : '';
+    var dest = digits ? '+55' + digits : '';
+
+    // Se o número não estiver preenchido, pede ao usuário
+    if (!dest) {
+      dest = prompt('Número do funcionário não encontrado.\nDigite manualmente (ex: +5511999999999):');
+      if (!dest) return;
+    } else {
+      if (!confirm('Enviar SMS com as credenciais para ' + dest + '?')) return;
+    }
 
     var completedPlatforms = Object.keys(state.platforms)
       .filter(function(id) { return state.platforms[id].completed; })
@@ -1043,8 +1051,6 @@ var App = App || {};
     var nome = nomes[Math.floor(Math.random() * nomes.length)];
     var cargo = cargos[Math.floor(Math.random() * cargos.length)];
     var depto = deptos[Math.floor(Math.random() * deptos.length)];
-    var ddd = ['11','21','31','41','51','61','71','85'][Math.floor(Math.random() * 8)];
-    var tel = '(' + ddd + ') 9' + Math.floor(1000 + Math.random() * 9000) + '-' + Math.floor(1000 + Math.random() * 9000);
 
     var year = 1985 + Math.floor(Math.random() * 20);
     var month = String(1 + Math.floor(Math.random() * 12)).padStart(2, '0');
@@ -1056,14 +1062,15 @@ var App = App || {};
 
     var emailSuggestion = App.generateEmailFromName(nome);
 
+    // telefone não é preenchido automaticamente — deve ser o número real
+    // do funcionário para receber SMS via Twilio
     var fields = {
-      nomeCompleto: nome,
+      nomeCompleto:  nome,
       emailDesejado: emailSuggestion,
-      telefone: tel,
       dataNascimento: dataNasc,
-      cargo: cargo,
-      departamento: depto,
-      dataAdmissao: dataAdm
+      cargo:         cargo,
+      departamento:  depto,
+      dataAdmissao:  dataAdm
     };
 
     for (var key in fields) {

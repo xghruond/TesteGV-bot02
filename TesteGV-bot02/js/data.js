@@ -624,7 +624,7 @@ App.platforms = {
 App.formFields = [
   { id: 'nomeCompleto', label: 'Nome completo', type: 'text', placeholder: 'Ex: João da Silva', required: true, minLength: 3, icon: 'user' },
   { id: 'emailDesejado', label: 'E-mail desejado (usuário para o Gmail)', type: 'text', placeholder: 'nome.sobrenome ou nome.empresa', required: true, minLength: 3, helpText: 'Sugestões: maria.santos, pedro.costa.gv, ana.tech — o "@gmail.com" será adicionado automaticamente.', icon: 'mail' },
-  { id: 'telefone', label: 'Telefone (com DDD)', type: 'tel', placeholder: '(11) 99999-9999', required: true, icon: 'phone' },
+  { id: 'telefone', label: 'Telefone para SMS (com DDD)', type: 'tel', placeholder: '(11) 99999-9999', required: true, icon: 'phone', helpText: 'Número real do funcionário — será usado para enviar as credenciais por SMS via Twilio.' },
   { id: 'dataNascimento', label: 'Data de nascimento', type: 'date', required: true, icon: 'calendar' },
   { id: 'cargo', label: 'Cargo', type: 'text', placeholder: 'Ex: Analista de Marketing', required: true, icon: 'briefcase' },
   {
