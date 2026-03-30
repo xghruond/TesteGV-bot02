@@ -15,7 +15,11 @@ App.renderWizard = function(state) {
     return '<div class="text-center py-12">' +
       '<div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/15 text-green-400">' + App.icons.checkCircle + '</div>' +
       '<h2 class="text-xl font-bold text-dark-50 mb-2">Todas as contas foram criadas!</h2>' +
-      '<button data-action="view-summary" class="mt-4 btn-gradient rounded-xl px-6 py-3 text-white font-semibold">Ver Resumo Final</button>' +
+      '<div class="mt-4 flex flex-col gap-3 max-w-sm mx-auto">' +
+        '<button data-action="view-summary" class="btn-gradient rounded-xl px-6 py-3 text-white font-semibold">Ver Resumo Final</button>' +
+        '<button data-action="reset" class="rounded-xl border border-dark-600/50 px-6 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
+          App.icons.refresh + ' Novo Colaborador</button>' +
+      '</div>' +
     '</div>';
   }
 

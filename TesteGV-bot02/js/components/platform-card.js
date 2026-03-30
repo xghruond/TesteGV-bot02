@@ -43,8 +43,12 @@ App.renderPlatformCards = function(state) {
   }).join('');
 
   var summaryButton = allDone
-    ? '<div class="mt-6"><button data-action="view-summary" class="w-full btn-futuristic rounded-xl px-8 py-4 text-lg font-semibold text-white active:scale-[0.98]">' +
-        App.icons.sparkles + ' Ver Resumo Final</button></div>'
+    ? '<div class="mt-6 space-y-3">' +
+        '<button data-action="view-summary" class="w-full btn-futuristic rounded-xl px-8 py-4 text-lg font-semibold text-white active:scale-[0.98]">' +
+          App.icons.sparkles + ' Ver Resumo Final</button>' +
+        '<button data-action="reset" class="w-full rounded-xl border border-dark-600/50 px-8 py-3.5 text-base font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
+          App.icons.refresh + ' Novo Colaborador</button>' +
+      '</div>'
     : '';
 
   // === Painel de informações do funcionário para copiar ===
