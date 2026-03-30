@@ -1,3 +1,76 @@
+/* ===== Splash Screen — Abertura Green Village ===== */
+#splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: #020617;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+#splash-screen.splash-exit {
+  animation: splashFadeOut 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes splashFadeOut {
+  0%   { opacity: 1; }
+  100% { opacity: 0; pointer-events: none; }
+}
+
+.splash-glow {
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(34,197,94,0.18) 0%, rgba(34,197,94,0.06) 50%, transparent 70%);
+  animation: splashGlowPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes splashGlowPulse {
+  0%, 100% { transform: scale(1);   opacity: 0.8; }
+  50%       { transform: scale(1.1); opacity: 1;   }
+}
+
+#splash-logo {
+  position: relative;
+  width: 260px;
+  animation: splashLogoIn 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+#splash-logo.logo-exit {
+  animation: splashLogoOut 0.7s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes splashLogoIn {
+  0%   { opacity: 0; transform: scale(0.65) translateY(24px); filter: blur(12px); }
+  60%  { opacity: 1; filter: blur(1px); }
+  100% { opacity: 1; transform: scale(1) translateY(0);       filter: blur(0); }
+}
+
+@keyframes splashLogoOut {
+  0%   { opacity: 1; transform: scale(1);    filter: blur(0);   }
+  100% { opacity: 0; transform: scale(1.35); filter: blur(8px); }
+}
+
+.splash-skip {
+  position: absolute;
+  bottom: 32px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  animation: splashSkipIn 1s 1.5s both;
+  user-select: none;
+}
+
+@keyframes splashSkipIn {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+
 /* ===== Fallback: layout básico caso Tailwind CDN falhe ===== */
 .no-tailwind body {
   font-family: Inter, system-ui, -apple-system, sans-serif;

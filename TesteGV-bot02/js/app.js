@@ -1810,6 +1810,30 @@ var App = App || {};
   // Expor navigateTo globalmente (usado em onclick do header como fallback)
   App.navigateTo = navigateTo;
 
+  // ============================================================
+  // === Splash Screen — Abertura Green Village               ===
+  // ============================================================
+  (function() {
+    var splash = document.getElementById('splash-screen');
+    var logo   = document.getElementById('splash-logo');
+    if (!splash) return;
+
+    function closeSplash() {
+      if (splash.classList.contains('splash-exit')) return;
+      if (logo) logo.classList.add('logo-exit');
+      setTimeout(function() {
+        splash.classList.add('splash-exit');
+        setTimeout(function() { splash.style.display = 'none'; }, 900);
+      }, 500);
+    }
+
+    // Fechar ao clicar em qualquer lugar
+    splash.addEventListener('click', closeSplash);
+
+    // Fechar automaticamente após 3.2s
+    setTimeout(closeSplash, 3200);
+  })();
+
   // Iniciar a aplicação
   render();
 })();
