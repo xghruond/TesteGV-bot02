@@ -314,7 +314,6 @@ input[type="tel"]::placeholder {
 /* SVGs posicionados nas bordas */
 .foliage-svg {
   position: absolute;
-  fill: currentColor;
 }
 
 /* Particle canvas */
