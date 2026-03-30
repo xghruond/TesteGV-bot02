@@ -102,6 +102,32 @@ var App = App || {};
     return errors;
   }
 
+  // === Profundidade da floresta (parallax entre telas) ===
+  var forestDepth = {
+    welcome:          { scale: 1.0,  y: '0px',   brightness: 1.0,  overlay: 1.0  },
+    form:             { scale: 1.06, y: '-8px',   brightness: 0.92, overlay: 1.05 },
+    platforms:        { scale: 1.12, y: '-16px',  brightness: 0.85, overlay: 1.10 },
+    wizard:           { scale: 1.12, y: '-16px',  brightness: 0.85, overlay: 1.10 },
+    guide:            { scale: 1.18, y: '-24px',  brightness: 0.78, overlay: 1.15 },
+    summary:          { scale: 1.24, y: '-32px',  brightness: 0.72, overlay: 1.18 },
+    history:          { scale: 1.10, y: '-12px',  brightness: 0.88, overlay: 1.08 },
+    'history-detail': { scale: 1.15, y: '-20px',  brightness: 0.82, overlay: 1.12 }
+  };
+
+  function updateForestDepth(screen) {
+    var depth = forestDepth[screen] || forestDepth.welcome;
+    var forest = document.getElementById('bg-forest');
+    var overlay = document.querySelector('.bg-overlay');
+    if (forest) {
+      forest.style.setProperty('--forest-scale', depth.scale);
+      forest.style.setProperty('--forest-y', depth.y);
+      forest.style.setProperty('--forest-brightness', depth.brightness);
+    }
+    if (overlay) {
+      overlay.style.setProperty('--overlay-opacity', depth.overlay);
+    }
+  }
+
   // Navegação com transição animada
   var isTransitioning = false;
 
@@ -119,6 +145,7 @@ var App = App || {};
     if (isTransitioning || state.currentScreen === screen) {
       state.currentScreen = screen;
       App.storage.save(state);
+      updateForestDepth(screen);
       render();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
@@ -127,6 +154,7 @@ var App = App || {};
     // Animação de saída → troca → animação de entrada
     isTransitioning = true;
     content.classList.add('screen-exit');
+    updateForestDepth(screen);
 
     setTimeout(function() {
       content.classList.remove('screen-exit');
@@ -142,6 +170,7 @@ var App = App || {};
     App.storage.clear();
     state = JSON.parse(JSON.stringify(defaultState));
     hasSavedState = false;
+    updateForestDepth('welcome');
     render();
   }
 
@@ -428,6 +457,9 @@ var App = App || {};
     }
 
     bindFormEvents();
+
+    // Profundidade da floresta
+    updateForestDepth(state.currentScreen);
 
     // Partículas e typewriter na welcome
     if (state.currentScreen === 'welcome') {
