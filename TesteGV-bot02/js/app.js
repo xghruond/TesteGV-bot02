@@ -585,7 +585,7 @@ var App = App || {};
     if (state.currentScreen === 'twilio') {
       header.innerHTML =
         '<div class="container mx-auto px-4 py-3 flex items-center">' +
-          '<button data-action="back-welcome" class="flex items-center gap-1.5 rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' +
+          '<button data-action="back-welcome" onclick="App.navigateTo(\'welcome\')" class="flex items-center gap-1.5 rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' +
             App.icons.chevronLeft + ' Voltar' +
           '</button>' +
         '</div>';
@@ -624,7 +624,11 @@ var App = App || {};
           content.innerHTML = renderHistoryDetail(state.viewingHistoryId);
           break;
         case 'twilio':
-          content.innerHTML = App.renderTwilio(twilioState);
+          if (typeof App.renderTwilio !== 'function') {
+            content.innerHTML = '<div class="p-8 text-center"><p class="text-amber-400 mb-4">Módulo Twilio não carregado.</p><button data-action="back-welcome" onclick="App.navigateTo(\'welcome\')" class="rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' + App.icons.chevronLeft + ' Voltar</button></div>';
+          } else {
+            content.innerHTML = App.renderTwilio(twilioState);
+          }
           loadTwilioStatus();
           break;
         default:
@@ -1650,6 +1654,9 @@ var App = App || {};
       });
     }
   }
+
+  // Expor navigateTo globalmente (usado em onclick do header como fallback)
+  App.navigateTo = navigateTo;
 
   // Iniciar a aplicação
   render();
