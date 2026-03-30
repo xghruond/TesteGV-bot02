@@ -3,18 +3,19 @@
   position: fixed;
   inset: 0;
   z-index: 2000;
-  background: rgba(2, 6, 23, 0.72);
-  backdrop-filter: blur(22px) saturate(0.5) brightness(0.7);
-  -webkit-backdrop-filter: blur(22px) saturate(0.5) brightness(0.7);
+  background: rgba(4, 10, 20, 0.82);
+  backdrop-filter: blur(28px) saturate(0.4) brightness(0.55);
+  -webkit-backdrop-filter: blur(28px) saturate(0.4) brightness(0.55);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
+  gap: 36px;
   cursor: pointer;
 }
 
 #splash-screen.splash-exit {
-  animation: splashFadeOut 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: splashFadeOut 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes splashFadeOut {
@@ -22,59 +23,103 @@
   100% { opacity: 0; pointer-events: none; }
 }
 
+/* Glow suave atrás da logo */
 .splash-glow {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  width: 600px;
-  height: 600px;
+  transform: translate(-50%, -58%);
+  width: 520px;
+  height: 520px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(34,197,94,0.22) 0%, rgba(34,197,94,0.08) 45%, transparent 70%);
-  animation: splashGlowPulse 2.5s ease-in-out infinite;
+  background: radial-gradient(circle,
+    rgba(34,197,94,0.14) 0%,
+    rgba(34,197,94,0.05) 50%,
+    transparent 72%);
+  animation: splashGlowPulse 3s ease-in-out infinite;
   pointer-events: none;
 }
 
 @keyframes splashGlowPulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.8; }
-  50%       { transform: translate(-50%, -50%) scale(1.12); opacity: 1;   }
+  0%, 100% { transform: translate(-50%, -58%) scale(1);    opacity: 0.7; }
+  50%       { transform: translate(-50%, -58%) scale(1.08); opacity: 1;   }
 }
 
+/* Container da logo */
 #splash-logo {
   position: relative;
-  width: min(500px, 72vw);
-  animation: splashLogoIn 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  width: min(380px, 62vw);
+  filter: drop-shadow(0 0 32px rgba(34,197,94,0.30))
+          drop-shadow(0 8px 24px rgba(0,0,0,0.6));
+  animation: splashLogoIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 #splash-logo.logo-exit {
-  animation: splashLogoOut 0.7s cubic-bezier(0.4, 0, 1, 1) forwards;
+  animation: splashLogoOut 0.65s cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
 @keyframes splashLogoIn {
-  0%   { opacity: 0; transform: scale(0.65) translateY(24px); filter: blur(12px); }
-  60%  { opacity: 1; filter: blur(1px); }
-  100% { opacity: 1; transform: scale(1) translateY(0);       filter: blur(0); }
+  0%   { opacity: 0; transform: scale(0.75) translateY(20px); filter: blur(14px) drop-shadow(0 0 0 transparent); }
+  70%  { opacity: 1; }
+  100% { opacity: 1; transform: scale(1)    translateY(0);
+         filter: drop-shadow(0 0 32px rgba(34,197,94,0.30)) drop-shadow(0 8px 24px rgba(0,0,0,0.6)); }
 }
 
 @keyframes splashLogoOut {
-  0%   { opacity: 1; transform: scale(1);    filter: blur(0);   }
-  100% { opacity: 0; transform: scale(1.35); filter: blur(8px); }
+  0%   { opacity: 1; transform: scale(1);    filter: drop-shadow(0 0 32px rgba(34,197,94,0.30)); }
+  100% { opacity: 0; transform: scale(1.25); filter: drop-shadow(0 0 60px rgba(34,197,94,0.0)) blur(6px); }
+}
+
+/* Barra de progresso decorativa */
+.splash-bar-wrap {
+  width: min(280px, 50vw);
+  height: 2px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+  animation: splashFadeInUp 0.6s 0.9s both;
+}
+
+.splash-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #16a34a, #4ade80, #16a34a);
+  border-radius: 2px;
+  animation: splashBarFill 2.6s 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes splashBarFill {
+  0%   { width: 0%; }
+  100% { width: 100%; }
+}
+
+/* Tagline */
+.splash-tagline {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.28);
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  animation: splashFadeInUp 0.6s 1.1s both;
+  user-select: none;
+}
+
+@keyframes splashFadeInUp {
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 .splash-skip {
   position: absolute;
-  bottom: 32px;
-  font-size: 11px;
-  color: rgba(255,255,255,0.25);
-  letter-spacing: 2px;
+  bottom: 28px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.18);
+  letter-spacing: 2.5px;
   text-transform: uppercase;
-  animation: splashSkipIn 1s 1.5s both;
+  font-family: Inter, system-ui, sans-serif;
+  animation: splashFadeInUp 0.6s 1.8s both;
   user-select: none;
-}
-
-@keyframes splashSkipIn {
-  0%   { opacity: 0; }
-  100% { opacity: 1; }
 }
 
 /* ===== Fallback: layout básico caso Tailwind CDN falhe ===== */
