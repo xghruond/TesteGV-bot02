@@ -50,20 +50,16 @@
 #splash-logo {
   position: relative;
   width: min(520px, 80vw, 60vh);
-  filter: drop-shadow(0 0 60px rgba(34,197,94,0.45))
-          drop-shadow(0 0 20px rgba(34,197,94,0.20))
-          drop-shadow(0 16px 40px rgba(0,0,0,0.8));
+  filter: drop-shadow(0 0 48px rgba(34,197,94,0.55))
+          drop-shadow(0 8px 24px rgba(0,0,0,0.6));
   animation: splashLogoIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
   margin-bottom: 24px;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
 }
 
 #splash-logo img {
   display: block;
   width: 100%;
   height: auto;
-  image-rendering: auto;
 }
 
 #splash-logo.logo-exit {
