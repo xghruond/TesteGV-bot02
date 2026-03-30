@@ -685,19 +685,21 @@ input[type="tel"]::placeholder {
 /* ===== Password visibility toggle ===== */
 .password-toggle {
   position: absolute;
-  right: 8px;
+  right: 4px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
   color: #64748b;
   cursor: pointer;
-  padding: 6px;
+  padding: 10px;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: color 0.2s, background 0.2s;
+  min-width: 44px;
+  min-height: 44px;
 }
 .password-toggle:hover {
   color: #22c55e;
@@ -708,8 +710,11 @@ input[type="tel"]::placeholder {
 @media (max-width: 640px) {
   /* Ensure minimum 44px touch targets */
   .checklist-drawer button,
-  .toast-undo-btn {
+  .toast-undo-btn,
+  [data-action="copy"],
+  [data-action="wizard-copy-credential"] {
     min-height: 44px;
+    min-width: 44px;
   }
   /* Stack form buttons vertically on mobile */
   #employee-form .flex.gap-3 {

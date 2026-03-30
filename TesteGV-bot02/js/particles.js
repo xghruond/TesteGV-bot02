@@ -116,21 +116,46 @@ App.particles = (function() {
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw connections first (behind particles)
-    for (var i = 0; i < particles.length; i++) {
-      for (var j = i + 1; j < particles.length; j++) {
-        var dx = particles[i].x - particles[j].x;
-        var dy = particles[i].y - particles[j].y;
-        var dist = Math.sqrt(dx * dx + dy * dy);
+    // Spatial grid for O(n) connection checks instead of O(n²)
+    var cellSize = CONFIG.connectionDistance;
+    var cols = Math.ceil(canvas.width / cellSize) + 1;
+    var grid = {};
+    for (var gi = 0; gi < particles.length; gi++) {
+      var cx = Math.floor(particles[gi].x / cellSize);
+      var cy = Math.floor(particles[gi].y / cellSize);
+      var key = cx + ',' + cy;
+      if (!grid[key]) grid[key] = [];
+      grid[key].push(gi);
+    }
 
-        if (dist < CONFIG.connectionDistance) {
-          var opacity = (1 - dist / CONFIG.connectionDistance) * 0.15;
-          ctx.beginPath();
-          ctx.strokeStyle = 'rgba(34, 197, 94, ' + opacity + ')';
-          ctx.lineWidth = 0.5;
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.stroke();
+    // Draw connections using spatial grid
+    var drawn = {};
+    for (var i = 0; i < particles.length; i++) {
+      var gcx = Math.floor(particles[i].x / cellSize);
+      var gcy = Math.floor(particles[i].y / cellSize);
+      for (var nx = gcx - 1; nx <= gcx + 1; nx++) {
+        for (var ny = gcy - 1; ny <= gcy + 1; ny++) {
+          var neighbors = grid[nx + ',' + ny];
+          if (!neighbors) continue;
+          for (var ni = 0; ni < neighbors.length; ni++) {
+            var j = neighbors[ni];
+            if (j <= i) continue;
+            var pairKey = i + '-' + j;
+            if (drawn[pairKey]) continue;
+            drawn[pairKey] = true;
+            var dx = particles[i].x - particles[j].x;
+            var dy = particles[i].y - particles[j].y;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < CONFIG.connectionDistance) {
+              var opacity = (1 - dist / CONFIG.connectionDistance) * 0.15;
+              ctx.beginPath();
+              ctx.strokeStyle = 'rgba(34, 197, 94, ' + opacity + ')';
+              ctx.lineWidth = 0.5;
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.stroke();
+            }
+          }
         }
       }
     }

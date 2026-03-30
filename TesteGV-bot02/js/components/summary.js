@@ -69,7 +69,7 @@ App.renderSummary = function(state) {
     }).join('');
 
     return '' +
-      '<div class="rounded-xl border border-dark-700/60 bg-dark-800/60 backdrop-blur-sm p-4 shadow-lg shadow-black/10">' +
+      '<div class="rounded-xl border border-dark-700/40 bg-dark-900/30 backdrop-blur-sm p-4 shadow-lg shadow-black/10">' +
         '<div class="flex items-center justify-between mb-3">' +
           '<div class="flex items-center gap-2">' +
             '<div class="flex h-9 w-9 items-center justify-center rounded-lg ' + platform.color.accent + ' text-white [&>svg]:w-4 [&>svg]:h-4">' + platform.icon + '</div>' +
@@ -82,7 +82,7 @@ App.renderSummary = function(state) {
             '</a>' +
           '</div>' +
         '</div>' +
-        '<div class="space-y-1.5 rounded-lg bg-dark-900/50 p-3">' +
+        '<div class="space-y-1.5 rounded-lg bg-dark-900/30 p-3">' +
           credRows +
         '</div>' +
       '</div>';
@@ -107,7 +107,7 @@ App.renderSummary = function(state) {
         '<h2 class="text-2xl font-bold text-dark-50">Processo Concluído!</h2>' +
         '<p class="mt-1 text-dark-400">Todas as contas foram criadas com sucesso</p>' +
       '</div>' +
-      '<div class="mb-6 rounded-xl border border-dark-700/60 bg-dark-800/60 backdrop-blur-sm p-6 shadow-lg shadow-black/10">' +
+      '<div class="mb-6 rounded-xl border border-dark-700/40 bg-dark-900/30 backdrop-blur-sm p-6 shadow-lg shadow-black/10">' +
         '<h3 class="mb-4 flex items-center gap-2 text-lg font-bold text-dark-100">' + App.icons.user + ' Dados do Funcionário</h3>' +
         '<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">' +
           '<div><p class="text-xs font-medium uppercase tracking-wide text-dark-500">Nome completo</p><p class="text-base font-medium text-dark-100">' + esc(state.employee.nomeCompleto || '-') + '</p></div>' +

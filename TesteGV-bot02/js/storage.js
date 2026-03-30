@@ -31,7 +31,7 @@ App.storage = {
   saveHistory: function(record) {
     try {
       var history = this.loadHistory();
-      record.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      record.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
       history.push(record);
       localStorage.setItem(this.HISTORY_KEY, JSON.stringify(history));
     } catch (e) {

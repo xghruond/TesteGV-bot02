@@ -47,7 +47,7 @@ App.renderWizard = function(state) {
     if (!cred.value) continue;
     var isAutoCopy = (cred.value === autoCopyData.value);
     var autoBadge = isAutoCopy
-      ? '<span id="wizard-autocopy-indicator" class="ml-2 text-xs text-green-400 font-medium"></span>'
+      ? '<span class="ml-2 inline-flex items-center gap-0.5 text-xs text-green-400 font-medium">' + App.icons.copy + '</span>'
       : '';
     credRows +=
       '<div class="flex items-center justify-between gap-2 py-2.5 ' + (c > 0 ? 'border-t border-dark-700/50' : '') + '">' +
@@ -76,7 +76,7 @@ App.renderWizard = function(state) {
 
       // Platform identity
       '<div class="text-center mb-6">' +
-        '<div class="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-800 border border-dark-700 [&>svg]:w-8 [&>svg]:h-8">' +
+        '<div class="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-900/40 border border-dark-700/40 [&>svg]:w-8 [&>svg]:h-8">' +
           platform.icon +
         '</div>' +
         '<h2 class="text-2xl font-bold text-dark-50">' + esc(platform.name) + '</h2>' +
@@ -84,7 +84,7 @@ App.renderWizard = function(state) {
       '</div>' +
 
       // Username editor
-      '<div class="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">' +
+      '<div class="mb-4 rounded-xl border border-amber-500/30 bg-dark-900/30 backdrop-blur-sm p-4">' +
         '<label class="block text-xs font-semibold text-amber-400 mb-1.5">Nome de usuário / E-mail base</label>' +
         '<div class="flex gap-2">' +
           '<input id="wizard-username-input" type="text" value="' + esc(state.employee.emailDesejado) + '" class="dark-input flex-1 rounded-lg px-3 py-2 text-sm font-medium !border-amber-500/30 focus:!border-amber-400">' +
@@ -107,11 +107,11 @@ App.renderWizard = function(state) {
       '</div>' +
 
       // Credentials panel
-      '<div class="mb-5 rounded-xl border border-brand-500/30 bg-brand-500/5 p-5">' +
+      '<div class="mb-5 rounded-xl border border-brand-500/30 bg-dark-900/30 backdrop-blur-sm p-5">' +
         '<h3 class="flex items-center gap-2 text-sm font-bold text-brand-400 mb-3">' +
           App.icons.clipboard + ' Dados para Cadastro' +
         '</h3>' +
-        '<div class="bg-dark-900/50 rounded-lg p-3">' +
+        '<div class="bg-dark-900/30 rounded-lg p-3">' +
           credRows +
         '</div>' +
       '</div>' +
@@ -125,12 +125,12 @@ App.renderWizard = function(state) {
       '<div class="relative my-6">' +
         '<div class="absolute inset-0 flex items-center"><div class="w-full border-t border-dark-700"></div></div>' +
         '<div class="relative flex justify-center">' +
-          '<span class="bg-dark-900/95 backdrop-blur-sm px-4 text-sm text-dark-500 rounded">Após criar a conta, confirme abaixo</span>' +
+          '<span class="bg-dark-900/50 backdrop-blur-sm px-4 text-sm text-dark-500 rounded">Após criar a conta, confirme abaixo</span>' +
         '</div>' +
       '</div>' +
 
       // Confirmation section
-      '<div class="rounded-xl border border-dark-700/60 bg-dark-800/80 p-5">' +
+      '<div class="rounded-xl border border-dark-700/40 bg-dark-900/30 backdrop-blur-sm p-5">' +
         '<label class="block text-sm font-medium text-dark-300 mb-2">Informação da conta criada</label>' +
         '<input id="wizard-account-input" type="text" value="' + esc(accountSuggestion) + '" placeholder="Ex: ' + esc(accountSuggestion) + '" class="dark-input w-full rounded-lg px-4 py-3 text-sm focus:outline-none">' +
         '<button data-action="wizard-confirm" class="mt-3 btn-gradient flex items-center justify-center gap-2 w-full rounded-xl px-6 py-4 text-base font-bold text-white shadow-lg shadow-green-600/20">' +

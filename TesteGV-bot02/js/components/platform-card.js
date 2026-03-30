@@ -20,7 +20,7 @@ App.renderPlatformCards = function(state) {
 
     var borderColor = isCompleted
       ? 'border-green-500/30 bg-green-500/5'
-      : 'border-dark-700/60 bg-dark-800/60 hover:border-brand-500/40 hover:bg-dark-800/80';
+      : 'border-dark-700/40 bg-dark-900/30 hover:border-brand-500/40 hover:bg-dark-900/50';
 
     var undoButton = isCompleted
       ? '<button data-action="undo-platform" data-platform-id="' + platform.id + '" aria-label="Desfazer conclusão de ' + platform.name + '" class="mt-1 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-500/30 px-3 py-2 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/10 hover:border-amber-500/50">' +
@@ -80,7 +80,7 @@ App.renderPlatformCards = function(state) {
       '</div>';
   }
 
-  var infoPanel = '<div class="mb-6 rounded-xl border border-brand-500/20 bg-dark-800/60 backdrop-blur-sm p-5">' +
+  var infoPanel = '<div class="mb-6 rounded-xl border border-brand-500/20 bg-dark-900/30 backdrop-blur-sm p-5">' +
     '<h3 class="mb-3 flex items-center gap-2 text-sm font-bold text-dark-100">' +
       App.icons.clipboard + ' Dados para Cadastro <span class="text-xs font-normal text-dark-400">— copie e cole nos formulários</span>' +
     '</h3>' +
@@ -127,7 +127,7 @@ App.renderPlatformCards = function(state) {
         '</div>';
     }).join('');
 
-    var batchFillForm = '<div class="mt-5 rounded-xl border border-brand-500/20 bg-brand-500/5 backdrop-blur-sm p-5">' +
+    var batchFillForm = '<div class="mt-5 rounded-xl border border-brand-500/20 bg-dark-900/30 backdrop-blur-sm p-5">' +
       '<h4 class="mb-1 text-sm font-bold text-dark-100 flex items-center gap-2">' +
         App.icons.sparkles + ' Preenchimento Rápido' +
       '</h4>' +
@@ -162,7 +162,7 @@ App.renderPlatformCards = function(state) {
         '<div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-500/15 text-brand-400">' + App.icons.listChecks + '</div>' +
         '<h2 class="text-2xl font-bold text-dark-50">Crie suas Contas</h2>' +
         '<p class="mt-1 text-dark-400">Clique em cada plataforma para seguir o guia passo a passo</p>' +
-        '<div class="mt-3 inline-flex items-center gap-2 rounded-full bg-dark-800/60 backdrop-blur-sm border border-dark-700/50 px-4 py-1.5">' +
+        '<div class="mt-3 inline-flex items-center gap-2 rounded-full bg-dark-900/30 backdrop-blur-sm border border-dark-700/40 px-4 py-1.5">' +
           '<span class="text-sm font-medium text-dark-200">' + completedCount + ' de ' + totalCount + ' concluídas</span>' +
           '<div class="h-2 w-24 rounded-full bg-dark-700">' +
             '<div class="h-2 rounded-full bg-brand-500 transition-all duration-500" style="width:' + ((completedCount / totalCount) * 100) + '%"></div>' +

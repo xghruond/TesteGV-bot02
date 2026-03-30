@@ -32,7 +32,7 @@ App.renderGuide = function(state) {
   var accountSuggestion = App.suggestAccountInfo(platform.id, state.employee.emailDesejado);
 
   var finishForm = step.action === 'finish'
-    ? '<div class="mt-6 rounded-xl border border-brand-500/30 bg-brand-500/5 backdrop-blur-sm p-5">' +
+    ? '<div class="mt-6 rounded-xl border border-brand-500/30 bg-dark-900/30 backdrop-blur-sm p-5">' +
         '<h4 class="mb-2 font-semibold text-brand-400">Registre sua conta criada</h4>' +
         (accountSuggestion
           ? '<button type="button" data-action="use-account-suggestion" data-suggestion="' + App.escapeHtml(accountSuggestion) + '" class="mb-3 inline-flex items-center gap-1.5 rounded-lg border border-brand-500/30 bg-brand-500/10 px-3 py-1.5 text-xs font-medium text-brand-400 hover:bg-brand-500/20 transition-colors">' +
@@ -65,7 +65,7 @@ App.renderGuide = function(state) {
     '<div>' +
       '<button data-action="back-platforms" aria-label="Voltar para plataformas" class="no-print mb-4 flex items-center gap-1 text-sm font-medium text-dark-400 transition-colors hover:text-brand-400">' +
         App.icons.chevronLeft + ' Voltar para Plataformas</button>' +
-      '<div class="rounded-xl border border-dark-700/60 bg-dark-800/60 backdrop-blur-sm p-6 shadow-lg shadow-black/10">' +
+      '<div class="rounded-xl border border-dark-700/40 bg-dark-900/30 backdrop-blur-sm p-6 shadow-lg shadow-black/10">' +
         '<div class="mb-4 flex items-center justify-between">' +
           '<span class="text-sm font-medium text-dark-400">Passo ' + (state.currentStep + 1) + ' de ' + totalSteps + '</span>' +
           '<span class="inline-flex items-center gap-2 rounded-full ' + platform.color.accent + ' px-3 py-1 text-sm font-medium text-white">' +
@@ -81,7 +81,7 @@ App.renderGuide = function(state) {
           ? '<div class="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">' +
               '<p class="text-sm text-amber-300"><strong class="font-semibold">&#128161; Dica:</strong> ' + step.tip + '</p></div>'
           : '') +
-        '<div class="mb-4 rounded-xl border border-dark-700/60 bg-dark-900/50 p-4">' +
+        '<div class="mb-4 rounded-xl border border-dark-700/40 bg-dark-900/30 p-4">' +
           '<button data-action="toggle-password-tool" class="flex w-full items-center justify-between text-sm font-medium text-dark-300">' +
             '<span class="flex items-center gap-2">' + App.icons.key + ' Gerador de Senha Segura</span>' +
             '<span class="text-xs text-dark-500">clique para abrir</span>' +
