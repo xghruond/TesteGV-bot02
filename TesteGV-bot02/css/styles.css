@@ -122,12 +122,19 @@
   flex-shrink: 0;
 }
 
-/* ── Barra de progresso (absoluta, não afeta o flex) ── */
+/* ── Bloco inferior centralizado como flex item ── */
+.splash-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+/* ── Barra de progresso ── */
 .splash-bar-wrap {
-  position: absolute;
-  bottom: 52px;
-  left: 50%;
-  transform: translateX(-50%);
   width: 160px;
   height: 1px;
   background: rgba(255,255,255,0.08);
@@ -151,8 +158,6 @@
 
 /* ── "Toque para pular" ── */
 .splash-skip {
-  position: absolute;
-  bottom: 20px;
   font-size: 9px;
   color: rgba(255,255,255,0.12);
   letter-spacing: 3px;
@@ -161,6 +166,7 @@
   opacity: 0;
   animation: splashFadeUp 0.5s 2s forwards;
   user-select: none;
+  text-align: center;
 }
 
 @keyframes splashFadeUp {
