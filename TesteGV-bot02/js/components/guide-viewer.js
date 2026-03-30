@@ -13,12 +13,12 @@ App.renderGuide = function(state) {
   var stepsProgress = platform.steps.map(function(_, i) {
     var isDone = i < state.currentStep;
     var isCurrent = i === state.currentStep;
-    var color = isDone ? 'bg-brand-500' : isCurrent ? 'bg-brand-400' : 'bg-gray-200';
+    var color = isDone ? 'bg-brand-500' : isCurrent ? 'bg-brand-400' : 'bg-dark-700';
     return '<div class="h-1.5 flex-1 rounded-full ' + color + ' transition-colors"></div>';
   }).join('');
 
   var registerButton = step.action === 'open_register'
-    ? '<button data-action="open-register" class="mb-6 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-brand-600/20 transition-all hover:bg-brand-700 hover:shadow-xl active:scale-[0.98]">' +
+    ? '<button data-action="open-register" class="mb-6 flex w-full items-center justify-center gap-2 btn-futuristic rounded-xl px-6 py-4 text-base font-semibold text-white active:scale-[0.98]">' +
         App.icons.externalLink + ' Abrir Página de Cadastro</button>'
     : '';
 
@@ -32,17 +32,17 @@ App.renderGuide = function(state) {
   var accountSuggestion = App.suggestAccountInfo(platform.id, state.employee.emailDesejado);
 
   var finishForm = step.action === 'finish'
-    ? '<div class="mt-6 rounded-xl border-2 border-brand-200 bg-brand-50 p-5">' +
-        '<h4 class="mb-2 font-semibold text-brand-800">Registre sua conta criada</h4>' +
+    ? '<div class="mt-6 rounded-xl border border-brand-500/30 bg-brand-500/5 backdrop-blur-sm p-5">' +
+        '<h4 class="mb-2 font-semibold text-brand-400">Registre sua conta criada</h4>' +
         (accountSuggestion
-          ? '<button type="button" data-action="use-account-suggestion" data-suggestion="' + App.escapeHtml(accountSuggestion) + '" class="mb-3 inline-flex items-center gap-1.5 rounded-lg border border-brand-300 bg-white px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100 transition-colors">' +
+          ? '<button type="button" data-action="use-account-suggestion" data-suggestion="' + App.escapeHtml(accountSuggestion) + '" class="mb-3 inline-flex items-center gap-1.5 rounded-lg border border-brand-500/30 bg-brand-500/10 px-3 py-1.5 text-xs font-medium text-brand-400 hover:bg-brand-500/20 transition-colors">' +
               App.icons.sparkles + ' Usar sugestão: <strong>' + App.escapeHtml(accountSuggestion) + '</strong>' +
             '</button>'
           : '') +
         '<form id="complete-platform-form" class="flex flex-col gap-3 sm:flex-row">' +
           '<input type="text" name="accountInfo" placeholder="' + (placeholders[platform.id] || 'Digite sua conta') + '"' +
             ' required value="' + (isCompleted ? App.escapeHtml(state.platforms[platform.id].accountInfo) : '') + '"' +
-            ' class="flex-1 rounded-lg border border-brand-300 bg-white px-4 py-3 text-base placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />' +
+            ' class="dark-input flex-1 rounded-lg px-4 py-3 text-base focus:outline-none" />' +
           '<button type="submit" class="rounded-lg ' + (isCompleted ? 'bg-green-600 hover:bg-green-700' : 'bg-brand-600 hover:bg-brand-700') +
             ' px-6 py-3 text-sm font-semibold text-white transition-colors whitespace-nowrap">' +
             (isCompleted ? '&#10003; Atualizar' : 'Marcar como Concluído') +
@@ -52,7 +52,7 @@ App.renderGuide = function(state) {
     : '';
 
   var prevButton = !isFirst
-    ? '<button data-action="guide-prev" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">' +
+    ? '<button data-action="guide-prev" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-4 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-dark-100">' +
         App.icons.chevronLeft + ' Anterior</button>'
     : '<div class="flex-1"></div>';
 
@@ -63,36 +63,36 @@ App.renderGuide = function(state) {
 
   return '' +
     '<div>' +
-      '<button data-action="back-platforms" class="no-print mb-4 flex items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-700">' +
+      '<button data-action="back-platforms" class="no-print mb-4 flex items-center gap-1 text-sm font-medium text-dark-400 transition-colors hover:text-brand-400">' +
         App.icons.chevronLeft + ' Voltar para Plataformas</button>' +
-      '<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">' +
+      '<div class="rounded-xl border border-dark-700/60 bg-dark-800/60 backdrop-blur-sm p-6 shadow-lg shadow-black/10">' +
         '<div class="mb-4 flex items-center justify-between">' +
-          '<span class="text-sm font-medium text-gray-500">Passo ' + (state.currentStep + 1) + ' de ' + totalSteps + '</span>' +
-          '<span class="inline-flex items-center gap-2 rounded-full ' + platform.color.bg + ' ' + platform.color.border + ' border px-3 py-1 text-sm font-medium ' + platform.color.text + '">' +
+          '<span class="text-sm font-medium text-dark-400">Passo ' + (state.currentStep + 1) + ' de ' + totalSteps + '</span>' +
+          '<span class="inline-flex items-center gap-2 rounded-full ' + platform.color.accent + ' px-3 py-1 text-sm font-medium text-white">' +
             '<span class="[&>svg]:w-4 [&>svg]:h-4">' + platform.icon + '</span>' +
             platform.name +
           '</span>' +
         '</div>' +
         '<div class="mb-6 flex gap-1">' + stepsProgress + '</div>' +
-        '<h3 class="mb-4 text-xl font-bold text-gray-900">' + step.title + '</h3>' +
+        '<h3 class="mb-4 text-xl font-bold text-dark-50">' + step.title + '</h3>' +
         registerButton +
-        '<div class="mb-4 text-base leading-relaxed text-gray-700">' + step.description + '</div>' +
+        '<div class="mb-4 text-base leading-relaxed text-dark-300">' + step.description + '</div>' +
         (step.tip
-          ? '<div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">' +
-              '<p class="text-sm text-amber-800"><strong class="font-semibold">&#128161; Dica:</strong> ' + step.tip + '</p></div>'
+          ? '<div class="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">' +
+              '<p class="text-sm text-amber-300"><strong class="font-semibold">&#128161; Dica:</strong> ' + step.tip + '</p></div>'
           : '') +
-        '<div class="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-4">' +
-          '<button data-action="toggle-password-tool" class="flex w-full items-center justify-between text-sm font-medium text-gray-700">' +
+        '<div class="mb-4 rounded-xl border border-dark-700/60 bg-dark-900/50 p-4">' +
+          '<button data-action="toggle-password-tool" class="flex w-full items-center justify-between text-sm font-medium text-dark-300">' +
             '<span class="flex items-center gap-2">' + App.icons.key + ' Gerador de Senha Segura</span>' +
-            '<span class="text-xs text-gray-400">clique para abrir</span>' +
+            '<span class="text-xs text-dark-500">clique para abrir</span>' +
           '</button>' +
           '<div id="password-tool-body" style="display:none" class="mt-3">' +
             '<div class="flex gap-2">' +
-              '<input type="text" id="generated-password" readonly class="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-mono text-gray-900" placeholder="Clique em Gerar" />' +
+              '<input type="text" id="generated-password" readonly class="dark-input flex-1 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none" placeholder="Clique em Gerar" />' +
               '<button data-action="generate-password" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 transition-colors whitespace-nowrap">Gerar</button>' +
-              '<button data-action="copy-password" class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 transition-colors" title="Copiar">' + App.icons.copy + '</button>' +
+              '<button data-action="copy-password" class="rounded-lg border border-dark-600/50 px-3 py-2 text-sm text-dark-400 hover:bg-dark-700/50 hover:text-brand-400 transition-colors" title="Copiar">' + App.icons.copy + '</button>' +
             '</div>' +
-            '<p class="mt-2 text-xs text-gray-500">14 caracteres com maiúsculas, minúsculas, números e símbolos.</p>' +
+            '<p class="mt-2 text-xs text-dark-500">14 caracteres com maiúsculas, minúsculas, números e símbolos.</p>' +
           '</div>' +
         '</div>' +
         finishForm +

@@ -10,17 +10,17 @@ App.renderChecklist = function(state) {
 
     var checkIcon = isCompleted
       ? '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-green-500 text-white">' + App.icons.check + '</div>'
-      : '<div class="h-6 w-6 rounded-full border-2 border-gray-300"></div>';
+      : '<div class="h-6 w-6 rounded-full border-2 border-dark-600"></div>';
 
     var accountInfo = isCompleted && pState.accountInfo
-      ? '<span class="block truncate text-xs text-gray-500">' + App.escapeHtml(pState.accountInfo) + '</span>'
+      ? '<span class="block truncate text-xs text-dark-500">' + App.escapeHtml(pState.accountInfo) + '</span>'
       : '';
 
     return '' +
       '<div class="flex items-center gap-3 py-2">' +
         checkIcon +
         '<div class="min-w-0 flex-1">' +
-          '<span class="text-sm font-medium ' + (isCompleted ? 'text-gray-900' : 'text-gray-500') + '">' + platform.name + '</span>' +
+          '<span class="text-sm font-medium ' + (isCompleted ? 'text-dark-100' : 'text-dark-400') + '">' + platform.name + '</span>' +
           accountInfo +
         '</div>' +
       '</div>';
@@ -31,27 +31,27 @@ App.renderChecklist = function(state) {
     '<div class="checklist-drawer">' +
       '<div class="flex h-full flex-col p-5">' +
         '<div class="mb-4 flex items-center justify-between">' +
-          '<h3 class="text-base font-bold text-gray-900">Progresso</h3>' +
-          '<button data-action="toggle-checklist" class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100">' +
+          '<h3 class="text-base font-bold text-dark-100">Progresso</h3>' +
+          '<button data-action="toggle-checklist" class="flex h-8 w-8 items-center justify-center rounded-lg text-dark-400 hover:bg-dark-700/50 hover:text-dark-200">' +
             App.icons.close +
           '</button>' +
         '</div>' +
         (state.employee.nomeCompleto
-          ? '<div class="mb-4 rounded-lg bg-gray-50 p-3"><p class="text-xs text-gray-500">Funcionário</p><p class="text-sm font-semibold text-gray-900">' + App.escapeHtml(state.employee.nomeCompleto) + '</p></div>'
+          ? '<div class="mb-4 rounded-lg bg-dark-800/80 border border-dark-700/50 p-3"><p class="text-xs text-dark-500">Funcionário</p><p class="text-sm font-semibold text-dark-100">' + App.escapeHtml(state.employee.nomeCompleto) + '</p></div>'
           : '') +
         (state.startedAt
-          ? '<div class="mb-4 rounded-lg bg-brand-50 p-3"><p class="text-xs text-gray-500">Tempo decorrido</p><p id="elapsed-timer" class="text-sm font-semibold text-brand-700">' + App.formatElapsedTime(state.startedAt) + '</p></div>'
+          ? '<div class="mb-4 rounded-lg bg-brand-500/10 border border-brand-500/20 p-3"><p class="text-xs text-dark-400">Tempo decorrido</p><p id="elapsed-timer" class="text-sm font-semibold text-brand-400">' + App.formatElapsedTime(state.startedAt) + '</p></div>'
           : '') +
         '<div class="mb-4">' +
           '<div class="mb-2 flex items-center justify-between text-sm">' +
-            '<span class="text-gray-600">' + completedCount + ' de ' + totalCount + '</span>' +
-            '<span class="font-semibold text-brand-600">' + Math.round((completedCount / totalCount) * 100) + '%</span>' +
+            '<span class="text-dark-400">' + completedCount + ' de ' + totalCount + '</span>' +
+            '<span class="font-semibold text-brand-400">' + Math.round((completedCount / totalCount) * 100) + '%</span>' +
           '</div>' +
-          '<div class="h-2 rounded-full bg-gray-200">' +
+          '<div class="h-2 rounded-full bg-dark-700">' +
             '<div class="h-2 rounded-full bg-brand-500 transition-all duration-500" style="width:' + ((completedCount / totalCount) * 100) + '%"></div>' +
           '</div>' +
         '</div>' +
-        '<div class="divide-y divide-gray-100">' + itemsHtml + '</div>' +
+        '<div class="divide-y divide-dark-700/50">' + itemsHtml + '</div>' +
       '</div>' +
     '</div>';
 };
@@ -63,7 +63,7 @@ App.renderChecklistFab = function(state) {
     '<button class="checklist-fab no-print" data-action="toggle-checklist" title="Ver progresso">' +
       App.icons.clipboard +
       (completedCount > 0
-        ? '<span class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-bold text-brand-600 shadow">' + completedCount + '</span>'
+        ? '<span class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-500 text-xs font-bold text-white shadow">' + completedCount + '</span>'
         : '') +
     '</button>';
 };
