@@ -32,18 +32,38 @@
 
 /* ===== Transições de tela ===== */
 .screen-enter {
-  animation: fadeIn 0.3s ease-out;
+  animation: screenSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   outline: none !important;
 }
 
-@keyframes fadeIn {
+@keyframes screenSlideIn {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(30px) scale(0.97);
+    filter: blur(4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Transição de saída */
+#app-content.screen-exit {
+  animation: screenSlideOut 0.3s cubic-bezier(0.55, 0, 1, 0.45) both;
+}
+
+@keyframes screenSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.98);
+    filter: blur(3px);
   }
 }
 

@@ -102,18 +102,40 @@ var App = App || {};
     return errors;
   }
 
-  // Navegação
+  // Navegação com transição animada
+  var isTransitioning = false;
+
   function navigateTo(screen, options) {
     options = options || {};
-    state.currentScreen = screen;
     if (options.guide) {
       if (!App.platforms[options.guide]) return;
       state.currentGuide = options.guide;
     }
     if (options.step !== undefined) state.currentStep = options.step;
-    App.storage.save(state);
-    render();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    var content = document.getElementById('app-content');
+
+    // Se já está em transição ou é a mesma tela, renderizar direto
+    if (isTransitioning || state.currentScreen === screen) {
+      state.currentScreen = screen;
+      App.storage.save(state);
+      render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // Animação de saída → troca → animação de entrada
+    isTransitioning = true;
+    content.classList.add('screen-exit');
+
+    setTimeout(function() {
+      content.classList.remove('screen-exit');
+      state.currentScreen = screen;
+      App.storage.save(state);
+      render();
+      window.scrollTo({ top: 0 });
+      isTransitioning = false;
+    }, 280);
   }
 
   function resetApp() {
@@ -443,7 +465,7 @@ var App = App || {};
   bindAction('start', function(e, el) {
     createRipple(e, el);
     state.startedAt = new Date().toISOString();
-    setTimeout(function() { navigateTo('form'); }, 300);
+    navigateTo('form');
   });
 
   bindAction('continue', function() {
