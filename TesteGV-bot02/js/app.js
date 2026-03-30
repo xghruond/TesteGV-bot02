@@ -664,7 +664,12 @@ var App = App || {};
   // ============================================================
 
   function twilioFetch(path, options) {
-    return fetch(App.BACKEND_URL + path, options).then(function(r) { return r.json(); });
+    return App.twilioGetApiKey().then(function(key) {
+      var opts = options || {};
+      opts.headers = Object.assign({}, opts.headers || {});
+      if (key) opts.headers['X-API-Key'] = key;
+      return fetch(App.BACKEND_URL + path, opts).then(function(r) { return r.json(); });
+    });
   }
 
   function loadTwilioStatus() {

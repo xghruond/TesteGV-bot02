@@ -1,0 +1,13 @@
+# Credenciais — NUNCA commitar
+backend/.env
+
+# Dependências Node
+backend/node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operacional
+.DS_Store
+Thumbs.db

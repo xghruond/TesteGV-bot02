@@ -1,7 +1,21 @@
 var App = App || {};
 
 // URL do backend (ajuste se mudar a porta)
-App.BACKEND_URL = 'http://localhost:3001';
+App.BACKEND_URL = 'http://127.0.0.1:3001';
+
+// API Key — carregada uma vez do backend (somente localhost)
+App._twilioApiKey = null;
+
+App.twilioGetApiKey = function() {
+  if (App._twilioApiKey) return Promise.resolve(App._twilioApiKey);
+  return fetch(App.BACKEND_URL + '/api/config')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.apiKey) { App._twilioApiKey = data.apiKey; }
+      return App._twilioApiKey;
+    })
+    .catch(function() { return null; });
+};
 
 // Países suportados pelo Twilio (código ISO + nome)
 App.twilioCountries = [
