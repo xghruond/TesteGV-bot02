@@ -741,48 +741,103 @@ var App = App || {};
     });
   }
 
+  var WARN_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+  var LOCK_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+
   function showPurchaseModal(phone, friendlyName, country, monthlyFee) {
-    // Remove modal anterior se existir
     var old = document.getElementById('purchase-modal-overlay');
     if (old) old.remove();
 
     var overlay = document.createElement('div');
     overlay.id = 'purchase-modal-overlay';
     overlay.className = 'purchase-modal-overlay';
-    overlay.innerHTML =
-      '<div class="purchase-modal" role="dialog" aria-modal="true" aria-labelledby="purchase-modal-title">' +
-        '<div class="flex items-center gap-3 mb-5">' +
-          '<div class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400">' +
-            '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+
+    // ── Tela 1: Aviso ──────────────────────────────────────
+    function renderStep1() {
+      overlay.innerHTML =
+        '<div class="purchase-modal" role="dialog" aria-modal="true">' +
+
+          // Indicador de passos
+          '<div class="flex items-center gap-2 mb-6">' +
+            '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-white text-xs font-bold">1</div>' +
+            '<div class="h-px flex-1 bg-amber-500/40"></div>' +
+            '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-dark-700 text-dark-500 text-xs font-bold">2</div>' +
           '</div>' +
-          '<div>' +
-            '<h3 id="purchase-modal-title" class="text-lg font-bold text-dark-50">Confirmar Compra</h3>' +
-            '<p class="text-xs text-dark-500">Esta ação é irreversível</p>' +
+
+          // Ícone + título
+          '<div class="flex flex-col items-center text-center mb-6">' +
+            '<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-400 mb-4">' +
+              WARN_ICON +
+            '</div>' +
+            '<h3 class="text-xl font-bold text-dark-50 mb-1">Atenção!</h3>' +
+            '<p class="text-sm text-dark-400">Este número gera cobrança recorrente</p>' +
           '</div>' +
+
+          // Detalhes do número
+          '<div class="rounded-xl border border-amber-500/25 bg-amber-500/8 p-4 mb-6 space-y-2.5">' +
+            '<div class="flex justify-between text-sm">' +
+              '<span class="text-dark-400">Número</span>' +
+              '<span class="font-mono font-semibold text-dark-100">' + App.escapeHtml(friendlyName || phone) + '</span>' +
+            '</div>' +
+            '<div class="flex justify-between text-sm">' +
+              '<span class="text-dark-400">País</span>' +
+              '<span class="font-medium text-dark-200">' + App.escapeHtml(country) + '</span>' +
+            '</div>' +
+            '<div class="flex justify-between text-sm">' +
+              '<span class="text-dark-400">Custo mensal</span>' +
+              '<span class="font-bold text-amber-400">' + App.escapeHtml(monthlyFee || '~$1.00') + ' / mês</span>' +
+            '</div>' +
+            '<div class="pt-2 border-t border-amber-500/20 text-xs text-amber-300/75 leading-relaxed">' +
+              '⚠️ O valor será debitado da sua conta Twilio todos os meses até o número ser liberado manualmente.' +
+            '</div>' +
+          '</div>' +
+
+          // Pergunta central
+          '<p class="text-center text-base font-semibold text-dark-100 mb-6">' +
+            'Deseja continuar com essa compra?' +
+          '</p>' +
+
+          // Botões
+          '<div class="flex gap-3">' +
+            '<button id="pm-step1-no"  class="flex-1 rounded-xl border border-dark-600 py-3.5 text-sm font-bold text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">Não</button>' +
+            '<button id="pm-step1-yes" class="flex-1 rounded-xl bg-amber-500 hover:bg-amber-400 py-3.5 text-sm font-bold text-white transition-colors">Sim, continuar</button>' +
+          '</div>' +
+
+        '</div>';
+
+      document.getElementById('pm-step1-no').addEventListener('click', function() { overlay.remove(); });
+      document.getElementById('pm-step1-yes').addEventListener('click', function() { renderStep2(); });
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+    }
+
+    // ── Tela 2: Senha ──────────────────────────────────────
+    function renderStep2() {
+      var card = overlay.querySelector('.purchase-modal');
+      card.style.animation = 'slideUpModal 0.25s cubic-bezier(0.22, 1, 0.36, 1)';
+
+      card.innerHTML =
+        // Indicador de passos
+        '<div class="flex items-center gap-2 mb-6">' +
+          '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-dark-700 text-dark-500 text-xs font-bold">1</div>' +
+          '<div class="h-px flex-1 bg-brand-500/40"></div>' +
+          '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-white text-xs font-bold">2</div>' +
         '</div>' +
 
-        '<div class="rounded-xl border border-amber-500/20 bg-amber-500/8 p-4 mb-5 space-y-2">' +
-          '<div class="flex justify-between text-sm">' +
-            '<span class="text-dark-400">Número</span>' +
-            '<span class="font-mono font-semibold text-dark-100">' + App.escapeHtml(friendlyName || phone) + '</span>' +
+        // Ícone + título
+        '<div class="flex flex-col items-center text-center mb-6">' +
+          '<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/15 text-brand-400 mb-4">' +
+            LOCK_ICON +
           '</div>' +
-          '<div class="flex justify-between text-sm">' +
-            '<span class="text-dark-400">País</span>' +
-            '<span class="font-medium text-dark-200">' + App.escapeHtml(country) + '</span>' +
-          '</div>' +
-          '<div class="flex justify-between text-sm">' +
-            '<span class="text-dark-400">Custo mensal</span>' +
-            '<span class="font-semibold text-amber-400">' + App.escapeHtml(monthlyFee || '~$1.00') + '</span>' +
-          '</div>' +
-          '<div class="pt-2 border-t border-amber-500/20">' +
-            '<p class="text-xs text-amber-300/80">⚠️ O valor será debitado automaticamente da sua conta Twilio todos os meses até o número ser liberado.</p>' +
-          '</div>' +
+          '<h3 class="text-xl font-bold text-dark-50 mb-1">Autorização necessária</h3>' +
+          '<p class="text-sm text-dark-400">Digite a senha para confirmar a compra</p>' +
         '</div>' +
 
-        '<div class="mb-5">' +
+        // Campo de senha
+        '<div class="mb-6">' +
           '<label class="mb-2 block text-sm font-medium text-dark-200">Senha de autorização</label>' +
           '<div class="relative">' +
-            '<input id="purchase-password-input" type="password" autocomplete="off" placeholder="Digite a senha para confirmar" ' +
+            '<input id="purchase-password-input" type="password" autocomplete="off" ' +
+              'placeholder="Digite a senha de autorização" ' +
               'class="dark-input block w-full rounded-xl py-3 pl-4 pr-12 text-base focus:outline-none" />' +
             '<button type="button" id="purchase-pw-toggle" tabindex="-1" class="password-toggle">' +
               App.icons.eye +
@@ -791,89 +846,81 @@ var App = App || {};
           '<p id="purchase-pw-error" class="mt-1.5 text-xs text-red-400 hidden">Senha incorreta. Tente novamente.</p>' +
         '</div>' +
 
+        // Botões
         '<div class="flex gap-3">' +
-          '<button id="purchase-modal-cancel" class="flex-1 rounded-xl border border-dark-600 py-3 text-sm font-semibold text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">Cancelar</button>' +
-          '<button id="purchase-modal-confirm" class="flex-1 rounded-xl bg-amber-500 hover:bg-amber-400 py-3 text-sm font-semibold text-white transition-colors">Confirmar Compra</button>' +
-        '</div>' +
-      '</div>';
+          '<button id="pm-step2-back"    class="flex-1 rounded-xl border border-dark-600 py-3.5 text-sm font-bold text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">← Voltar</button>' +
+          '<button id="pm-step2-confirm" class="flex-1 rounded-xl bg-brand-500 hover:bg-brand-600 py-3.5 text-sm font-bold text-white transition-colors">Confirmar Compra</button>' +
+        '</div>';
 
-    document.body.appendChild(overlay);
+      // Foco automático
+      setTimeout(function() {
+        var inp = document.getElementById('purchase-password-input');
+        if (inp) inp.focus();
+      }, 60);
 
-    // Foco automático
-    setTimeout(function() {
-      var input = document.getElementById('purchase-password-input');
-      if (input) input.focus();
-    }, 50);
+      // Toggle olho
+      document.getElementById('purchase-pw-toggle').addEventListener('click', function() {
+        var inp = document.getElementById('purchase-password-input');
+        if (!inp) return;
+        if (inp.type === 'password') { inp.type = 'text'; this.innerHTML = App.icons.eyeOff; }
+        else                         { inp.type = 'password'; this.innerHTML = App.icons.eye; }
+      });
 
-    // Toggle visibilidade da senha
-    document.getElementById('purchase-pw-toggle').addEventListener('click', function() {
-      var input = document.getElementById('purchase-password-input');
-      if (!input) return;
-      if (input.type === 'password') {
-        input.type = 'text';
-        this.innerHTML = App.icons.eyeOff;
-      } else {
-        input.type = 'password';
-        this.innerHTML = App.icons.eye;
-      }
-    });
+      // Voltar
+      document.getElementById('pm-step2-back').addEventListener('click', function() { renderStep1(); });
 
-    // Cancelar
-    document.getElementById('purchase-modal-cancel').addEventListener('click', function() {
-      overlay.remove();
-    });
-    overlay.addEventListener('click', function(e) {
-      if (e.target === overlay) overlay.remove();
-    });
+      // Confirmar
+      function doConfirm() {
+        var inp    = document.getElementById('purchase-password-input');
+        var errEl  = document.getElementById('purchase-pw-error');
+        var btn    = document.getElementById('pm-step2-confirm');
+        var pw     = inp ? inp.value : '';
+        if (!pw) { errEl.classList.remove('hidden'); inp.focus(); return; }
 
-    // Confirmar — verifica senha e compra
-    function doConfirm() {
-      var input = document.getElementById('purchase-password-input');
-      var errEl = document.getElementById('purchase-pw-error');
-      var pw = input ? input.value : '';
-      if (!pw) { errEl.classList.remove('hidden'); input.focus(); return; }
+        btn.disabled    = true;
+        btn.textContent = 'Verificando...';
 
-      var confirmBtn = document.getElementById('purchase-modal-confirm');
-      confirmBtn.disabled = true;
-      confirmBtn.textContent = 'Verificando...';
+        hashSHA256(pw).then(function(hash) {
+          if (hash !== PURCHASE_PASSWORD_HASH) {
+            errEl.classList.remove('hidden');
+            inp.value       = '';
+            inp.focus();
+            btn.disabled    = false;
+            btn.textContent = 'Confirmar Compra';
+            return;
+          }
+          errEl.classList.add('hidden');
+          btn.textContent = 'Comprando...';
+          App.showToast('Comprando ' + phone + '...', 'info');
 
-      hashSHA256(pw).then(function(hash) {
-        if (hash !== PURCHASE_PASSWORD_HASH) {
-          errEl.classList.remove('hidden');
-          input.value = '';
-          input.focus();
-          confirmBtn.disabled = false;
-          confirmBtn.textContent = 'Confirmar Compra';
-          return;
-        }
-        // Senha correta — executa compra
-        errEl.classList.add('hidden');
-        confirmBtn.textContent = 'Comprando...';
-        App.showToast('Comprando ' + phone + '...', 'info');
-
-        twilioFetch('/api/numbers/purchase', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phoneNumber: phone })
-        }).then(function(data) {
-          overlay.remove();
-          if (data.error) { App.showToast('Erro: ' + data.error, 'error'); return; }
-          App.showToast(data.message, 'success');
-          twilioState.searchResults = [];
-          twilioState.searchDone = false;
-          loadTwilioStatus();
-        }).catch(function() {
-          overlay.remove();
-          App.showToast('Erro ao comprar número.', 'error');
+          twilioFetch('/api/numbers/purchase', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ phoneNumber: phone })
+          }).then(function(data) {
+            overlay.remove();
+            if (data.error) { App.showToast('Erro: ' + data.error, 'error'); return; }
+            App.showToast(data.message, 'success');
+            twilioState.searchResults = [];
+            twilioState.searchDone    = false;
+            loadTwilioStatus();
+          }).catch(function() {
+            overlay.remove();
+            App.showToast('Erro ao comprar número.', 'error');
+          });
         });
+      }
+
+      document.getElementById('pm-step2-confirm').addEventListener('click', doConfirm);
+      document.getElementById('purchase-password-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter')  doConfirm();
+        if (e.key === 'Escape') overlay.remove();
       });
     }
 
-    document.getElementById('purchase-modal-confirm').addEventListener('click', doConfirm);
-    document.getElementById('purchase-password-input').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') doConfirm();
-      if (e.key === 'Escape') overlay.remove();
-    });
+    // Inicia na tela 1
+    document.body.appendChild(overlay);
+    renderStep1();
   }
 
   bindAction('twilio-purchase', function(e, el) {
