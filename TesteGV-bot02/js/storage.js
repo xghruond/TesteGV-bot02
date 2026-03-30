@@ -14,7 +14,14 @@ App.storage = {
   load: function() {
     try {
       var raw = localStorage.getItem(this.KEY);
-      return raw ? JSON.parse(raw) : null;
+      if (!raw) return null;
+      var state = JSON.parse(raw);
+      // Telas que não devem ser restauradas ao recarregar
+      var noRestore = ['twilio', 'history', 'history-detail'];
+      if (state && noRestore.indexOf(state.currentScreen) !== -1) {
+        state.currentScreen = 'welcome';
+      }
+      return state;
     } catch (e) {
       console.warn('Não foi possível carregar:', e);
       return null;
