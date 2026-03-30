@@ -26,9 +26,9 @@
 /* Container da logo — responsivo e grande */
 #splash-logo {
   position: relative;
-  width: min(500px, 78vw, 58vh);
+  width: min(600px, 88vw, 72vh);
   animation: splashLogoIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 /* Glow sempre centrado atrás da logo */
@@ -37,14 +37,14 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 200%;
-  height: 200%;
+  width: 220%;
+  height: 220%;
   border-radius: 50%;
   background: radial-gradient(circle,
-    rgba(34,197,94,0.35) 0%,
-    rgba(34,197,94,0.12) 35%,
-    rgba(34,197,94,0.03) 60%,
-    transparent 75%);
+    rgba(34,197,94,0.30) 0%,
+    rgba(34,197,94,0.10) 40%,
+    rgba(34,197,94,0.02) 65%,
+    transparent 80%);
   animation: splashGlowPulse 3s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
