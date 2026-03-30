@@ -590,37 +590,49 @@ var App = App || {};
 
     // Full-width: cada componente controla seu próprio max-width
 
-    switch (state.currentScreen) {
-      case 'welcome':
-        content.innerHTML = renderWelcome();
-        break;
-      case 'form':
-        content.innerHTML = App.renderForm(state);
-        break;
-      case 'platforms':
-        content.innerHTML = App.renderPlatformCards(state);
-        break;
-      case 'guide':
-        content.innerHTML = App.renderGuide(state);
-        break;
-      case 'wizard':
-        content.innerHTML = App.renderWizard(state);
-        break;
-      case 'summary':
-        content.innerHTML = App.renderSummary(state);
-        break;
-      case 'history':
-        content.innerHTML = renderHistory();
-        break;
-      case 'history-detail':
-        content.innerHTML = renderHistoryDetail(state.viewingHistoryId);
-        break;
-      case 'twilio':
-        content.innerHTML = App.renderTwilio(twilioState);
-        loadTwilioStatus();
-        break;
-      default:
-        content.innerHTML = renderWelcome();
+    try {
+      switch (state.currentScreen) {
+        case 'welcome':
+          content.innerHTML = renderWelcome();
+          break;
+        case 'form':
+          content.innerHTML = App.renderForm(state);
+          break;
+        case 'platforms':
+          content.innerHTML = App.renderPlatformCards(state);
+          break;
+        case 'guide':
+          content.innerHTML = App.renderGuide(state);
+          break;
+        case 'wizard':
+          content.innerHTML = App.renderWizard(state);
+          break;
+        case 'summary':
+          content.innerHTML = App.renderSummary(state);
+          break;
+        case 'history':
+          content.innerHTML = renderHistory();
+          break;
+        case 'history-detail':
+          content.innerHTML = renderHistoryDetail(state.viewingHistoryId);
+          break;
+        case 'twilio':
+          content.innerHTML = App.renderTwilio(twilioState);
+          loadTwilioStatus();
+          break;
+        default:
+          content.innerHTML = renderWelcome();
+      }
+    } catch (err) {
+      content.innerHTML =
+        '<div class="flex min-h-[80vh] items-center justify-center">' +
+          '<div class="text-center">' +
+            '<p class="text-dark-400 mb-6">Ocorreu um erro ao carregar a tela.</p>' +
+            '<button data-action="back-welcome" class="rounded-xl border border-dark-700 px-6 py-3 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' +
+              App.icons.chevronLeft + ' Voltar ao início' +
+            '</button>' +
+          '</div>' +
+        '</div>';
     }
 
     if (state.currentScreen === 'platforms' || state.currentScreen === 'guide' || state.currentScreen === 'wizard') {
