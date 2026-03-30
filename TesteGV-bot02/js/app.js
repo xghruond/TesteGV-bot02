@@ -33,6 +33,17 @@ var App = App || {};
   var state = JSON.parse(JSON.stringify(defaultState));
   var hasSavedState = false;
 
+  // Estado da tela Twilio (não persistido — carregado ao entrar na tela)
+  var twilioState = {
+    status: null,
+    ownedNumbers: [],
+    searchResults: [],
+    selectedCountry: 'US',
+    selectedType: 'local',
+    searching: false,
+    searchDone: false
+  };
+
   // Restaurar estado salvo
   var saved = App.storage.load();
   if (saved) {
@@ -138,7 +149,8 @@ var App = App || {};
     guide:            { scale: 1.18, y: '-24px',  brightness: 0.78, saturate: 0.95, overlay: 1.15, vignette: 0.5,  farOp: 0.75, farSc: 1.03, midOp: 0.55, midX: '0px',   nearOp: 0.35, nearX: '10px', nearSc: 0.99 },
     summary:          { scale: 1.24, y: '-32px',  brightness: 0.72, saturate: 0.9,  overlay: 1.18, vignette: 0.6,  farOp: 0.85, farSc: 1.06, midOp: 0.7,  midX: '-15px', nearOp: 0.55, nearX: '0px',  nearSc: 1.0  },
     history:          { scale: 1.10, y: '-12px',  brightness: 0.88, saturate: 1.0,  overlay: 1.08, vignette: 0.25, farOp: 0.35, farSc: 0.97, midOp: 0.15, midX: '30px',  nearOp: 0,    nearX: '40px', nearSc: 0.95 },
-    'history-detail': { scale: 1.15, y: '-20px',  brightness: 0.82, saturate: 0.95, overlay: 1.12, vignette: 0.4,  farOp: 0.5,  farSc: 1.0,  midOp: 0.3,  midX: '15px',  nearOp: 0.15, nearX: '20px', nearSc: 0.97 }
+    'history-detail': { scale: 1.15, y: '-20px',  brightness: 0.82, saturate: 0.95, overlay: 1.12, vignette: 0.4,  farOp: 0.5,  farSc: 1.0,  midOp: 0.3,  midX: '15px',  nearOp: 0.15, nearX: '20px', nearSc: 0.97 },
+    twilio:           { scale: 1.10, y: '-12px',  brightness: 0.88, saturate: 1.0,  overlay: 1.08, vignette: 0.25, farOp: 0.35, farSc: 0.97, midOp: 0.15, midX: '30px',  nearOp: 0,    nearX: '40px', nearSc: 0.95 }
   };
 
   // SVGs de folhagem para as 3 camadas — silhuetas escuras contrastantes
@@ -417,6 +429,8 @@ var App = App || {};
             ? '<button data-action="continue" class="mt-3 w-full rounded-xl border border-brand-500/30 bg-brand-500/10 px-8 py-3.5 text-base font-semibold text-brand-400 backdrop-blur-sm transition-all hover:bg-brand-500/20 hover:border-brand-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)]">Continuar de onde parei</button>'
             : '') +
           historyButton +
+          '<button data-action="view-twilio" class="mt-3 w-full rounded-xl border border-dark-700/50 bg-dark-800/40 px-8 py-3.5 text-base font-medium text-dark-300 backdrop-blur-sm transition-all hover:bg-dark-800/60 hover:border-brand-500/30 hover:text-white">' +
+            App.icons.phone + ' Configura\u00e7\u00e3o Twilio (SMS)</button>' +
 
           // Versão com separador
           '<div class="futuristic-separator mt-8"><span class="dot"></span></div>' +
@@ -568,7 +582,7 @@ var App = App || {};
     var content = document.getElementById('app-content');
     var checklistContainer = document.getElementById('app-checklist');
 
-    if (state.currentScreen === 'welcome' || state.currentScreen === 'history' || state.currentScreen === 'history-detail') {
+    if (state.currentScreen === 'welcome' || state.currentScreen === 'history' || state.currentScreen === 'history-detail' || state.currentScreen === 'twilio') {
       header.innerHTML = '';
     } else {
       header.innerHTML = App.renderHeader(state);
@@ -600,6 +614,10 @@ var App = App || {};
         break;
       case 'history-detail':
         content.innerHTML = renderHistoryDetail(state.viewingHistoryId);
+        break;
+      case 'twilio':
+        content.innerHTML = App.renderTwilio(twilioState);
+        loadTwilioStatus();
         break;
       default:
         content.innerHTML = renderWelcome();
@@ -642,8 +660,148 @@ var App = App || {};
   }
 
   // ============================================================
+  // === Twilio — helpers de fetch                             ===
+  // ============================================================
+
+  function twilioFetch(path, options) {
+    return fetch(App.BACKEND_URL + path, options).then(function(r) { return r.json(); });
+  }
+
+  function loadTwilioStatus() {
+    twilioFetch('/api/status').then(function(data) {
+      twilioState.status = data;
+      // Carregar números comprados se conectado
+      if (data.connected) {
+        twilioFetch('/api/numbers/owned').then(function(owned) {
+          twilioState.ownedNumbers = owned.numbers || [];
+          if (state.currentScreen === 'twilio') render();
+        }).catch(function() {
+          if (state.currentScreen === 'twilio') render();
+        });
+      } else {
+        if (state.currentScreen === 'twilio') render();
+      }
+    }).catch(function() {
+      twilioState.status = { connected: false, message: 'Backend não encontrado em ' + App.BACKEND_URL + '. Inicie com: cd backend && node server.js' };
+      if (state.currentScreen === 'twilio') render();
+    });
+  }
+
+  // ============================================================
   // === Registro de handlers (delegados pelo listener global) ===
   // ============================================================
+
+  bindAction('view-twilio', function() {
+    twilioState.status = null;
+    twilioState.searchResults = [];
+    twilioState.searchDone = false;
+    navigateTo('twilio');
+  });
+
+  bindAction('twilio-search', function() {
+    var countryEl = document.getElementById('twilio-country');
+    var typeEl = document.getElementById('twilio-type');
+    var country = countryEl ? countryEl.value : 'US';
+    var type = typeEl ? typeEl.value : 'local';
+    twilioState.selectedCountry = country;
+    twilioState.selectedType = type;
+    twilioState.searching = true;
+    twilioState.searchResults = [];
+    twilioState.searchDone = false;
+    render();
+    twilioFetch('/api/numbers/search?country=' + country + '&type=' + type + '&limit=10')
+      .then(function(data) {
+        twilioState.searching = false;
+        twilioState.searchDone = true;
+        twilioState.searchResults = data.numbers || [];
+        render();
+      })
+      .catch(function(err) {
+        twilioState.searching = false;
+        twilioState.searchDone = true;
+        App.showToast('Erro na busca: ' + err.message, 'error');
+        render();
+      });
+  });
+
+  bindAction('twilio-purchase', function(e, el) {
+    var phone = el.getAttribute('data-phone');
+    if (!phone) return;
+    if (!confirm('Comprar o número ' + phone + '?\nEsta ação gerará cobrança na sua conta Twilio.')) return;
+    App.showToast('Comprando ' + phone + '...', 'info');
+    twilioFetch('/api/numbers/purchase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phoneNumber: phone })
+    }).then(function(data) {
+      if (data.error) { App.showToast('Erro: ' + data.error, 'error'); return; }
+      App.showToast(data.message, 'success');
+      twilioState.searchResults = [];
+      twilioState.searchDone = false;
+      loadTwilioStatus();
+    }).catch(function() {
+      App.showToast('Erro ao comprar número', 'error');
+    });
+  });
+
+  bindAction('twilio-set-active', function(e, el) {
+    var phone = el.getAttribute('data-phone');
+    if (!phone) return;
+    twilioFetch('/api/numbers/set-active', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phoneNumber: phone })
+    }).then(function(data) {
+      if (data.error) { App.showToast('Erro: ' + data.error, 'error'); return; }
+      twilioState.status.phoneNumber = phone;
+      App.showToast('Número ativo atualizado para ' + phone, 'success');
+      render();
+    }).catch(function() { App.showToast('Erro ao atualizar número ativo', 'error'); });
+  });
+
+  bindAction('twilio-release-number', function(e, el) {
+    var sid = el.getAttribute('data-sid');
+    var phone = el.getAttribute('data-phone');
+    if (!sid) return;
+    if (!confirm('Liberar o número ' + phone + '?\nVocê deixará de ser cobrado por ele, mas não poderá recuperá-lo.')) return;
+    twilioFetch('/api/numbers/' + sid, { method: 'DELETE' })
+      .then(function(data) {
+        if (data.error) { App.showToast('Erro: ' + data.error, 'error'); return; }
+        App.showToast('Número ' + phone + ' liberado', 'info');
+        loadTwilioStatus();
+      })
+      .catch(function() { App.showToast('Erro ao liberar número', 'error'); });
+  });
+
+  bindAction('send-sms-credentials', function() {
+    var phone = state.employee.telefone ? state.employee.telefone.replace(/\D/g, '') : '';
+    var dest = prompt('Número do destinatário (com código do país, ex: +5511999999999):', phone ? '+55' + phone : '');
+    if (!dest) return;
+
+    var completedPlatforms = Object.keys(state.platforms)
+      .filter(function(id) { return state.platforms[id].completed; })
+      .map(function(id) {
+        return { name: App.platforms[id].name, username: state.employee.emailDesejado };
+      });
+
+    App.showToast('Enviando SMS...', 'info');
+    twilioFetch('/api/sms/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: dest,
+        employeeName: state.employee.nomeCompleto,
+        email: state.employee.emailDesejado,
+        password: state.suggestedPassword || '',
+        platforms: completedPlatforms
+      })
+    }).then(function(data) {
+      if (data.error) { App.showToast('Erro: ' + data.error, 'error'); return; }
+      App.showToast('SMS enviado para ' + dest + '!', 'success');
+    }).catch(function() {
+      App.showToast('Backend n\u00e3o encontrado. Inicie o servidor primeiro.', 'error');
+    });
+  });
 
   bindAction('start', function(e, el) {
     createRipple(e, el);

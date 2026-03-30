@@ -131,6 +131,8 @@ App.renderSummary = function(state) {
           App.icons.copy + ' Copiar Resumo</button>' +
         '<button data-action="print" aria-label="Imprimir relatório" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-6 py-3 text-base font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
           App.icons.printer + ' Imprimir</button>' +
+        '<button data-action="send-sms-credentials" aria-label="Enviar credenciais por SMS via Twilio" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-brand-500/30 bg-brand-500/10 px-6 py-3 text-base font-medium text-brand-400 transition-colors hover:bg-brand-500/20">' +
+          App.icons.phone + ' Enviar SMS</button>' +
         '<button data-action="reset" aria-label="Iniciar novo onboarding" class="flex flex-1 items-center justify-center gap-2 btn-futuristic rounded-xl px-6 py-3 text-base font-medium text-white">' +
           App.icons.refresh + ' Novo Colaborador</button>' +
       '</div>' +
