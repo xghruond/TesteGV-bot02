@@ -96,9 +96,12 @@ var App = App || {};
     } else if (/\.{2,}/.test(data.emailDesejado) || /^[.\-]|[.\-]$/.test(data.emailDesejado)) {
       errors.push('E-mail não pode começar/terminar com ponto ou hífen, nem ter pontos consecutivos.');
     }
-    var phoneDigits = (data.telefone || '').replace(/\D/g, '');
-    if (phoneDigits.length < 10 || phoneDigits.length > 11) {
-      errors.push('Telefone deve ter 10 ou 11 dígitos (com DDD).');
+    var phone = (data.telefone || '').trim();
+    var isE164 = /^\+[1-9]\d{6,14}$/.test(phone);
+    var phoneDigits = phone.replace(/\D/g, '');
+    var isBR = phoneDigits.length >= 10 && phoneDigits.length <= 11;
+    if (!isE164 && !isBR) {
+      errors.push('Selecione um número Twilio válido clicando no campo de telefone.');
     }
     if (!data.dataNascimento) {
       errors.push('Data de nascimento é obrigatória.');
@@ -716,8 +719,157 @@ var App = App || {};
   }
 
   // ============================================================
+  // === Modal: Selecionar número Twilio (campo telefone no form)===
+  // ============================================================
+
+  var SELECT_WARN_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+
+  function showTwilioSelectModal() {
+    var old = document.getElementById('twilio-select-overlay');
+    if (old) old.remove();
+
+    var overlay = document.createElement('div');
+    overlay.id = 'twilio-select-overlay';
+    overlay.className = 'purchase-modal-overlay';
+
+    function renderStep1() {
+      overlay.innerHTML =
+        '<div class="purchase-modal" role="dialog" aria-modal="true">' +
+          '<div class="flex items-center gap-2 mb-6">' +
+            '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-white text-xs font-bold">1</div>' +
+            '<div class="h-px flex-1 bg-amber-500/40"></div>' +
+            '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-dark-700 text-dark-500 text-xs font-bold">2</div>' +
+            '<div class="h-px flex-1 bg-dark-700/40"></div>' +
+            '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-dark-700 text-dark-500 text-xs font-bold">3</div>' +
+          '</div>' +
+          '<div class="flex flex-col items-center text-center mb-6">' +
+            '<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-400 mb-4">' + SELECT_WARN_ICON + '</div>' +
+            '<h3 class="text-xl font-bold text-dark-50 mb-1">Acesso Restrito</h3>' +
+            '<p class="text-sm text-dark-400">Este recurso requer autenticação. Os números Twilio são pagos e estão vinculados à sua conta.</p>' +
+          '</div>' +
+          '<p class="text-sm text-center text-dark-300 mb-6">Deseja continuar e selecionar um número?</p>' +
+          '<div class="flex gap-3">' +
+            '<button id="ts-step1-no" class="flex-1 rounded-xl border border-dark-700 py-3 text-sm font-semibold text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">Não</button>' +
+            '<button id="ts-step1-yes" class="flex-1 rounded-xl btn-gradient py-3 text-sm font-semibold text-white transition-all">Sim, continuar</button>' +
+          '</div>' +
+        '</div>';
+      document.getElementById('ts-step1-no').addEventListener('click', function() { overlay.remove(); });
+      document.getElementById('ts-step1-yes').addEventListener('click', function() { renderStep2(); });
+    }
+
+    function renderStep2() {
+      var card = overlay.querySelector('.purchase-modal');
+      card.innerHTML =
+        '<div class="flex items-center gap-2 mb-6">' +
+          '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-dark-700 text-dark-500 text-xs font-bold">1</div>' +
+          '<div class="h-px flex-1 bg-dark-700/40"></div>' +
+          '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-white text-xs font-bold">2</div>' +
+          '<div class="h-px flex-1 bg-brand-500/40"></div>' +
+          '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-dark-700 text-dark-500 text-xs font-bold">3</div>' +
+        '</div>' +
+        '<div class="flex flex-col items-center text-center mb-6">' +
+          '<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/15 text-brand-400 mb-4">' + SELECT_WARN_ICON + '</div>' +
+          '<h3 class="text-xl font-bold text-dark-50 mb-1">Senha de Acesso</h3>' +
+          '<p class="text-sm text-dark-400">Digite a senha para acessar os números.</p>' +
+        '</div>' +
+        '<div class="relative mb-4">' +
+          '<input id="ts-pw-input" type="password" placeholder="Digite a senha..." class="dark-input w-full rounded-xl py-3 px-4 pr-12 text-base focus:outline-none" />' +
+          '<button id="ts-pw-eye" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-dark-200">' + App.icons.eye + '</button>' +
+        '</div>' +
+        '<p id="ts-pw-error" class="text-xs text-red-400 mb-4 hidden">Senha incorreta.</p>' +
+        '<div class="flex gap-3">' +
+          '<button id="ts-step2-back" class="rounded-xl border border-dark-700 px-4 py-3 text-sm font-semibold text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' + App.icons.chevronLeft + ' Voltar</button>' +
+          '<button id="ts-step2-confirm" class="flex-1 rounded-xl btn-gradient py-3 text-sm font-semibold text-white transition-all">Confirmar</button>' +
+        '</div>';
+
+      var eyeToggled = false;
+      document.getElementById('ts-pw-eye').addEventListener('click', function() {
+        var inp = document.getElementById('ts-pw-input');
+        eyeToggled = !eyeToggled;
+        inp.type = eyeToggled ? 'text' : 'password';
+      });
+      document.getElementById('ts-step2-back').addEventListener('click', function() { renderStep1(); });
+      document.getElementById('ts-step2-confirm').addEventListener('click', function() {
+        var pw = document.getElementById('ts-pw-input').value;
+        hashSHA256(pw).then(function(hash) {
+          if (hash !== PURCHASE_PASSWORD_HASH) {
+            document.getElementById('ts-pw-error').classList.remove('hidden');
+            document.getElementById('ts-pw-input').classList.add('border-red-500/50');
+            return;
+          }
+          renderStep3();
+        });
+      });
+      document.getElementById('ts-pw-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') document.getElementById('ts-step2-confirm').click();
+      });
+    }
+
+    function renderStep3() {
+      var card = overlay.querySelector('.purchase-modal');
+      card.innerHTML =
+        '<div class="flex items-center gap-2 mb-6">' +
+          '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-dark-700 text-dark-500 text-xs font-bold">1</div>' +
+          '<div class="h-px flex-1 bg-dark-700/40"></div>' +
+          '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-dark-700 text-dark-500 text-xs font-bold">2</div>' +
+          '<div class="h-px flex-1 bg-brand-500/40"></div>' +
+          '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-white text-xs font-bold">3</div>' +
+        '</div>' +
+        '<h3 class="text-lg font-bold text-dark-50 mb-4">Selecionar Número</h3>' +
+        '<div id="ts-numbers-list" class="space-y-2 min-h-[80px] flex items-center justify-center">' +
+          '<div class="h-2.5 w-2.5 rounded-full bg-brand-500 animate-pulse"></div>' +
+          '<span class="text-sm text-dark-400 ml-2">Carregando números...</span>' +
+        '</div>' +
+        '<button id="ts-step3-back" class="mt-4 rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' + App.icons.chevronLeft + ' Voltar</button>';
+
+      document.getElementById('ts-step3-back').addEventListener('click', function() { renderStep2(); });
+
+      twilioFetch('/api/numbers/owned').then(function(data) {
+        var nums = data.numbers || [];
+        var list = document.getElementById('ts-numbers-list');
+        if (!list) return;
+        if (nums.length === 0) {
+          list.innerHTML = '<p class="text-sm text-dark-500 text-center py-4">Nenhum número encontrado. Compre um na tela Twilio.</p>';
+          return;
+        }
+        list.className = 'space-y-2 max-h-60 overflow-y-auto';
+        list.innerHTML = nums.map(function(n) {
+          var isActive = n.phoneNumber === (twilioState.status && twilioState.status.phoneNumber);
+          return '<div class="flex items-center gap-3 rounded-lg border border-dark-700/40 bg-dark-900/40 px-3 py-2.5">' +
+            '<div class="flex-1 min-w-0">' +
+              '<p class="text-sm font-mono font-semibold text-dark-100">' + App.escapeHtml(n.phoneNumber) + '</p>' +
+              '<p class="text-xs text-dark-500">' + App.escapeHtml(n.friendlyName || '') + '</p>' +
+            '</div>' +
+            (isActive ? '<span class="text-xs text-green-400 font-semibold">Ativo</span>' : '') +
+            '<button data-ts-phone="' + App.escapeHtml(n.phoneNumber) + '" class="ts-select-btn rounded-lg px-3 py-1.5 text-xs font-semibold btn-gradient text-white">Usar</button>' +
+          '</div>';
+        }).join('');
+
+        list.querySelectorAll('.ts-select-btn').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            state.employee.telefone = btn.getAttribute('data-ts-phone');
+            App.storage.save(state);
+            overlay.remove();
+            render();
+          });
+        });
+      }).catch(function() {
+        var list = document.getElementById('ts-numbers-list');
+        if (list) list.innerHTML = '<p class="text-sm text-red-400 text-center py-4">Backend não disponível. Inicie o servidor Twilio.</p>';
+      });
+    }
+
+    document.body.appendChild(overlay);
+    renderStep1();
+  }
+
+  // ============================================================
   // === Registro de handlers (delegados pelo listener global) ===
   // ============================================================
+
+  bindAction('select-twilio-number', function() {
+    showTwilioSelectModal();
+  });
 
   bindAction('view-twilio', function() {
     twilioState.status = null;
