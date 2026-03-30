@@ -104,68 +104,108 @@ var App = App || {};
 
   // === Profundidade da floresta (parallax entre telas) ===
   var forestDepth = {
-    welcome:          { scale: 1.0,  y: '0px',   brightness: 1.0,  saturate: 1.1,  overlay: 1.0,  vignette: 0,    farOp: 0,    farSc: 0.95, midOp: 0,    midX: '30px',  nearOp: 0,    nearX: '20px', nearSc: 0.97 },
-    form:             { scale: 1.06, y: '-8px',   brightness: 0.92, saturate: 1.05, overlay: 1.05, vignette: 0.2,  farOp: 0.2,  farSc: 0.97, midOp: 0,    midX: '30px',  nearOp: 0,    nearX: '20px', nearSc: 0.97 },
-    platforms:        { scale: 1.12, y: '-16px',  brightness: 0.85, saturate: 1.0,  overlay: 1.10, vignette: 0.35, farOp: 0.35, farSc: 1.0,  midOp: 0.15, midX: '15px',  nearOp: 0,    nearX: '20px', nearSc: 0.97 },
-    wizard:           { scale: 1.12, y: '-16px',  brightness: 0.85, saturate: 1.0,  overlay: 1.10, vignette: 0.35, farOp: 0.35, farSc: 1.0,  midOp: 0.15, midX: '15px',  nearOp: 0,    nearX: '20px', nearSc: 0.97 },
-    guide:            { scale: 1.18, y: '-24px',  brightness: 0.78, saturate: 0.95, overlay: 1.15, vignette: 0.5,  farOp: 0.45, farSc: 1.02, midOp: 0.3,  midX: '0px',   nearOp: 0.15, nearX: '10px', nearSc: 0.99 },
-    summary:          { scale: 1.24, y: '-32px',  brightness: 0.72, saturate: 0.9,  overlay: 1.18, vignette: 0.6,  farOp: 0.55, farSc: 1.05, midOp: 0.4,  midX: '-10px', nearOp: 0.3,  nearX: '0px',  nearSc: 1.0  },
-    history:          { scale: 1.10, y: '-12px',  brightness: 0.88, saturate: 1.0,  overlay: 1.08, vignette: 0.25, farOp: 0.25, farSc: 0.98, midOp: 0.1,  midX: '20px',  nearOp: 0,    nearX: '20px', nearSc: 0.97 },
-    'history-detail': { scale: 1.15, y: '-20px',  brightness: 0.82, saturate: 0.95, overlay: 1.12, vignette: 0.4,  farOp: 0.3,  farSc: 1.0,  midOp: 0.2,  midX: '10px',  nearOp: 0.1,  nearX: '15px', nearSc: 0.98 }
+    welcome:          { scale: 1.0,  y: '0px',   brightness: 1.0,  saturate: 1.1,  overlay: 1.0,  vignette: 0,    farOp: 0,    farSc: 0.92, midOp: 0,    midX: '60px',  nearOp: 0,    nearX: '40px', nearSc: 0.95 },
+    form:             { scale: 1.06, y: '-8px',   brightness: 0.92, saturate: 1.05, overlay: 1.05, vignette: 0.2,  farOp: 0.4,  farSc: 0.96, midOp: 0.1,  midX: '40px',  nearOp: 0,    nearX: '40px', nearSc: 0.95 },
+    platforms:        { scale: 1.12, y: '-16px',  brightness: 0.85, saturate: 1.0,  overlay: 1.10, vignette: 0.35, farOp: 0.6,  farSc: 1.0,  midOp: 0.35, midX: '15px',  nearOp: 0.1,  nearX: '25px', nearSc: 0.97 },
+    wizard:           { scale: 1.12, y: '-16px',  brightness: 0.85, saturate: 1.0,  overlay: 1.10, vignette: 0.35, farOp: 0.6,  farSc: 1.0,  midOp: 0.35, midX: '15px',  nearOp: 0.1,  nearX: '25px', nearSc: 0.97 },
+    guide:            { scale: 1.18, y: '-24px',  brightness: 0.78, saturate: 0.95, overlay: 1.15, vignette: 0.5,  farOp: 0.75, farSc: 1.03, midOp: 0.55, midX: '0px',   nearOp: 0.35, nearX: '10px', nearSc: 0.99 },
+    summary:          { scale: 1.24, y: '-32px',  brightness: 0.72, saturate: 0.9,  overlay: 1.18, vignette: 0.6,  farOp: 0.85, farSc: 1.06, midOp: 0.7,  midX: '-15px', nearOp: 0.55, nearX: '0px',  nearSc: 1.0  },
+    history:          { scale: 1.10, y: '-12px',  brightness: 0.88, saturate: 1.0,  overlay: 1.08, vignette: 0.25, farOp: 0.35, farSc: 0.97, midOp: 0.15, midX: '30px',  nearOp: 0,    nearX: '40px', nearSc: 0.95 },
+    'history-detail': { scale: 1.15, y: '-20px',  brightness: 0.82, saturate: 0.95, overlay: 1.12, vignette: 0.4,  farOp: 0.5,  farSc: 1.0,  midOp: 0.3,  midX: '15px',  nearOp: 0.15, nearX: '20px', nearSc: 0.97 }
   };
 
-  // SVGs de folhagem para as 3 camadas
+  // SVGs de folhagem para as 3 camadas — silhuetas escuras contrastantes
   var foliageSvgs = {
     far: '' +
-      // Folhas pequenas — canto superior esquerdo
-      '<svg class="foliage-svg" style="top:-10px;left:-20px;width:200px;height:180px;color:rgba(5,46,22,0.7);transform:rotate(15deg)" viewBox="0 0 200 180">' +
-        '<path d="M30 160 Q50 80 20 10 Q60 50 90 20 Q70 70 100 50 Q80 90 110 80 Q85 110 105 120 Q75 120 80 150Z"/>' +
+      // Folhas — canto superior esquerdo
+      '<svg class="foliage-svg" style="top:-20px;left:-30px;width:300px;height:280px;transform:rotate(15deg)" viewBox="0 0 200 180" fill="#000">' +
+        '<path d="M30 160 Q50 80 20 10 Q60 50 90 20 Q70 70 100 50 Q80 90 110 80 Q85 110 105 120 Q75 120 80 150Z" opacity="0.9"/>' +
+        '<path d="M60 170 Q70 120 55 60 Q80 85 100 55 Q90 100 115 85 Q100 115 120 110 Q95 130 100 160Z" opacity="0.7"/>' +
       '</svg>' +
-      // Folhas pequenas — canto superior direito
-      '<svg class="foliage-svg" style="top:-10px;right:-20px;width:180px;height:160px;color:rgba(5,46,22,0.6);transform:scaleX(-1) rotate(10deg)" viewBox="0 0 200 180">' +
-        '<path d="M30 160 Q50 80 20 10 Q60 50 90 20 Q70 70 100 50 Q80 90 110 80 Q85 110 105 120 Q75 120 80 150Z"/>' +
+      // Folhas — canto superior direito
+      '<svg class="foliage-svg" style="top:-20px;right:-30px;width:280px;height:260px;transform:scaleX(-1) rotate(10deg)" viewBox="0 0 200 180" fill="#000">' +
+        '<path d="M30 160 Q50 80 20 10 Q60 50 90 20 Q70 70 100 50 Q80 90 110 80 Q85 110 105 120 Q75 120 80 150Z" opacity="0.9"/>' +
+        '<path d="M60 170 Q70 120 55 60 Q80 85 100 55 Q90 100 115 85 Q100 115 120 110 Q95 130 100 160Z" opacity="0.7"/>' +
       '</svg>' +
       // Folhas cantos inferiores
-      '<svg class="foliage-svg" style="bottom:-5px;left:-15px;width:160px;height:120px;color:rgba(5,46,22,0.5);transform:rotate(160deg)" viewBox="0 0 200 180">' +
-        '<path d="M20 170 Q40 100 10 30 Q50 60 80 25 Q65 75 95 55 Q75 95 100 90 Q70 110 80 150Z"/>' +
+      '<svg class="foliage-svg" style="bottom:-10px;left:-20px;width:250px;height:200px;transform:rotate(160deg)" viewBox="0 0 200 180" fill="#000">' +
+        '<path d="M20 170 Q40 100 10 30 Q50 60 80 25 Q65 75 95 55 Q75 95 100 90 Q70 110 80 150Z" opacity="0.85"/>' +
       '</svg>' +
-      '<svg class="foliage-svg" style="bottom:-5px;right:-15px;width:150px;height:110px;color:rgba(5,46,22,0.5);transform:scaleX(-1) rotate(160deg)" viewBox="0 0 200 180">' +
-        '<path d="M20 170 Q40 100 10 30 Q50 60 80 25 Q65 75 95 55 Q75 95 100 90 Q70 110 80 150Z"/>' +
+      '<svg class="foliage-svg" style="bottom:-10px;right:-20px;width:240px;height:190px;transform:scaleX(-1) rotate(160deg)" viewBox="0 0 200 180" fill="#000">' +
+        '<path d="M20 170 Q40 100 10 30 Q50 60 80 25 Q65 75 95 55 Q75 95 100 90 Q70 110 80 150Z" opacity="0.85"/>' +
       '</svg>',
 
     mid: '' +
-      // Samambaia esquerda
-      '<svg class="foliage-svg" style="top:15%;left:-30px;width:250px;height:400px;color:rgba(2,32,15,0.8)" viewBox="0 0 250 400">' +
-        '<path d="M10 400 Q15 350 12 300 Q20 310 35 290 Q15 280 14 250 Q25 265 45 240 Q18 235 16 200 Q30 220 55 195 Q20 185 18 155 Q35 175 60 150 Q22 140 20 110 Q40 135 65 110 Q25 100 22 70 Q45 95 70 70 Q28 60 25 30 Q50 55 75 35 Q30 20 28 5"/>' +
+      // Samambaia grande — esquerda (tronco + folhas laterais)
+      '<svg class="foliage-svg" style="top:8%;left:-40px;width:320px;height:500px" viewBox="0 0 250 400" fill="#000">' +
+        '<path d="M10 400 Q15 350 12 300 Q20 310 35 290 Q15 280 14 250 Q25 265 45 240 Q18 235 16 200 Q30 220 55 195 Q20 185 18 155 Q35 175 60 150 Q22 140 20 110 Q40 135 65 110 Q25 100 22 70 Q45 95 70 70 Q28 60 25 30 Q50 55 75 35 Q30 20 28 5" stroke="#000" stroke-width="4" fill="none"/>' +
+        '<path d="M14 250 Q-15 230 -30 200" stroke="#000" stroke-width="3" fill="none"/>' +
+        '<path d="M16 200 Q-10 185 -25 155" stroke="#000" stroke-width="3" fill="none"/>' +
+        '<path d="M18 155 Q-5 140 -20 110" stroke="#000" stroke-width="2.5" fill="none"/>' +
+        '<path d="M35 290 Q20 300 35 310 Q15 310 10 330 Q25 310 35 290Z" opacity="0.9"/>' +
+        '<path d="M45 240 Q30 250 42 265 Q22 260 18 280 Q35 258 45 240Z" opacity="0.9"/>' +
+        '<path d="M55 195 Q40 205 50 220 Q30 215 25 235 Q42 212 55 195Z" opacity="0.85"/>' +
+        '<path d="M60 150 Q45 160 55 175 Q35 170 30 190 Q48 165 60 150Z" opacity="0.8"/>' +
+        '<path d="M65 110 Q50 120 60 135 Q40 130 35 150 Q52 125 65 110Z" opacity="0.75"/>' +
       '</svg>' +
-      // Samambaia direita (espelhada)
-      '<svg class="foliage-svg" style="top:10%;right:-30px;width:250px;height:400px;color:rgba(2,32,15,0.8);transform:scaleX(-1)" viewBox="0 0 250 400">' +
-        '<path d="M10 400 Q15 350 12 300 Q20 310 35 290 Q15 280 14 250 Q25 265 45 240 Q18 235 16 200 Q30 220 55 195 Q20 185 18 155 Q35 175 60 150 Q22 140 20 110 Q40 135 65 110 Q25 100 22 70 Q45 95 70 70 Q28 60 25 30 Q50 55 75 35 Q30 20 28 5"/>' +
+      // Samambaia grande — direita (espelhada)
+      '<svg class="foliage-svg" style="top:5%;right:-40px;width:320px;height:500px;transform:scaleX(-1)" viewBox="0 0 250 400" fill="#000">' +
+        '<path d="M10 400 Q15 350 12 300 Q20 310 35 290 Q15 280 14 250 Q25 265 45 240 Q18 235 16 200 Q30 220 55 195 Q20 185 18 155 Q35 175 60 150 Q22 140 20 110 Q40 135 65 110 Q25 100 22 70 Q45 95 70 70 Q28 60 25 30 Q50 55 75 35 Q30 20 28 5" stroke="#000" stroke-width="4" fill="none"/>' +
+        '<path d="M14 250 Q-15 230 -30 200" stroke="#000" stroke-width="3" fill="none"/>' +
+        '<path d="M16 200 Q-10 185 -25 155" stroke="#000" stroke-width="3" fill="none"/>' +
+        '<path d="M35 290 Q20 300 35 310 Q15 310 10 330 Q25 310 35 290Z" opacity="0.9"/>' +
+        '<path d="M45 240 Q30 250 42 265 Q22 260 18 280 Q35 258 45 240Z" opacity="0.9"/>' +
+        '<path d="M55 195 Q40 205 50 220 Q30 215 25 235 Q42 212 55 195Z" opacity="0.85"/>' +
+        '<path d="M60 150 Q45 160 55 175 Q35 170 30 190 Q48 165 60 150Z" opacity="0.8"/>' +
       '</svg>' +
-      // Galhos com folhinhas — lateral esquerda inferior
-      '<svg class="foliage-svg" style="bottom:10%;left:-20px;width:200px;height:300px;color:rgba(2,32,15,0.7)" viewBox="0 0 200 300">' +
-        '<path d="M5 300 Q10 250 8 200 Q25 220 40 200 Q12 190 10 160 Q30 180 50 155 Q15 145 12 115 Q35 140 55 115 Q18 105 15 80 Q40 100 60 80 Q20 65 18 45"/>' +
-        '<path d="M8 200 Q-5 180 -10 160 Q5 170 15 155 Q-2 145 -8 125 Q10 140 22 120"/>' +
+      // Galho com folhas — lateral esquerda baixo
+      '<svg class="foliage-svg" style="bottom:5%;left:-25px;width:280px;height:350px" viewBox="0 0 200 300" fill="#000">' +
+        '<path d="M5 300 Q10 250 8 200 Q12 190 10 160 Q15 145 12 115 Q18 105 15 80 Q20 65 18 45" stroke="#000" stroke-width="3.5" fill="none"/>' +
+        '<path d="M8 200 Q25 220 40 200 Q25 195 8 200Z" opacity="0.85"/>' +
+        '<path d="M10 160 Q30 180 50 155 Q28 155 10 160Z" opacity="0.8"/>' +
+        '<path d="M12 115 Q35 140 55 115 Q32 112 12 115Z" opacity="0.75"/>' +
+        '<path d="M15 80 Q40 100 60 80 Q36 78 15 80Z" opacity="0.7"/>' +
       '</svg>',
 
     near: '' +
-      // Folha grande — canto inferior esquerdo
-      '<svg class="foliage-svg" style="bottom:-20px;left:-40px;width:350px;height:300px;color:rgba(1,20,8,0.85)" viewBox="0 0 350 300">' +
-        '<path d="M0 300 Q10 250 5 200 Q30 230 60 195 Q15 185 10 150 Q45 180 80 145 Q25 135 15 100 Q55 135 95 100 Q35 85 25 55 Q65 90 110 60 Q45 45 35 15 Q75 50 120 25 Q55 10 50 0"/>' +
-        '<path d="M0 300 Q-10 240 -20 200 Q10 215 25 190 Q-15 175 -25 150 Q15 170 35 140 Q-10 125 -20 100"/>' +
+      // Folha tropical grande — canto inferior esquerdo
+      '<svg class="foliage-svg" style="bottom:-30px;left:-60px;width:450px;height:400px" viewBox="0 0 350 300" fill="#000">' +
+        '<path d="M0 300 Q10 250 5 200 Q30 230 60 195 Q15 185 10 150 Q45 180 80 145 Q25 135 15 100 Q55 135 95 100 Q35 85 25 55 Q65 90 110 60 Q45 45 35 15 Q75 50 120 25 Q55 10 50 0" stroke="#000" stroke-width="5" fill="none"/>' +
+        '<path d="M5 200 Q30 230 60 195 Q30 200 5 200Z" opacity="0.95"/>' +
+        '<path d="M10 150 Q45 180 80 145 Q40 155 10 150Z" opacity="0.9"/>' +
+        '<path d="M15 100 Q55 135 95 100 Q50 105 15 100Z" opacity="0.85"/>' +
+        '<path d="M25 55 Q65 90 110 60 Q62 60 25 55Z" opacity="0.8"/>' +
+        '<path d="M0 300 Q-10 240 -20 200 Q10 215 25 190 Q-15 175 -25 150 Q15 170 35 140" stroke="#000" stroke-width="4" fill="none"/>' +
+        '<path d="M-20 200 Q10 215 25 190 Q0 195 -20 200Z" opacity="0.9"/>' +
+        '<path d="M-25 150 Q15 170 35 140 Q-5 150 -25 150Z" opacity="0.85"/>' +
       '</svg>' +
-      // Folha grande — canto inferior direito
-      '<svg class="foliage-svg" style="bottom:-20px;right:-40px;width:320px;height:280px;color:rgba(1,20,8,0.85);transform:scaleX(-1)" viewBox="0 0 350 300">' +
-        '<path d="M0 300 Q10 250 5 200 Q30 230 60 195 Q15 185 10 150 Q45 180 80 145 Q25 135 15 100 Q55 135 95 100 Q35 85 25 55 Q65 90 110 60 Q45 45 35 15 Q75 50 120 25 Q55 10 50 0"/>' +
-        '<path d="M0 300 Q-10 240 -20 200 Q10 215 25 190 Q-15 175 -25 150 Q15 170 35 140 Q-10 125 -20 100"/>' +
+      // Folha tropical grande — canto inferior direito
+      '<svg class="foliage-svg" style="bottom:-30px;right:-60px;width:420px;height:380px;transform:scaleX(-1)" viewBox="0 0 350 300" fill="#000">' +
+        '<path d="M0 300 Q10 250 5 200 Q30 230 60 195 Q15 185 10 150 Q45 180 80 145 Q25 135 15 100 Q55 135 95 100 Q35 85 25 55 Q65 90 110 60 Q45 45 35 15 Q75 50 120 25" stroke="#000" stroke-width="5" fill="none"/>' +
+        '<path d="M5 200 Q30 230 60 195 Q30 200 5 200Z" opacity="0.95"/>' +
+        '<path d="M10 150 Q45 180 80 145 Q40 155 10 150Z" opacity="0.9"/>' +
+        '<path d="M15 100 Q55 135 95 100 Q50 105 15 100Z" opacity="0.85"/>' +
+        '<path d="M0 300 Q-10 240 -20 200 Q10 215 25 190 Q-15 175 -25 150 Q15 170 35 140" stroke="#000" stroke-width="4" fill="none"/>' +
+        '<path d="M-20 200 Q10 215 25 190 Q0 195 -20 200Z" opacity="0.9"/>' +
       '</svg>' +
-      // Grama/vegetação rasteira — borda inferior
-      '<svg class="foliage-svg" style="bottom:-5px;left:20%;width:60%;height:80px;color:rgba(1,20,8,0.7)" viewBox="0 0 600 80">' +
-        '<path d="M0 80 Q20 60 15 30 Q25 55 30 80 Q50 50 45 15 Q55 45 60 80 Q85 55 80 20 Q90 50 95 80 Q120 60 115 25 Q125 55 130 80 Q155 50 150 10 Q160 45 165 80 Q190 55 185 20 Q195 50 200 80 Q225 60 220 30 Q230 55 235 80 Q260 50 255 15 Q265 45 270 80 Q295 55 290 20 Q300 50 305 80 Q330 60 325 25 Q335 55 340 80 Q365 50 360 10 Q370 45 375 80 Q400 55 395 20 Q405 50 410 80 Q435 60 430 30 Q440 55 445 80 Q470 50 465 15 Q475 45 480 80 Q505 55 500 20 Q510 50 515 80 Q540 60 535 25 Q545 55 550 80 Q570 50 570 25 Q580 50 585 80 L600 80Z"/>' +
+      // Grama densa — borda inferior inteira
+      '<svg class="foliage-svg" style="bottom:-5px;left:10%;width:80%;height:100px" viewBox="0 0 600 80" fill="#000">' +
+        '<path d="M0 80 Q15 55 10 20 Q20 50 25 80 Q40 45 35 5 Q48 42 52 80 Q70 50 65 10 Q78 45 82 80 Q100 55 95 15 Q108 48 112 80 Q130 50 125 8 Q138 45 142 80 Q160 55 155 18 Q168 48 172 80 Q190 50 185 12 Q198 45 202 80 Q220 55 215 20 Q228 50 232 80 Q250 45 245 8 Q258 42 262 80 Q280 55 275 15 Q288 48 292 80 Q310 50 305 10 Q318 45 322 80 Q340 55 335 18 Q348 48 352 80 Q370 50 365 12 Q378 45 382 80 Q400 55 395 20 Q408 50 412 80 Q430 45 425 8 Q438 42 442 80 Q460 55 455 15 Q468 48 472 80 Q490 50 485 10 Q498 45 502 80 Q520 55 515 18 Q528 48 532 80 Q550 50 545 12 Q558 45 562 80 Q580 55 575 20 Q588 50 592 80 L600 80Z" opacity="0.95"/>' +
       '</svg>' +
       // Galho pendente — canto superior esquerdo
-      '<svg class="foliage-svg" style="top:-15px;left:5%;width:280px;height:200px;color:rgba(1,20,8,0.75)" viewBox="0 0 280 200">' +
-        '<path d="M0 5 Q30 8 60 15 Q50 30 65 45 Q75 20 90 25 Q80 45 95 60 Q105 30 120 35 Q110 55 125 75 Q135 40 150 50 Q140 70 155 90 Q165 55 180 65 Q170 85 185 105"/>' +
+      '<svg class="foliage-svg" style="top:-20px;left:2%;width:350px;height:250px" viewBox="0 0 280 200" fill="#000">' +
+        '<path d="M0 5 Q30 8 60 15 Q75 20 90 25 Q105 30 120 35 Q135 40 150 50 Q165 55 180 65" stroke="#000" stroke-width="4" fill="none"/>' +
+        '<path d="M60 15 Q50 30 65 45 Q70 25 60 15Z" opacity="0.85"/>' +
+        '<path d="M90 25 Q80 45 95 60 Q98 32 90 25Z" opacity="0.8"/>' +
+        '<path d="M120 35 Q110 55 125 75 Q128 45 120 35Z" opacity="0.75"/>' +
+        '<path d="M150 50 Q140 70 155 90 Q158 58 150 50Z" opacity="0.7"/>' +
+      '</svg>' +
+      // Galho pendente — canto superior direito
+      '<svg class="foliage-svg" style="top:-20px;right:2%;width:320px;height:230px;transform:scaleX(-1)" viewBox="0 0 280 200" fill="#000">' +
+        '<path d="M0 5 Q30 8 60 15 Q75 20 90 25 Q105 30 120 35 Q135 40 150 50" stroke="#000" stroke-width="3.5" fill="none"/>' +
+        '<path d="M60 15 Q50 30 65 45 Q70 25 60 15Z" opacity="0.8"/>' +
+        '<path d="M90 25 Q80 45 95 60 Q98 32 90 25Z" opacity="0.75"/>' +
+        '<path d="M120 35 Q110 55 125 75 Q128 45 120 35Z" opacity="0.7"/>' +
       '</svg>'
   };
 
