@@ -582,7 +582,14 @@ var App = App || {};
     var content = document.getElementById('app-content');
     var checklistContainer = document.getElementById('app-checklist');
 
-    if (state.currentScreen === 'welcome' || state.currentScreen === 'history' || state.currentScreen === 'history-detail' || state.currentScreen === 'twilio') {
+    if (state.currentScreen === 'twilio') {
+      header.innerHTML =
+        '<div class="container mx-auto px-4 py-3 flex items-center">' +
+          '<button data-action="back-welcome" class="flex items-center gap-1.5 rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' +
+            App.icons.chevronLeft + ' Voltar' +
+          '</button>' +
+        '</div>';
+    } else if (state.currentScreen === 'welcome' || state.currentScreen === 'history' || state.currentScreen === 'history-detail') {
       header.innerHTML = '';
     } else {
       header.innerHTML = App.renderHeader(state);
