@@ -145,6 +145,8 @@ App.renderPlatformCards = function(state) {
 
   return '' +
     '<div>' +
+      '<button data-action="back-to-form" class="no-print mb-4 flex items-center gap-1 text-sm font-medium text-dark-400 transition-colors hover:text-brand-400">' +
+        App.icons.chevronLeft + ' Voltar</button>' +
       '<div class="mb-6 text-center">' +
         '<div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-500/15 text-brand-400">' + App.icons.listChecks + '</div>' +
         '<h2 class="text-2xl font-bold text-dark-50">Crie suas Contas</h2>' +

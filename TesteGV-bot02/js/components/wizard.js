@@ -59,6 +59,8 @@ App.renderWizard = function(state) {
 
   return '' +
     '<div class="wizard-step-enter max-w-2xl mx-auto">' +
+      '<button data-action="wizard-back-platforms" class="no-print mb-4 flex items-center gap-1 text-sm font-medium text-dark-400 transition-colors hover:text-brand-400">' +
+        App.icons.chevronLeft + ' Voltar</button>' +
       // Progress header
       '<div class="mb-6">' +
         '<div class="flex items-center justify-between mb-2">' +

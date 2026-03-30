@@ -94,6 +94,8 @@ App.renderSummary = function(state) {
 
   return '' +
     '<div>' +
+      '<button data-action="back-to-platforms" class="no-print mb-4 flex items-center gap-1 text-sm font-medium text-dark-400 transition-colors hover:text-brand-400">' +
+        App.icons.chevronLeft + ' Voltar</button>' +
       '<div class="print-only mb-6 border-b-2 border-gray-900 pb-4">' +
         '<h1 class="text-2xl font-bold">Relatório - Green BOT</h1>' +
         '<p class="text-sm text-gray-600">Gerado em: ' + completedAt + '</p>' +

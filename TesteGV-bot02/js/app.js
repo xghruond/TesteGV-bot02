@@ -719,6 +719,14 @@ var App = App || {};
     navigateTo('welcome');
   });
 
+  bindAction('back-to-form', function() {
+    navigateTo('form');
+  });
+
+  bindAction('back-to-platforms', function() {
+    navigateTo('platforms');
+  });
+
   // Gerar dados de teste no formulário
   bindAction('auto-fill-form', function() {
     var nomes = ['Lucas Oliveira', 'Maria Santos', 'Pedro Costa', 'Ana Ferreira', 'João Souza', 'Carla Lima', 'Rafael Almeida', 'Juliana Rocha'];
