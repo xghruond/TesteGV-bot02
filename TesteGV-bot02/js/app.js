@@ -512,7 +512,12 @@ var App = App || {};
             statusBadge +
             '<p class="text-xs text-dark-600">' + App.formatDateTimeBR(record.completedAt) + '</p>' +
           '</div>' +
-          '<div class="text-dark-600 group-hover:text-dark-400 transition-colors">' + App.icons.chevronRight + '</div>' +
+          '<div class="flex items-center gap-1">' +
+            '<button data-action="delete-history" data-history-id="' + record.id + '" title="Remover do hist\u00f3rico" class="p-1.5 rounded-lg text-dark-700 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100">' +
+              App.icons.trash +
+            '</button>' +
+            '<div class="text-dark-600 group-hover:text-dark-400 transition-colors">' + App.icons.chevronRight + '</div>' +
+          '</div>' +
         '</div>';
     }).join('');
 
@@ -544,6 +549,7 @@ var App = App || {};
     var pseudoState = {
       employee: record.employee,
       platforms: record.platforms,
+      suggestedPassword: record.suggestedPassword || null,
       startedAt: record.startedAt,
       completedAt: record.completedAt
     };
@@ -678,18 +684,6 @@ var App = App || {};
     }
   });
 
-  bindAction('use-email-suggestion', function() {
-    var nameInput = document.querySelector('[name="nomeCompleto"]');
-    var emailInput = document.querySelector('[name="emailDesejado"]');
-    if (nameInput && emailInput) {
-      var suggestion = App.generateEmailFromName(nameInput.value);
-      if (suggestion) {
-        emailInput.value = suggestion;
-        emailInput.focus();
-      }
-    }
-  });
-
   bindAction('regenerate-email', function() {
     // Regenera os chips com novos números aleatórios
     var nameInput = document.querySelector('[name="nomeCompleto"]');
@@ -801,15 +795,6 @@ var App = App || {};
     App.showToast(pending.length + ' páginas abertas', 'info');
   });
 
-  // Toggle batch fill
-  bindAction('toggle-batch-fill', function() {
-    var panel = document.getElementById('batch-fill-panel');
-    if (panel) {
-      var isHidden = panel.style.display === 'none';
-      panel.style.display = isHidden ? '' : 'none';
-    }
-  });
-
   // Guia passo a passo
   bindAction('guide-next', function() {
     var platform = App.platforms[state.currentGuide];
@@ -904,6 +889,7 @@ var App = App || {};
     App.storage.saveHistory({
       employee: JSON.parse(JSON.stringify(state.employee)),
       platforms: JSON.parse(JSON.stringify(state.platforms)),
+      suggestedPassword: state.suggestedPassword,
       startedAt: state.startedAt,
       completedAt: state.completedAt
     });
@@ -978,6 +964,22 @@ var App = App || {};
     navigateTo('history-detail');
   });
 
+  bindAction('delete-history', function(e, el) {
+    e.stopPropagation();
+    var id = el.getAttribute('data-history-id');
+    if (!id) return;
+    var history = App.storage.loadHistory();
+    var record = null;
+    for (var i = 0; i < history.length; i++) {
+      if (history[i].id === id) { record = history[i]; break; }
+    }
+    var name = record ? record.employee.nomeCompleto : 'este registro';
+    if (!confirm('Remover "' + name + '" do hist\u00f3rico?')) return;
+    App.storage.deleteHistoryItem(id);
+    App.showToast('Registro removido', 'info');
+    render();
+  });
+
   // ============================================================
   // === Wizard action handlers                                ===
   // ============================================================
@@ -1017,6 +1019,7 @@ var App = App || {};
       App.storage.saveHistory({
         employee: JSON.parse(JSON.stringify(state.employee)),
         platforms: JSON.parse(JSON.stringify(state.platforms)),
+        suggestedPassword: state.suggestedPassword,
         startedAt: state.startedAt,
         completedAt: state.completedAt
       });
@@ -1031,7 +1034,6 @@ var App = App || {};
   });
 
   bindAction('wizard-skip-platform', function() {
-    var order = App.getWizardPlatformOrder();
     var nextIndex = state.wizardPlatformIndex + 1;
     var next = App.getNextPendingPlatform(state, nextIndex);
     if (!next) next = App.getNextPendingPlatform(state, 0);
@@ -1039,6 +1041,8 @@ var App = App || {};
       state.wizardPlatformIndex = next.index;
       App.storage.save(state);
       render();
+    } else {
+      App.showToast('Esta \u00e9 a \u00fanica plataforma pendente.', 'info');
     }
   });
 
@@ -1086,6 +1090,14 @@ var App = App || {};
   // === Bind de eventos de formulário (precisam re-bindar     ===
   // === após cada render pois os elementos são recriados)     ===
   // ============================================================
+  var preferManual = false;
+
+  bindAction('submit-form-to-platforms', function() {
+    preferManual = true;
+    var form = document.getElementById('employee-form');
+    if (form) form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  });
+
   function bindFormEvents() {
     // === Formulário do funcionário ===
     var form = document.getElementById('employee-form');
@@ -1117,10 +1129,16 @@ var App = App || {};
         if (!state.suggestedPassword) {
           state.suggestedPassword = App.generatePassword(14);
         }
-        state.wizardMode = true;
-        state.wizardPlatformIndex = 0;
         App.storage.save(state);
-        navigateTo('wizard');
+        if (preferManual) {
+          preferManual = false;
+          state.wizardMode = false;
+          navigateTo('platforms');
+        } else {
+          state.wizardMode = true;
+          state.wizardPlatformIndex = 0;
+          navigateTo('wizard');
+        }
       });
 
       // Máscara de telefone
@@ -1235,6 +1253,7 @@ var App = App || {};
               App.storage.saveHistory({
                 employee: JSON.parse(JSON.stringify(state.employee)),
                 platforms: JSON.parse(JSON.stringify(state.platforms)),
+                suggestedPassword: state.suggestedPassword,
                 startedAt: state.startedAt,
                 completedAt: state.completedAt
               });

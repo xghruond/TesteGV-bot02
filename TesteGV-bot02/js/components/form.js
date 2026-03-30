@@ -73,7 +73,12 @@ App.renderForm = function(state) {
             App.icons.sparkles + ' Gerar Dados de Teste' +
           '</button>' +
           '<button type="submit" class="btn-futuristic flex-[2] rounded-xl px-6 py-3.5 text-base font-semibold text-white active:scale-[0.98]">' +
-            'Continuar' +
+            'Continuar com Assistente' +
+          '</button>' +
+        '</div>' +
+        '<div class="mt-3 flex justify-center">' +
+          '<button type="button" data-action="submit-form-to-platforms" class="flex items-center gap-1.5 text-sm text-dark-500 hover:text-brand-400 transition-colors">' +
+            App.icons.chevronRight + ' Ir para o Painel Manual' +
           '</button>' +
         '</div>' +
       '</form>' +
