@@ -15,16 +15,21 @@ App.renderPlatformCards = function(state) {
       : '<span class="inline-flex items-center rounded-full bg-dark-700/50 px-3 py-1 text-xs font-medium text-dark-400">Pendente</span>';
 
     var accountInfo = isCompleted && pState.accountInfo
-      ? '<p class="mt-1 text-xs text-dark-400 truncate max-w-[180px]">' + esc(pState.accountInfo) + '</p>'
+      ? '<p class="mt-1 text-xs text-dark-400 truncate max-w-[160px] sm:max-w-[180px]">' + esc(pState.accountInfo) + '</p>'
       : '';
 
     var borderColor = isCompleted
       ? 'border-green-500/30 bg-green-500/5'
       : 'border-dark-700/60 bg-dark-800/60 hover:border-brand-500/40 hover:bg-dark-800/80';
 
+    var undoButton = isCompleted
+      ? '<button data-action="undo-platform" data-platform-id="' + platform.id + '" aria-label="Desfazer conclusão de ' + platform.name + '" class="mt-1 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-500/30 px-3 py-2 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/10 hover:border-amber-500/50">' +
+          App.icons.undo + ' Desfazer</button>'
+      : '';
+
     return '' +
       '<div class="platform-card flex flex-col items-center gap-3 rounded-xl border ' + borderColor + ' backdrop-blur-sm p-5 text-center transition-all hover:shadow-lg hover:shadow-brand-500/5">' +
-        '<button data-platform="' + platform.id + '" class="flex flex-col items-center gap-3 w-full">' +
+        '<button data-platform="' + platform.id + '" aria-label="Abrir guia de ' + platform.name + '" class="flex flex-col items-center gap-3 w-full">' +
           '<div class="flex h-14 w-14 items-center justify-center rounded-2xl ' + platform.color.accent + ' text-white shadow-lg shadow-black/20">' +
             '<div class="flex items-center justify-center [&>svg]:!fill-white [&>svg]:!w-7 [&>svg]:!h-7">' + platform.icon + '</div>' +
           '</div>' +
@@ -36,9 +41,11 @@ App.renderPlatformCards = function(state) {
           statusBadge +
         '</button>' +
         '<a href="' + platform.registerUrl + '" target="_blank" rel="noopener noreferrer"' +
+          ' aria-label="Acessar site de ' + platform.name + '"' +
           ' class="mt-1 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-dark-600/50 px-3 py-2 text-xs font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
           App.icons.externalLink + ' Acessar site' +
         '</a>' +
+        undoButton +
       '</div>';
   }).join('');
 
@@ -67,7 +74,7 @@ App.renderPlatformCards = function(state) {
           '<p class="text-xs text-dark-400">' + label + '</p>' +
           '<p class="text-sm font-medium text-dark-100 truncate">' + esc(value) + '</p>' +
         '</div>' +
-        '<button data-action="copy" data-copy-text="' + esc(value) + '" class="shrink-0 inline-flex items-center gap-1 rounded-lg border border-dark-600/50 px-2.5 py-1.5 text-xs font-medium text-dark-400 hover:text-brand-400 hover:border-brand-500/30 hover:bg-brand-500/10 transition-colors" title="Copiar">' +
+        '<button data-action="copy" data-copy-text="' + esc(value) + '" aria-label="Copiar ' + label + '" class="shrink-0 inline-flex items-center gap-1 rounded-lg border border-dark-600/50 px-2.5 py-1.5 text-xs font-medium text-dark-400 hover:text-brand-400 hover:border-brand-500/30 hover:bg-brand-500/10 transition-colors" title="Copiar">' +
           App.icons.copy + ' Copiar' +
         '</button>' +
       '</div>';
@@ -102,8 +109,8 @@ App.renderPlatformCards = function(state) {
   var shortcutsSection = '';
   if (hasPending) {
     var openAllBtn = '<div class="text-center">' +
-      '<button data-action="open-all-registers" class="inline-flex items-center gap-2 rounded-xl border border-dark-600/50 px-6 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
-        App.icons.externalLink + ' Abrir todos os cadastros pendentes' +
+      '<button data-action="open-all-registers" aria-label="Abrir todos os cadastros pendentes em novas abas" class="inline-flex items-center gap-2 rounded-xl border border-dark-600/50 px-6 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
+        App.icons.externalLink + ' Abrir todos os cadastros pendentes (' + pendingPlatforms.length + ')' +
       '</button>' +
     '</div>';
 
@@ -149,7 +156,7 @@ App.renderPlatformCards = function(state) {
 
   return '' +
     '<div>' +
-      '<button data-action="back-to-form" class="no-print mb-4 flex items-center gap-1 text-sm font-medium text-dark-400 transition-colors hover:text-brand-400">' +
+      '<button data-action="back-to-form" aria-label="Voltar para formulário" class="no-print mb-4 flex items-center gap-1 text-sm font-medium text-dark-400 transition-colors hover:text-brand-400">' +
         App.icons.chevronLeft + ' Voltar</button>' +
       '<div class="mb-6 text-center">' +
         '<div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-500/15 text-brand-400">' + App.icons.listChecks + '</div>' +

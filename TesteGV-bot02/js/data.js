@@ -210,25 +210,118 @@ App.generateEmailVariations = function(fullName) {
   return variations;
 };
 
+// === Sistema de Toast Notifications ===
+App.showToast = function(message, type) {
+  type = type || 'success';
+  var container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+  var icons = {
+    success: App.icons.check,
+    error: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/></svg>',
+    info: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></svg>',
+    undo: App.icons.refresh
+  };
+  var colors = {
+    success: 'toast-success',
+    error: 'toast-error',
+    info: 'toast-info',
+    undo: 'toast-undo'
+  };
+  var toast = document.createElement('div');
+  toast.className = 'toast ' + (colors[type] || 'toast-success');
+  toast.setAttribute('role', 'alert');
+  toast.setAttribute('aria-live', 'polite');
+  toast.innerHTML = '<span class="toast-icon">' + (icons[type] || icons.success) + '</span><span class="toast-msg">' + message + '</span>';
+  container.appendChild(toast);
+  // Trigger animation
+  requestAnimationFrame(function() { toast.classList.add('toast-show'); });
+  var timeout = setTimeout(function() { App._dismissToast(toast); }, 3000);
+  toast._timeout = timeout;
+  return toast;
+};
+
+App.showUndoToast = function(message, onUndo) {
+  var container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+  var toast = document.createElement('div');
+  toast.className = 'toast toast-undo';
+  toast.setAttribute('role', 'alert');
+  toast.setAttribute('aria-live', 'polite');
+  toast.innerHTML = '<span class="toast-icon">' + App.icons.check + '</span><span class="toast-msg">' + message + '</span><button class="toast-undo-btn">Desfazer</button>';
+  container.appendChild(toast);
+  requestAnimationFrame(function() { toast.classList.add('toast-show'); });
+  var undoBtn = toast.querySelector('.toast-undo-btn');
+  var undone = false;
+  undoBtn.addEventListener('click', function() {
+    if (!undone) { undone = true; onUndo(); App._dismissToast(toast); }
+  });
+  var timeout = setTimeout(function() { App._dismissToast(toast); }, 5000);
+  toast._timeout = timeout;
+  return toast;
+};
+
+App._dismissToast = function(toast) {
+  if (!toast || !toast.parentNode) return;
+  clearTimeout(toast._timeout);
+  toast.classList.remove('toast-show');
+  toast.classList.add('toast-hide');
+  setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
+};
+
 App.copyToClipboard = function(text, buttonEl) {
-  // Fallback para file:// protocol
+  var success = false;
+  // Try modern API first
+  if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(function() {
+      App._showCopyFeedback(buttonEl, true);
+    }).catch(function() {
+      success = App._fallbackCopy(text);
+      App._showCopyFeedback(buttonEl, success);
+    });
+    return;
+  }
+  // Fallback for file:// protocol
+  success = App._fallbackCopy(text);
+  App._showCopyFeedback(buttonEl, success);
+};
+
+App._fallbackCopy = function(text) {
   var textarea = document.createElement('textarea');
   textarea.value = text;
   textarea.style.position = 'fixed';
   textarea.style.opacity = '0';
   document.body.appendChild(textarea);
   textarea.select();
-  try { document.execCommand('copy'); } catch (e) { /* ignore */ }
+  var ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
   document.body.removeChild(textarea);
-  // Feedback visual
+  return ok;
+};
+
+App._showCopyFeedback = function(buttonEl, success) {
+  if (success) {
+    App.showToast('Copiado!', 'success');
+  } else {
+    App.showToast('Falha ao copiar', 'error');
+  }
   if (buttonEl) {
     var original = buttonEl.innerHTML;
     buttonEl.innerHTML = App.icons.check + ' Copiado!';
-    buttonEl.classList.add('text-green-600');
+    buttonEl.classList.add('text-green-400');
     setTimeout(function() {
       buttonEl.innerHTML = original;
-      buttonEl.classList.remove('text-green-600');
-    }, 2000);
+      buttonEl.classList.remove('text-green-400');
+    }, 1500);
   }
 };
 
@@ -357,7 +450,10 @@ App.icons = {
   download: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>',
   robot: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="8" y1="16" x2="8" y2="16.01"/><line x1="16" y1="16" x2="16" y2="16.01"/><path d="M9 21v1"/><path d="M15 21v1"/></svg>',
   robotSmall: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="8" y1="16" x2="8" y2="16.01"/><line x1="16" y1="16" x2="16" y2="16.01"/></svg>',
-  arrowRight: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>'
+  arrowRight: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+  eye: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+  eyeOff: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>',
+  undo: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>'
 };
 
 App.platforms = {

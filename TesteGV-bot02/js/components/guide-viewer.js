@@ -52,18 +52,18 @@ App.renderGuide = function(state) {
     : '';
 
   var prevButton = !isFirst
-    ? '<button data-action="guide-prev" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-4 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-dark-100">' +
+    ? '<button data-action="guide-prev" aria-label="Passo anterior" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-4 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-dark-100">' +
         App.icons.chevronLeft + ' Anterior</button>'
     : '<div class="flex-1"></div>';
 
   var nextButton = !isLast
-    ? '<button data-action="guide-next" class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-700">' +
+    ? '<button data-action="guide-next" aria-label="Próximo passo" class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-700">' +
         'Próximo ' + App.icons.chevronRight + '</button>'
     : '';
 
   return '' +
     '<div>' +
-      '<button data-action="back-platforms" class="no-print mb-4 flex items-center gap-1 text-sm font-medium text-dark-400 transition-colors hover:text-brand-400">' +
+      '<button data-action="back-platforms" aria-label="Voltar para plataformas" class="no-print mb-4 flex items-center gap-1 text-sm font-medium text-dark-400 transition-colors hover:text-brand-400">' +
         App.icons.chevronLeft + ' Voltar para Plataformas</button>' +
       '<div class="rounded-xl border border-dark-700/60 bg-dark-800/60 backdrop-blur-sm p-6 shadow-lg shadow-black/10">' +
         '<div class="mb-4 flex items-center justify-between">' +
@@ -88,9 +88,12 @@ App.renderGuide = function(state) {
           '</button>' +
           '<div id="password-tool-body" style="display:none" class="mt-3">' +
             '<div class="flex gap-2">' +
-              '<input type="text" id="generated-password" readonly class="dark-input flex-1 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none" placeholder="Clique em Gerar" />' +
+              '<div class="relative flex-1">' +
+                '<input type="password" id="generated-password" readonly class="dark-input w-full rounded-lg px-3 py-2 pr-10 text-sm font-mono focus:outline-none" placeholder="Clique em Gerar" />' +
+                '<button data-action="toggle-password-visibility" aria-label="Mostrar ou esconder senha" class="password-toggle">' + App.icons.eye + '</button>' +
+              '</div>' +
               '<button data-action="generate-password" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 transition-colors whitespace-nowrap">Gerar</button>' +
-              '<button data-action="copy-password" class="rounded-lg border border-dark-600/50 px-3 py-2 text-sm text-dark-400 hover:bg-dark-700/50 hover:text-brand-400 transition-colors" title="Copiar">' + App.icons.copy + '</button>' +
+              '<button data-action="copy-password" aria-label="Copiar senha" class="rounded-lg border border-dark-600/50 px-3 py-2 text-sm text-dark-400 hover:bg-dark-700/50 hover:text-brand-400 transition-colors" title="Copiar">' + App.icons.copy + '</button>' +
             '</div>' +
             '<p class="mt-2 text-xs text-dark-500">14 caracteres com maiúsculas, minúsculas, números e símbolos.</p>' +
           '</div>' +

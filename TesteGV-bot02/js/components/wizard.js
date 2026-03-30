@@ -54,7 +54,7 @@ App.renderWizard = function(state) {
         '<span class="text-sm text-dark-400 min-w-[120px]">' + esc(cred.label) + autoBadge + '</span>' +
         '<div class="flex items-center gap-1.5">' +
           '<span class="text-sm font-medium text-dark-100 select-all">' + esc(cred.value) + '</span>' +
-          '<button data-action="wizard-copy-credential" data-copy-text="' + esc(cred.value) + '" class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-dark-500 hover:text-brand-400 hover:bg-brand-500/10 transition-colors" title="Copiar">' +
+          '<button data-action="wizard-copy-credential" data-copy-text="' + esc(cred.value) + '" aria-label="Copiar ' + esc(cred.label) + '" class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-dark-500 hover:text-brand-400 hover:bg-brand-500/10 transition-colors" title="Copiar">' +
             App.icons.copy +
           '</button>' +
         '</div>' +
@@ -63,7 +63,7 @@ App.renderWizard = function(state) {
 
   return '' +
     '<div class="wizard-step-enter max-w-2xl mx-auto">' +
-      '<button data-action="wizard-back-platforms" class="no-print mb-4 flex items-center gap-1 text-sm font-medium text-dark-400 transition-colors hover:text-brand-400">' +
+      '<button data-action="wizard-back-platforms" aria-label="Voltar para plataformas" class="no-print mb-4 flex items-center gap-1 text-sm font-medium text-dark-400 transition-colors hover:text-brand-400">' +
         App.icons.chevronLeft + ' Voltar</button>' +
       // Progress header
       '<div class="mb-6">' +

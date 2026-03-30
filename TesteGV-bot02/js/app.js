@@ -600,19 +600,6 @@ var App = App || {};
       App.particles.destroy();
     }
 
-    // Auto-copy ao entrar no wizard
-    if (state.currentScreen === 'wizard') {
-      var wizCurrent = App.getNextPendingPlatform(state, state.wizardPlatformIndex);
-      if (!wizCurrent) wizCurrent = App.getNextPendingPlatform(state, 0);
-      if (wizCurrent) {
-        setTimeout(function() {
-          var autoCopy = App.getWizardAutoCopyData(wizCurrent.id, state);
-          var indicator = document.getElementById('wizard-autocopy-indicator');
-          App.copyToClipboard(autoCopy.value, indicator);
-        }, 500);
-      }
-    }
-
     // Timer: ativo durante form, platforms, guide e wizard
     if (state.currentScreen === 'form' || state.currentScreen === 'platforms' || state.currentScreen === 'guide' || state.currentScreen === 'wizard') {
       startTimer();
@@ -768,11 +755,13 @@ var App = App || {};
     if (nameEl) nameEl.dispatchEvent(new Event('input'));
   });
 
-  // Abrir todos os cadastros pendentes
+  // Abrir todos os cadastros pendentes — com confirmação
   bindAction('open-all-registers', function() {
     var pending = Object.keys(state.platforms).filter(function(id) {
       return !state.platforms[id].completed && App.platforms[id];
     });
+    if (pending.length === 0) return;
+    if (!confirm('Abrir ' + pending.length + ' páginas de cadastro em novas abas?')) return;
     pending.forEach(function(id, index) {
       setTimeout(function() {
         var link = document.createElement('a');
@@ -780,8 +769,9 @@ var App = App || {};
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
         link.click();
-      }, index * 300);
+      }, index * 500);
     });
+    App.showToast(pending.length + ' páginas abertas', 'info');
   });
 
   // Toggle batch fill
@@ -821,6 +811,7 @@ var App = App || {};
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.click();
+    App.showToast(platform.name + ' aberto em nova aba', 'info');
   });
 
   // Gerador de senha
@@ -840,6 +831,34 @@ var App = App || {};
   bindAction('copy-password', function(e, el) {
     var field = document.getElementById('generated-password');
     if (field && field.value) App.copyToClipboard(field.value, el);
+  });
+
+  // Toggle visibilidade da senha gerada
+  bindAction('toggle-password-visibility', function(e, el) {
+    var field = document.getElementById('generated-password');
+    if (!field) return;
+    if (field.type === 'password') {
+      field.type = 'text';
+      el.innerHTML = App.icons.eyeOff;
+    } else {
+      field.type = 'password';
+      el.innerHTML = App.icons.eye;
+    }
+  });
+
+  // Desfazer conclusão de plataforma
+  bindAction('undo-platform', function(e, el) {
+    var platformId = el.getAttribute('data-platform-id');
+    if (!platformId || !state.platforms[platformId]) return;
+    var previousInfo = state.platforms[platformId].accountInfo;
+    state.platforms[platformId] = { completed: false, accountInfo: '' };
+    App.storage.save(state);
+    render();
+    App.showUndoToast(App.platforms[platformId].name + ' desmarcada', function() {
+      state.platforms[platformId] = { completed: true, accountInfo: previousInfo };
+      App.storage.save(state);
+      render();
+    });
   });
 
   // Auto-preencher campo de conta com sugestão
@@ -888,6 +907,7 @@ var App = App || {};
     a.download = fileName;
     a.click();
     URL.revokeObjectURL(url);
+    App.showToast('Arquivo exportado!', 'success');
   });
 
   // Imprimir
@@ -936,7 +956,8 @@ var App = App || {};
   // ============================================================
 
   bindAction('wizard-open-register', function() {
-    // Link <a> handles the navigation, nothing extra needed
+    // Link <a> handles the navigation; show toast as feedback
+    App.showToast('Página de cadastro aberta', 'info');
   });
 
   bindAction('wizard-confirm', function() {
@@ -951,31 +972,17 @@ var App = App || {};
     }
     if (!accountInfo) return;
 
+    var platformName = App.platforms[current.id].name;
     state.platforms[current.id] = { completed: true, accountInfo: accountInfo };
     App.storage.save(state);
+
+    App.showToast(platformName + ' concluída!', 'success');
 
     var next = App.getNextPendingPlatform(state, 0);
     if (next) {
       state.wizardPlatformIndex = next.index;
       App.storage.save(state);
       render();
-
-      // Auto-copy next platform data
-      setTimeout(function() {
-        var autoCopy = App.getWizardAutoCopyData(next.id, state);
-        var indicator = document.getElementById('wizard-autocopy-indicator');
-        App.copyToClipboard(autoCopy.value, indicator);
-      }, 300);
-
-      // Auto-open next platform registration
-      setTimeout(function() {
-        var platform = App.platforms[next.id];
-        var link = document.createElement('a');
-        link.href = platform.registerUrl;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.click();
-      }, 800);
     } else {
       state.completedAt = new Date().toISOString();
       state.wizardMode = false;
@@ -1067,12 +1074,13 @@ var App = App || {};
         if (oldError) oldError.remove();
 
         if (errors.length > 0) {
-          var errorHtml = '<div class="form-error mt-4 rounded-lg border border-red-200 bg-red-50 p-4">' +
-            '<p class="text-sm font-semibold text-red-700 mb-1">Corrija os seguintes erros:</p>' +
-            '<ul class="list-disc pl-5 text-sm text-red-600">' +
+          var errorHtml = '<div class="form-error mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4">' +
+            '<p class="text-sm font-semibold text-red-400 mb-1">Corrija os seguintes erros:</p>' +
+            '<ul class="list-disc pl-5 text-sm text-red-300">' +
             errors.map(function(err) { return '<li>' + err + '</li>'; }).join('') +
             '</ul></div>';
           form.querySelector('button[type="submit"]').insertAdjacentHTML('beforebegin', errorHtml);
+          App.showToast('Preencha todos os campos obrigatórios', 'error');
           return;
         }
 
@@ -1129,6 +1137,21 @@ var App = App || {};
         // Preencher chips iniciais se o nome já existe
         updateEmailChips();
       }
+
+      // Auto-save form fields on blur (prevent data loss)
+      var formFields = form.querySelectorAll('input, select');
+      for (var fi = 0; fi < formFields.length; fi++) {
+        formFields[fi].addEventListener('blur', function() {
+          var inputs = form.querySelectorAll('input, select');
+          for (var j = 0; j < inputs.length; j++) {
+            var name = inputs[j].getAttribute('name');
+            if (name && state.employee.hasOwnProperty(name)) {
+              state.employee[name] = inputs[j].value;
+            }
+          }
+          App.storage.save(state);
+        });
+      }
     }
 
     // === Batch fill form submit ===
@@ -1149,6 +1172,7 @@ var App = App || {};
         });
         if (anyFilled) {
           App.storage.save(state);
+          App.showToast('Todas as contas marcadas como concluídas!', 'success');
           render();
         }
       });
@@ -1164,6 +1188,7 @@ var App = App || {};
         if (accountInfo) {
           state.platforms[state.currentGuide] = { completed: true, accountInfo: accountInfo };
           App.storage.save(state);
+          App.showToast(App.platforms[state.currentGuide].name + ' concluída!', 'success');
           if (state.wizardMode) {
             var next = App.getNextPendingPlatform(state, 0);
             if (next) {

@@ -32,7 +32,7 @@ App.renderChecklist = function(state) {
       '<div class="flex h-full flex-col p-5">' +
         '<div class="mb-4 flex items-center justify-between">' +
           '<h3 class="text-base font-bold text-dark-100">Progresso</h3>' +
-          '<button data-action="toggle-checklist" class="flex h-8 w-8 items-center justify-center rounded-lg text-dark-400 hover:bg-dark-700/50 hover:text-dark-200">' +
+          '<button data-action="toggle-checklist" aria-label="Fechar painel de progresso" class="flex h-11 w-11 items-center justify-center rounded-lg text-dark-400 hover:bg-dark-700/50 hover:text-dark-200">' +
             App.icons.close +
           '</button>' +
         '</div>' +
@@ -60,7 +60,7 @@ App.renderChecklistFab = function(state) {
   var completedCount = Object.values(state.platforms).filter(function(p) { return p.completed; }).length;
 
   return '' +
-    '<button class="checklist-fab no-print" data-action="toggle-checklist" title="Ver progresso">' +
+    '<button class="checklist-fab no-print" data-action="toggle-checklist" aria-label="Ver progresso das contas" title="Ver progresso">' +
       App.icons.clipboard +
       (completedCount > 0
         ? '<span class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-500 text-xs font-bold text-white shadow">' + completedCount + '</span>'

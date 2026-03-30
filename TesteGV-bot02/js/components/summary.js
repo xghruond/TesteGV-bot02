@@ -12,7 +12,7 @@ App.renderSummary = function(state) {
 
   function copyBtn(text) {
     if (!text || text === '-') return '';
-    return '<button data-action="copy" data-copy-text="' + esc(text) + '" class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-dark-400 hover:text-brand-400 hover:bg-brand-500/10 transition-colors" title="Copiar">' + App.icons.copy + '</button>';
+    return '<button data-action="copy" data-copy-text="' + esc(text) + '" aria-label="Copiar valor" class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-dark-400 hover:text-brand-400 hover:bg-brand-500/10 transition-colors" title="Copiar">' + App.icons.copy + '</button>';
   }
 
   function credRow(label, value, highlight) {
@@ -94,7 +94,7 @@ App.renderSummary = function(state) {
 
   return '' +
     '<div>' +
-      '<button data-action="back-to-platforms" class="no-print mb-4 flex items-center gap-1 text-sm font-medium text-dark-400 transition-colors hover:text-brand-400">' +
+      '<button data-action="back-to-platforms" aria-label="Voltar para plataformas" class="no-print mb-4 flex items-center gap-1 text-sm font-medium text-dark-400 transition-colors hover:text-brand-400">' +
         App.icons.chevronLeft + ' Voltar</button>' +
       '<div class="print-only mb-6 border-b-2 border-gray-900 pb-4">' +
         '<h1 class="text-2xl font-bold">Relatório - Green BOT</h1>' +
@@ -125,13 +125,13 @@ App.renderSummary = function(state) {
         '<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">' + accountCards + '</div>' +
       '</div>' +
       '<div class="flex flex-col gap-3 no-print sm:flex-row sm:flex-wrap">' +
-        '<button data-action="export-txt" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-6 py-3 text-base font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
+        '<button data-action="export-txt" aria-label="Exportar relatório como arquivo de texto" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-6 py-3 text-base font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
           App.icons.download + ' Exportar TXT</button>' +
-        '<button data-action="copy-summary" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-6 py-3 text-base font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
+        '<button data-action="copy-summary" aria-label="Copiar resumo para área de transferência" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-6 py-3 text-base font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
           App.icons.copy + ' Copiar Resumo</button>' +
-        '<button data-action="print" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-6 py-3 text-base font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
+        '<button data-action="print" aria-label="Imprimir relatório" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-6 py-3 text-base font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
           App.icons.printer + ' Imprimir</button>' +
-        '<button data-action="reset" class="flex flex-1 items-center justify-center gap-2 btn-futuristic rounded-xl px-6 py-3 text-base font-medium text-white">' +
+        '<button data-action="reset" aria-label="Iniciar novo onboarding" class="flex flex-1 items-center justify-center gap-2 btn-futuristic rounded-xl px-6 py-3 text-base font-medium text-white">' +
           App.icons.refresh + ' Novo Colaborador</button>' +
       '</div>' +
     '</div>';
