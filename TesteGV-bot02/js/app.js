@@ -104,20 +104,89 @@ var App = App || {};
 
   // === Profundidade da floresta (parallax entre telas) ===
   var forestDepth = {
-    welcome:          { scale: 1.0,  y: '0px',   brightness: 1.0,  saturate: 1.1,  overlay: 1.0,  vignette: 0   },
-    form:             { scale: 1.06, y: '-8px',   brightness: 0.92, saturate: 1.05, overlay: 1.05, vignette: 0.2 },
-    platforms:        { scale: 1.12, y: '-16px',  brightness: 0.85, saturate: 1.0,  overlay: 1.10, vignette: 0.35 },
-    wizard:           { scale: 1.12, y: '-16px',  brightness: 0.85, saturate: 1.0,  overlay: 1.10, vignette: 0.35 },
-    guide:            { scale: 1.18, y: '-24px',  brightness: 0.78, saturate: 0.95, overlay: 1.15, vignette: 0.5 },
-    summary:          { scale: 1.24, y: '-32px',  brightness: 0.72, saturate: 0.9,  overlay: 1.18, vignette: 0.6 },
-    history:          { scale: 1.10, y: '-12px',  brightness: 0.88, saturate: 1.0,  overlay: 1.08, vignette: 0.25 },
-    'history-detail': { scale: 1.15, y: '-20px',  brightness: 0.82, saturate: 0.95, overlay: 1.12, vignette: 0.4 }
+    welcome:          { scale: 1.0,  y: '0px',   brightness: 1.0,  saturate: 1.1,  overlay: 1.0,  vignette: 0,    farOp: 0,    farSc: 0.95, midOp: 0,    midX: '30px',  nearOp: 0,    nearX: '20px', nearSc: 0.97 },
+    form:             { scale: 1.06, y: '-8px',   brightness: 0.92, saturate: 1.05, overlay: 1.05, vignette: 0.2,  farOp: 0.2,  farSc: 0.97, midOp: 0,    midX: '30px',  nearOp: 0,    nearX: '20px', nearSc: 0.97 },
+    platforms:        { scale: 1.12, y: '-16px',  brightness: 0.85, saturate: 1.0,  overlay: 1.10, vignette: 0.35, farOp: 0.35, farSc: 1.0,  midOp: 0.15, midX: '15px',  nearOp: 0,    nearX: '20px', nearSc: 0.97 },
+    wizard:           { scale: 1.12, y: '-16px',  brightness: 0.85, saturate: 1.0,  overlay: 1.10, vignette: 0.35, farOp: 0.35, farSc: 1.0,  midOp: 0.15, midX: '15px',  nearOp: 0,    nearX: '20px', nearSc: 0.97 },
+    guide:            { scale: 1.18, y: '-24px',  brightness: 0.78, saturate: 0.95, overlay: 1.15, vignette: 0.5,  farOp: 0.45, farSc: 1.02, midOp: 0.3,  midX: '0px',   nearOp: 0.15, nearX: '10px', nearSc: 0.99 },
+    summary:          { scale: 1.24, y: '-32px',  brightness: 0.72, saturate: 0.9,  overlay: 1.18, vignette: 0.6,  farOp: 0.55, farSc: 1.05, midOp: 0.4,  midX: '-10px', nearOp: 0.3,  nearX: '0px',  nearSc: 1.0  },
+    history:          { scale: 1.10, y: '-12px',  brightness: 0.88, saturate: 1.0,  overlay: 1.08, vignette: 0.25, farOp: 0.25, farSc: 0.98, midOp: 0.1,  midX: '20px',  nearOp: 0,    nearX: '20px', nearSc: 0.97 },
+    'history-detail': { scale: 1.15, y: '-20px',  brightness: 0.82, saturate: 0.95, overlay: 1.12, vignette: 0.4,  farOp: 0.3,  farSc: 1.0,  midOp: 0.2,  midX: '10px',  nearOp: 0.1,  nearX: '15px', nearSc: 0.98 }
   };
+
+  // SVGs de folhagem para as 3 camadas
+  var foliageSvgs = {
+    far: '' +
+      // Folhas pequenas — canto superior esquerdo
+      '<svg class="foliage-svg" style="top:-10px;left:-20px;width:200px;height:180px;color:rgba(5,46,22,0.7);transform:rotate(15deg)" viewBox="0 0 200 180">' +
+        '<path d="M30 160 Q50 80 20 10 Q60 50 90 20 Q70 70 100 50 Q80 90 110 80 Q85 110 105 120 Q75 120 80 150Z"/>' +
+      '</svg>' +
+      // Folhas pequenas — canto superior direito
+      '<svg class="foliage-svg" style="top:-10px;right:-20px;width:180px;height:160px;color:rgba(5,46,22,0.6);transform:scaleX(-1) rotate(10deg)" viewBox="0 0 200 180">' +
+        '<path d="M30 160 Q50 80 20 10 Q60 50 90 20 Q70 70 100 50 Q80 90 110 80 Q85 110 105 120 Q75 120 80 150Z"/>' +
+      '</svg>' +
+      // Folhas cantos inferiores
+      '<svg class="foliage-svg" style="bottom:-5px;left:-15px;width:160px;height:120px;color:rgba(5,46,22,0.5);transform:rotate(160deg)" viewBox="0 0 200 180">' +
+        '<path d="M20 170 Q40 100 10 30 Q50 60 80 25 Q65 75 95 55 Q75 95 100 90 Q70 110 80 150Z"/>' +
+      '</svg>' +
+      '<svg class="foliage-svg" style="bottom:-5px;right:-15px;width:150px;height:110px;color:rgba(5,46,22,0.5);transform:scaleX(-1) rotate(160deg)" viewBox="0 0 200 180">' +
+        '<path d="M20 170 Q40 100 10 30 Q50 60 80 25 Q65 75 95 55 Q75 95 100 90 Q70 110 80 150Z"/>' +
+      '</svg>',
+
+    mid: '' +
+      // Samambaia esquerda
+      '<svg class="foliage-svg" style="top:15%;left:-30px;width:250px;height:400px;color:rgba(2,32,15,0.8)" viewBox="0 0 250 400">' +
+        '<path d="M10 400 Q15 350 12 300 Q20 310 35 290 Q15 280 14 250 Q25 265 45 240 Q18 235 16 200 Q30 220 55 195 Q20 185 18 155 Q35 175 60 150 Q22 140 20 110 Q40 135 65 110 Q25 100 22 70 Q45 95 70 70 Q28 60 25 30 Q50 55 75 35 Q30 20 28 5"/>' +
+      '</svg>' +
+      // Samambaia direita (espelhada)
+      '<svg class="foliage-svg" style="top:10%;right:-30px;width:250px;height:400px;color:rgba(2,32,15,0.8);transform:scaleX(-1)" viewBox="0 0 250 400">' +
+        '<path d="M10 400 Q15 350 12 300 Q20 310 35 290 Q15 280 14 250 Q25 265 45 240 Q18 235 16 200 Q30 220 55 195 Q20 185 18 155 Q35 175 60 150 Q22 140 20 110 Q40 135 65 110 Q25 100 22 70 Q45 95 70 70 Q28 60 25 30 Q50 55 75 35 Q30 20 28 5"/>' +
+      '</svg>' +
+      // Galhos com folhinhas — lateral esquerda inferior
+      '<svg class="foliage-svg" style="bottom:10%;left:-20px;width:200px;height:300px;color:rgba(2,32,15,0.7)" viewBox="0 0 200 300">' +
+        '<path d="M5 300 Q10 250 8 200 Q25 220 40 200 Q12 190 10 160 Q30 180 50 155 Q15 145 12 115 Q35 140 55 115 Q18 105 15 80 Q40 100 60 80 Q20 65 18 45"/>' +
+        '<path d="M8 200 Q-5 180 -10 160 Q5 170 15 155 Q-2 145 -8 125 Q10 140 22 120"/>' +
+      '</svg>',
+
+    near: '' +
+      // Folha grande — canto inferior esquerdo
+      '<svg class="foliage-svg" style="bottom:-20px;left:-40px;width:350px;height:300px;color:rgba(1,20,8,0.85)" viewBox="0 0 350 300">' +
+        '<path d="M0 300 Q10 250 5 200 Q30 230 60 195 Q15 185 10 150 Q45 180 80 145 Q25 135 15 100 Q55 135 95 100 Q35 85 25 55 Q65 90 110 60 Q45 45 35 15 Q75 50 120 25 Q55 10 50 0"/>' +
+        '<path d="M0 300 Q-10 240 -20 200 Q10 215 25 190 Q-15 175 -25 150 Q15 170 35 140 Q-10 125 -20 100"/>' +
+      '</svg>' +
+      // Folha grande — canto inferior direito
+      '<svg class="foliage-svg" style="bottom:-20px;right:-40px;width:320px;height:280px;color:rgba(1,20,8,0.85);transform:scaleX(-1)" viewBox="0 0 350 300">' +
+        '<path d="M0 300 Q10 250 5 200 Q30 230 60 195 Q15 185 10 150 Q45 180 80 145 Q25 135 15 100 Q55 135 95 100 Q35 85 25 55 Q65 90 110 60 Q45 45 35 15 Q75 50 120 25 Q55 10 50 0"/>' +
+        '<path d="M0 300 Q-10 240 -20 200 Q10 215 25 190 Q-15 175 -25 150 Q15 170 35 140 Q-10 125 -20 100"/>' +
+      '</svg>' +
+      // Grama/vegetação rasteira — borda inferior
+      '<svg class="foliage-svg" style="bottom:-5px;left:20%;width:60%;height:80px;color:rgba(1,20,8,0.7)" viewBox="0 0 600 80">' +
+        '<path d="M0 80 Q20 60 15 30 Q25 55 30 80 Q50 50 45 15 Q55 45 60 80 Q85 55 80 20 Q90 50 95 80 Q120 60 115 25 Q125 55 130 80 Q155 50 150 10 Q160 45 165 80 Q190 55 185 20 Q195 50 200 80 Q225 60 220 30 Q230 55 235 80 Q260 50 255 15 Q265 45 270 80 Q295 55 290 20 Q300 50 305 80 Q330 60 325 25 Q335 55 340 80 Q365 50 360 10 Q370 45 375 80 Q400 55 395 20 Q405 50 410 80 Q435 60 430 30 Q440 55 445 80 Q470 50 465 15 Q475 45 480 80 Q505 55 500 20 Q510 50 515 80 Q540 60 535 25 Q545 55 550 80 Q570 50 570 25 Q580 50 585 80 L600 80Z"/>' +
+      '</svg>' +
+      // Galho pendente — canto superior esquerdo
+      '<svg class="foliage-svg" style="top:-15px;left:5%;width:280px;height:200px;color:rgba(1,20,8,0.75)" viewBox="0 0 280 200">' +
+        '<path d="M0 5 Q30 8 60 15 Q50 30 65 45 Q75 20 90 25 Q80 45 95 60 Q105 30 120 35 Q110 55 125 75 Q135 40 150 50 Q140 70 155 90 Q165 55 180 65 Q170 85 185 105"/>' +
+      '</svg>'
+  };
+
+  var foliageRendered = false;
+
+  function initFoliage() {
+    if (foliageRendered) return;
+    var container = document.getElementById('forest-foliage');
+    if (!container) return;
+    container.innerHTML =
+      '<div class="foliage-layer foliage-far">' + foliageSvgs.far + '</div>' +
+      '<div class="foliage-layer foliage-mid">' + foliageSvgs.mid + '</div>' +
+      '<div class="foliage-layer foliage-near">' + foliageSvgs.near + '</div>';
+    foliageRendered = true;
+  }
 
   function updateForestDepth(screen) {
     var depth = forestDepth[screen] || forestDepth.welcome;
     var forest = document.getElementById('bg-forest');
     var overlay = document.querySelector('.bg-overlay');
+    var foliage = document.getElementById('forest-foliage');
     if (forest) {
       forest.style.setProperty('--forest-scale', depth.scale);
       forest.style.setProperty('--forest-y', depth.y);
@@ -127,6 +196,15 @@ var App = App || {};
     if (overlay) {
       overlay.style.setProperty('--overlay-opacity', depth.overlay);
       overlay.style.setProperty('--vignette-intensity', depth.vignette);
+    }
+    if (foliage) {
+      foliage.style.setProperty('--foliage-far-opacity', depth.farOp);
+      foliage.style.setProperty('--foliage-far-scale', depth.farSc);
+      foliage.style.setProperty('--foliage-mid-opacity', depth.midOp);
+      foliage.style.setProperty('--foliage-mid-x', depth.midX);
+      foliage.style.setProperty('--foliage-near-opacity', depth.nearOp);
+      foliage.style.setProperty('--foliage-near-x', depth.nearX);
+      foliage.style.setProperty('--foliage-near-scale', depth.nearSc);
     }
   }
 
@@ -470,7 +548,8 @@ var App = App || {};
 
     bindFormEvents();
 
-    // Profundidade da floresta
+    // Profundidade da floresta + folhagem
+    initFoliage();
     updateForestDepth(state.currentScreen);
 
     // Partículas e typewriter na welcome
