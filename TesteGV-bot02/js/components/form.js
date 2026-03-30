@@ -12,59 +12,64 @@ App.renderForm = function(state) {
 
       return '' +
         '<div>' +
-          '<label for="' + field.id + '" class="mb-1.5 block text-sm font-medium text-gray-700">' +
-            field.label + (field.required ? ' <span class="text-red-500">*</span>' : '') +
+          '<label for="' + field.id + '" class="mb-1.5 block text-sm font-medium text-dark-200">' +
+            field.label + (field.required ? ' <span class="text-red-400">*</span>' : '') +
           '</label>' +
           '<div class="relative">' +
-            '<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">' + iconHtml + '</div>' +
+            '<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-500">' + iconHtml + '</div>' +
             '<select id="' + field.id + '" name="' + field.id + '"' + (field.required ? ' required' : '') +
-              ' class="block w-full rounded-xl border border-gray-300 bg-white py-3 pl-10 pr-4 text-base text-gray-900 shadow-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20">' +
+              ' class="dark-input block w-full rounded-xl py-3 pl-10 pr-4 text-base transition-colors focus:outline-none">' +
               optionsHtml +
             '</select>' +
           '</div>' +
         '</div>';
     }
 
+    var emailExtras = '';
+    if (field.id === 'emailDesejado') {
+      emailExtras =
+        '<div id="email-variations-chips" class="mt-2 flex flex-wrap gap-1.5"></div>' +
+        '<button type="button" data-action="regenerate-email" class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand-500/10 border border-brand-500/30 px-3 py-1.5 text-xs font-semibold text-brand-400 hover:bg-brand-500/20 transition-colors">' +
+          App.icons.refresh + ' Gerar novas sugestões</button>';
+    }
+
     return '' +
       '<div>' +
-        '<label for="' + field.id + '" class="mb-1.5 block text-sm font-medium text-gray-700">' +
-          field.label + (field.required ? ' <span class="text-red-500">*</span>' : '') +
+        '<label for="' + field.id + '" class="mb-1.5 block text-sm font-medium text-dark-200">' +
+          field.label + (field.required ? ' <span class="text-red-400">*</span>' : '') +
         '</label>' +
         '<div class="relative">' +
-          '<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">' + iconHtml + '</div>' +
+          '<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-500">' + iconHtml + '</div>' +
           '<input type="' + field.type + '" id="' + field.id + '" name="' + field.id + '"' +
             ' value="' + App.escapeHtml(value) + '"' +
             (field.placeholder ? ' placeholder="' + field.placeholder + '"' : '') +
             (field.required ? ' required' : '') +
             (field.minLength ? ' minlength="' + field.minLength + '"' : '') +
             (field.helpText ? ' aria-describedby="' + field.id + '-help"' : '') +
-            ' class="block w-full rounded-xl border border-gray-300 bg-white py-3 pl-10 pr-4 text-base text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />' +
+            ' class="dark-input block w-full rounded-xl py-3 pl-10 pr-4 text-base transition-colors focus:outline-none" />' +
         '</div>' +
-        (field.helpText ? '<p id="' + field.id + '-help" class="mt-1 text-xs text-gray-500">' + field.helpText + '</p>' : '') +
-        (field.id === 'emailDesejado'
-          ? '<div id="email-suggestion" style="display:none" class="mt-1.5">' +
-              '<button type="button" data-action="use-email-suggestion" class="inline-flex items-center gap-1 rounded-lg bg-brand-50 border border-brand-200 px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100 transition-colors">' +
-                App.icons.sparkles + ' <span id="email-suggestion-text"></span>' +
-              '</button>' +
-            '</div>'
-          : '') +
+        (field.helpText ? '<p id="' + field.id + '-help" class="mt-1 text-xs text-dark-500">' + field.helpText + '</p>' : '') +
+        emailExtras +
       '</div>';
   }).join('');
 
   return '' +
-    '<div class="mx-auto max-w-lg">' +
+    '<div class="mx-auto max-w-2xl">' +
       '<div class="mb-6 text-center">' +
-        '<div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-100 text-brand-600">' + App.icons.user + '</div>' +
-        '<h2 class="text-2xl font-bold text-gray-900">Seus Dados</h2>' +
-        '<p class="mt-1 text-gray-500">Preencha suas informações pessoais para começar</p>' +
+        '<div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-500/15 text-brand-400">' + App.icons.user + '</div>' +
+        '<h2 class="text-2xl font-bold text-dark-50">Seus Dados</h2>' +
+        '<p class="mt-1 text-dark-400">Preencha suas informações pessoais para começar</p>' +
       '</div>' +
-      '<form id="employee-form" class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">' +
+      '<form id="employee-form" class="rounded-2xl border border-dark-700/60 bg-dark-800/80 p-6 backdrop-blur-sm">' +
         '<div class="space-y-4">' + fieldsHtml + '</div>' +
-        '<div class="mt-4 flex gap-3">' +
-          '<button type="button" data-action="auto-fill-form" class="flex-1 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3.5 text-sm font-semibold text-brand-700 transition-all hover:bg-brand-100">' +
+        '<div class="mt-6 flex gap-3">' +
+          '<button type="button" data-action="back-to-welcome" class="rounded-xl border border-dark-700 px-4 py-3.5 text-sm font-semibold text-dark-300 transition-all hover:bg-dark-700 hover:text-white">' +
+            App.icons.chevronLeft + ' Voltar' +
+          '</button>' +
+          '<button type="button" data-action="auto-fill-form" class="flex-1 rounded-xl border border-brand-500/30 bg-brand-500/10 px-4 py-3.5 text-sm font-semibold text-brand-400 transition-all hover:bg-brand-500/20">' +
             App.icons.sparkles + ' Gerar Dados de Teste' +
           '</button>' +
-          '<button type="submit" class="flex-[2] rounded-xl bg-brand-600 px-6 py-3.5 text-base font-semibold text-white shadow-md shadow-brand-600/20 transition-all hover:bg-brand-700 hover:shadow-lg active:scale-[0.98]">' +
+          '<button type="submit" class="btn-gradient flex-[2] rounded-xl px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-green-600/20 active:scale-[0.98]">' +
             'Continuar' +
           '</button>' +
         '</div>' +

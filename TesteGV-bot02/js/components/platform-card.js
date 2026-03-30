@@ -136,6 +136,14 @@ App.renderPlatformCards = function(state) {
     '</div>';
   }
 
+  var wizardResumeBtn = hasPending
+    ? '<div class="mt-5 text-center">' +
+        '<button data-action="resume-wizard" class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand-600/20 hover:bg-brand-700 transition-all hover:shadow-xl">' +
+          App.icons.sparkles + ' Continuar com Assistente Automático' +
+        '</button>' +
+      '</div>'
+    : '';
+
   return '' +
     '<div>' +
       '<div class="mb-6 text-center">' +
@@ -152,6 +160,7 @@ App.renderPlatformCards = function(state) {
       infoPanel +
       '<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">' + cardsHtml + '</div>' +
       shortcutsSection +
+      wizardResumeBtn +
       summaryButton +
     '</div>';
 };

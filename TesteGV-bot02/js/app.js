@@ -22,6 +22,8 @@ var App = App || {};
       tiktok: { completed: false, accountInfo: '' }
     },
     suggestedPassword: null,
+    wizardMode: false,
+    wizardPlatformIndex: 0,
     startedAt: null,
     completedAt: null,
     viewingHistoryId: null
@@ -163,49 +165,60 @@ var App = App || {};
   function renderWelcome() {
     var historyCount = App.storage.loadHistory().length;
     var historyButton = historyCount > 0
-      ? '<button data-action="view-history" class="mt-3 w-full rounded-xl border border-gray-200 px-8 py-3 text-base font-medium text-gray-600 transition-all hover:bg-gray-100">' +
+      ? '<button data-action="view-history" class="mt-4 w-full rounded-xl border border-dark-700 bg-dark-800/50 px-8 py-3.5 text-base font-medium text-dark-300 transition-all hover:bg-dark-800 hover:border-dark-600 hover:text-white">' +
           App.icons.clipboard + ' Histórico (' + historyCount + ')</button>'
       : '';
 
     return '' +
-      '<div class="flex min-h-[80vh] items-center justify-center">' +
-        '<div class="w-full max-w-lg text-center">' +
-          '<div class="mb-8">' +
-            '<div class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-lg shadow-brand-500/30">' +
-              App.icons.users +
+      '<div class="flex min-h-[90vh] items-center justify-center px-4">' +
+        '<div class="w-full max-w-xl text-center">' +
+
+          // Logo com glow
+          '<div class="mb-10">' +
+            '<div class="mx-auto mb-8 flex h-28 w-28 items-center justify-center rounded-3xl bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600 text-white shadow-2xl logo-glow logo-float">' +
+              App.icons.robot +
             '</div>' +
-            '<h1 class="mb-3 text-3xl font-extrabold text-gray-900">Bem-vindo ao Onboarding!</h1>' +
-            '<p class="text-lg text-gray-500">Vamos te ajudar a criar suas contas profissionais de forma simples e rápida.</p>' +
+            '<h1 class="mb-3 text-5xl font-extrabold tracking-tight">' +
+              '<span class="text-gradient">Green BOT</span>' +
+            '</h1>' +
+            '<p class="text-lg text-dark-400">Criação automática de contas profissionais</p>' +
           '</div>' +
-          '<div class="mb-8 rounded-xl border border-gray-200 bg-white p-6 text-left shadow-sm">' +
-            '<h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">O que vamos criar:</h3>' +
-            '<div class="space-y-3">' +
-              renderWelcomeItem('bg-red-100', '&#128231;', 'Gmail (Google)', 'Seu e-mail profissional') +
-              renderWelcomeItem('bg-pink-100', '&#128248;', 'Instagram', 'Perfil na rede social') +
-              renderWelcomeItem('bg-blue-100', '&#128101;', 'Facebook', 'Conta na rede social') +
-              renderWelcomeItem('bg-gray-100', '&#127925;', 'TikTok', 'Perfil de vídeos curtos') +
+
+          // Cards de plataformas
+          '<div class="mb-8 rounded-2xl border border-dark-700/40 bg-dark-800/70 p-6 text-left backdrop-blur-xl">' +
+            '<h3 class="mb-5 text-xs font-bold uppercase tracking-widest text-dark-500">Plataformas</h3>' +
+            '<div class="grid grid-cols-2 gap-3">' +
+              renderWelcomeItem('bg-red-500/10 text-red-400', App.platforms.gmail.icon, 'Gmail', 'E-mail profissional') +
+              renderWelcomeItem('bg-pink-500/10 text-pink-400', App.platforms.instagram.icon, 'Instagram', 'Rede social') +
+              renderWelcomeItem('bg-blue-500/10 text-blue-400', App.platforms.facebook.icon, 'Facebook', 'Rede social') +
+              renderWelcomeItem('bg-gray-500/10 text-gray-300', App.platforms.tiktok.icon, 'TikTok', 'Vídeos curtos') +
             '</div>' +
           '</div>' +
-          '<button data-action="start" class="w-full rounded-xl bg-brand-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-brand-600/30 transition-all hover:bg-brand-700 hover:shadow-xl hover:shadow-brand-700/30 active:scale-[0.98]">' +
-            'Iniciar Onboarding' +
+
+          // Botões
+          '<button data-action="start" class="btn-gradient w-full rounded-xl px-8 py-4 text-lg font-bold text-white shadow-lg shadow-green-600/20 active:scale-[0.98] flex items-center justify-center gap-2">' +
+            App.icons.arrowRight + ' Iniciar' +
           '</button>' +
           (hasSavedState
-            ? '<button data-action="continue" class="mt-3 w-full rounded-xl border border-brand-200 bg-brand-50 px-8 py-3 text-base font-medium text-brand-700 transition-all hover:bg-brand-100">Continuar de onde parei</button>'
+            ? '<button data-action="continue" class="mt-3 w-full rounded-xl border border-brand-500/30 bg-brand-500/10 px-8 py-3.5 text-base font-semibold text-brand-400 transition-all hover:bg-brand-500/20 hover:border-brand-500/50">Continuar de onde parei</button>'
             : '') +
           historyButton +
+
+          // Versão
+          '<p class="mt-8 text-xs text-dark-600">Green BOT v1.0</p>' +
         '</div>' +
       '</div>';
   }
 
-  function renderWelcomeItem(bgClass, emoji, title, subtitle) {
+  function renderWelcomeItem(classes, icon, title, subtitle) {
     return '' +
-      '<div class="flex items-center gap-3">' +
-        '<div class="flex h-10 w-10 items-center justify-center rounded-lg ' + bgClass + '">' +
-          '<span class="text-lg">' + emoji + '</span>' +
+      '<div class="welcome-card flex items-center gap-3 rounded-xl border border-dark-700/40 bg-dark-900/50 px-4 py-3 cursor-default hover:border-dark-600">' +
+        '<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ' + classes + ' [&>svg]:w-5 [&>svg]:h-5">' +
+          icon +
         '</div>' +
-        '<div>' +
-          '<p class="font-medium text-gray-900">' + title + '</p>' +
-          '<p class="text-sm text-gray-500">' + subtitle + '</p>' +
+        '<div class="flex-1 min-w-0">' +
+          '<p class="font-semibold text-dark-100 text-sm">' + title + '</p>' +
+          '<p class="text-xs text-dark-500">' + subtitle + '</p>' +
         '</div>' +
       '</div>';
   }
@@ -217,36 +230,61 @@ var App = App || {};
       return '' +
         '<div class="flex min-h-[60vh] items-center justify-center">' +
           '<div class="text-center">' +
-            '<p class="text-lg text-gray-500 mb-4">Nenhum onboarding realizado ainda.</p>' +
-            '<button data-action="back-welcome" class="rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50">Voltar</button>' +
+            '<div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-800 border border-dark-700 text-dark-500">' + App.icons.clipboard + '</div>' +
+            '<p class="text-lg text-dark-400 mb-4">Nenhum processo realizado ainda.</p>' +
+            '<button data-action="back-welcome" class="rounded-xl border border-dark-700 px-6 py-3 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">Voltar</button>' +
           '</div>' +
         '</div>';
     }
 
-    var rows = history.slice().reverse().map(function(record) {
+    var rows = history.slice().reverse().map(function(record, idx) {
       var completedCount = Object.values(record.platforms).filter(function(p) { return p.completed; }).length;
       var total = Object.keys(record.platforms).length;
+      var allDone = completedCount === total;
+      var statusBadge = allDone
+        ? '<span class="inline-flex items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 text-xs font-medium text-green-400">' + App.icons.check + ' Completo</span>'
+        : '<span class="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-400">' + completedCount + '/' + total + '</span>';
+
+      // Ícones das plataformas criadas
+      var platformIcons = '';
+      var platformIds = Object.keys(record.platforms);
+      for (var p = 0; p < platformIds.length; p++) {
+        var pid = platformIds[p];
+        if (record.platforms[pid].completed && App.platforms[pid]) {
+          platformIcons += '<div class="flex h-6 w-6 items-center justify-center rounded-md bg-dark-700/50 [&>svg]:w-3.5 [&>svg]:h-3.5 text-dark-300">' + App.platforms[pid].icon + '</div>';
+        }
+      }
+
       return '' +
-        '<div class="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:border-brand-300 transition-colors cursor-pointer" data-action="view-history-item" data-history-id="' + record.id + '">' +
-          '<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600">' + App.icons.user + '</div>' +
+        '<div class="group flex items-center gap-4 rounded-xl border border-dark-700/60 bg-dark-800/80 p-4 backdrop-blur-sm hover:border-brand-500/40 hover:bg-dark-800 transition-all cursor-pointer" data-action="view-history-item" data-history-id="' + record.id + '">' +
+          '<div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-500/15 text-brand-400">' + App.icons.user + '</div>' +
           '<div class="flex-1 min-w-0">' +
-            '<p class="font-semibold text-gray-900 truncate">' + App.escapeHtml(record.employee.nomeCompleto) + '</p>' +
-            '<p class="text-xs text-gray-500">' + App.escapeHtml(record.employee.emailDesejado) + '@gmail.com &bull; ' + completedCount + '/' + total + ' contas</p>' +
+            '<p class="font-semibold text-dark-100 truncate group-hover:text-white transition-colors">' + App.escapeHtml(record.employee.nomeCompleto) + '</p>' +
+            '<div class="flex items-center gap-2 mt-1">' +
+              '<span class="text-xs text-dark-500">' + App.escapeHtml(record.employee.emailDesejado) + '@gmail.com</span>' +
+              '<div class="flex items-center gap-1">' + platformIcons + '</div>' +
+            '</div>' +
           '</div>' +
-          '<div class="text-right shrink-0">' +
-            '<p class="text-xs text-gray-400">' + App.formatDateTimeBR(record.completedAt) + '</p>' +
+          '<div class="text-right shrink-0 flex flex-col items-end gap-1.5">' +
+            statusBadge +
+            '<p class="text-xs text-dark-600">' + App.formatDateTimeBR(record.completedAt) + '</p>' +
           '</div>' +
+          '<div class="text-dark-600 group-hover:text-dark-400 transition-colors">' + App.icons.chevronRight + '</div>' +
         '</div>';
     }).join('');
 
     return '' +
-      '<div>' +
-        '<div class="mb-6 flex items-center justify-between">' +
-          '<div>' +
-            '<h2 class="text-2xl font-bold text-gray-900">Histórico de Onboardings</h2>' +
-            '<p class="mt-1 text-gray-500">' + history.length + ' onboarding(s) realizado(s)</p>' +
+      '<div class="mx-auto max-w-3xl">' +
+        '<div class="mb-8 flex items-center justify-between">' +
+          '<div class="flex items-center gap-3">' +
+            '<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/15 text-brand-400">' + App.icons.clipboard + '</div>' +
+            '<div>' +
+              '<h2 class="text-2xl font-bold text-dark-50">Histórico</h2>' +
+              '<p class="text-sm text-dark-500">' + history.length + ' processo' + (history.length !== 1 ? 's' : '') + ' realizado' + (history.length !== 1 ? 's' : '') + '</p>' +
+            '</div>' +
           '</div>' +
-          '<button data-action="back-welcome" class="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Voltar</button>' +
+          '<button data-action="back-welcome" class="rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' +
+            App.icons.chevronLeft + ' Voltar</button>' +
         '</div>' +
         '<div class="space-y-3">' + rows + '</div>' +
       '</div>';
@@ -258,7 +296,7 @@ var App = App || {};
     for (var i = 0; i < history.length; i++) {
       if (history[i].id === recordId) { record = history[i]; break; }
     }
-    if (!record) return '<p>Registro não encontrado.</p>';
+    if (!record) return '<p class="text-dark-400">Registro não encontrado.</p>';
 
     var pseudoState = {
       employee: record.employee,
@@ -268,8 +306,8 @@ var App = App || {};
     };
 
     return '' +
-      '<div>' +
-        '<button data-action="back-history" class="mb-4 flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-700">' +
+      '<div class="mx-auto max-w-3xl">' +
+        '<button data-action="back-history" class="mb-6 flex items-center gap-1.5 text-sm font-medium text-dark-400 hover:text-brand-400 transition-colors">' +
           App.icons.chevronLeft + ' Voltar ao Histórico</button>' +
         App.renderSummary(pseudoState) +
       '</div>';
@@ -287,6 +325,8 @@ var App = App || {};
       header.innerHTML = App.renderHeader(state);
     }
 
+    // Full-width: cada componente controla seu próprio max-width
+
     switch (state.currentScreen) {
       case 'welcome':
         content.innerHTML = renderWelcome();
@@ -299,6 +339,9 @@ var App = App || {};
         break;
       case 'guide':
         content.innerHTML = App.renderGuide(state);
+        break;
+      case 'wizard':
+        content.innerHTML = App.renderWizard(state);
         break;
       case 'summary':
         content.innerHTML = App.renderSummary(state);
@@ -313,7 +356,7 @@ var App = App || {};
         content.innerHTML = renderWelcome();
     }
 
-    if (state.currentScreen === 'platforms' || state.currentScreen === 'guide') {
+    if (state.currentScreen === 'platforms' || state.currentScreen === 'guide' || state.currentScreen === 'wizard') {
       checklistContainer.innerHTML = App.renderChecklistFab(state) + App.renderChecklist(state);
     } else {
       checklistContainer.innerHTML = '';
@@ -329,8 +372,21 @@ var App = App || {};
 
     bindFormEvents();
 
-    // Timer: ativo durante form, platforms e guide
-    if (state.currentScreen === 'form' || state.currentScreen === 'platforms' || state.currentScreen === 'guide') {
+    // Auto-copy ao entrar no wizard
+    if (state.currentScreen === 'wizard') {
+      var wizCurrent = App.getNextPendingPlatform(state, state.wizardPlatformIndex);
+      if (!wizCurrent) wizCurrent = App.getNextPendingPlatform(state, 0);
+      if (wizCurrent) {
+        setTimeout(function() {
+          var autoCopy = App.getWizardAutoCopyData(wizCurrent.id, state);
+          var indicator = document.getElementById('wizard-autocopy-indicator');
+          App.copyToClipboard(autoCopy.value, indicator);
+        }, 500);
+      }
+    }
+
+    // Timer: ativo durante form, platforms, guide e wizard
+    if (state.currentScreen === 'form' || state.currentScreen === 'platforms' || state.currentScreen === 'guide' || state.currentScreen === 'wizard') {
       startTimer();
     } else {
       stopTimer();
@@ -350,12 +406,33 @@ var App = App || {};
     var saved = App.storage.load();
     if (saved) {
       state = mergeDeep(JSON.parse(JSON.stringify(defaultState)), saved);
-      render();
+      // Determinar a melhor tela para retomar
+      var screen = state.currentScreen;
+      if (screen === 'welcome' || !screen) {
+        // Se já tem dados do form, ir para o wizard ou form
+        if (state.employee.nomeCompleto && state.employee.emailDesejado) {
+          var pending = App.getNextPendingPlatform(state, 0);
+          if (pending) {
+            state.wizardMode = true;
+            state.wizardPlatformIndex = pending.index;
+            screen = 'wizard';
+          } else {
+            screen = 'summary';
+          }
+        } else {
+          screen = 'form';
+        }
+      }
+      navigateTo(screen);
     }
   });
 
   bindAction('back-platforms', function() {
-    navigateTo('platforms');
+    if (state.wizardMode) {
+      navigateTo('wizard');
+    } else {
+      navigateTo('platforms');
+    }
   });
 
   bindAction('use-email-suggestion', function() {
@@ -368,6 +445,49 @@ var App = App || {};
         emailInput.focus();
       }
     }
+  });
+
+  bindAction('regenerate-email', function() {
+    // Regenera os chips com novos números aleatórios
+    var nameInput = document.querySelector('[name="nomeCompleto"]');
+    var chipsContainer = document.getElementById('email-variations-chips');
+    if (!nameInput || !chipsContainer || !nameInput.value.trim()) return;
+    var variations = App.generateEmailVariations(nameInput.value);
+    var emailInput = document.querySelector('[name="emailDesejado"]');
+    var currentEmail = emailInput ? emailInput.value : '';
+    chipsContainer.innerHTML = variations.map(function(v) {
+      var isActive = v === currentEmail;
+      return '<button type="button" data-action="select-email-variation" data-email="' + App.escapeHtml(v) + '" class="rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ' +
+        (isActive
+          ? 'bg-brand-500 text-white'
+          : 'bg-dark-800 border border-dark-600 text-dark-300 hover:border-brand-500/50 hover:text-brand-400') +
+        '">' + App.escapeHtml(v) + '</button>';
+    }).join('');
+  });
+
+  bindAction('select-email-variation', function(e, el) {
+    var email = el.getAttribute('data-email');
+    var emailInput = document.querySelector('[name="emailDesejado"]');
+    if (email && emailInput) {
+      emailInput.value = email;
+      // Atualizar destaque dos chips
+      var container = el.closest('#email-variations-chips') || document.getElementById('email-variations-chips');
+      if (container) {
+        var buttons = container.querySelectorAll('button');
+        for (var i = 0; i < buttons.length; i++) {
+          var btn = buttons[i];
+          if (btn.getAttribute('data-email') === email) {
+            btn.className = 'rounded-lg px-2.5 py-1 text-xs font-medium transition-colors bg-brand-500 text-white';
+          } else {
+            btn.className = 'rounded-lg px-2.5 py-1 text-xs font-medium transition-colors bg-dark-800 border border-dark-600 text-dark-300 hover:border-brand-500/50 hover:text-brand-400';
+          }
+        }
+      }
+    }
+  });
+
+  bindAction('back-to-welcome', function() {
+    navigateTo('welcome');
   });
 
   // Gerar dados de teste no formulário
@@ -406,6 +526,9 @@ var App = App || {};
       var input = document.querySelector('[name="' + key + '"]');
       if (input) input.value = fields[key];
     }
+    // Disparar geração de chips de email
+    var nameEl = document.querySelector('[name="nomeCompleto"]');
+    if (nameEl) nameEl.dispatchEvent(new Event('input'));
   });
 
   // Abrir todos os cadastros pendentes
@@ -572,6 +695,123 @@ var App = App || {};
   });
 
   // ============================================================
+  // === Wizard action handlers                                ===
+  // ============================================================
+
+  bindAction('wizard-open-register', function() {
+    // Link <a> handles the navigation, nothing extra needed
+  });
+
+  bindAction('wizard-confirm', function() {
+    var current = App.getNextPendingPlatform(state, state.wizardPlatformIndex);
+    if (!current) current = App.getNextPendingPlatform(state, 0);
+    if (!current) return;
+
+    var input = document.getElementById('wizard-account-input');
+    var accountInfo = input ? input.value.trim() : '';
+    if (!accountInfo) {
+      accountInfo = App.suggestAccountInfo(current.id, state.employee.emailDesejado);
+    }
+    if (!accountInfo) return;
+
+    state.platforms[current.id] = { completed: true, accountInfo: accountInfo };
+    App.storage.save(state);
+
+    var next = App.getNextPendingPlatform(state, 0);
+    if (next) {
+      state.wizardPlatformIndex = next.index;
+      App.storage.save(state);
+      render();
+
+      // Auto-copy next platform data
+      setTimeout(function() {
+        var autoCopy = App.getWizardAutoCopyData(next.id, state);
+        var indicator = document.getElementById('wizard-autocopy-indicator');
+        App.copyToClipboard(autoCopy.value, indicator);
+      }, 300);
+
+      // Auto-open next platform registration
+      setTimeout(function() {
+        var platform = App.platforms[next.id];
+        var link = document.createElement('a');
+        link.href = platform.registerUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.click();
+      }, 800);
+    } else {
+      state.completedAt = new Date().toISOString();
+      state.wizardMode = false;
+      App.storage.save(state);
+      App.storage.saveHistory({
+        employee: JSON.parse(JSON.stringify(state.employee)),
+        platforms: JSON.parse(JSON.stringify(state.platforms)),
+        startedAt: state.startedAt,
+        completedAt: state.completedAt
+      });
+      navigateTo('summary');
+    }
+  });
+
+  bindAction('wizard-copy-credential', function(e, el) {
+    e.stopPropagation();
+    var text = el.getAttribute('data-copy-text');
+    if (text) App.copyToClipboard(text, el);
+  });
+
+  bindAction('wizard-skip-platform', function() {
+    var order = App.getWizardPlatformOrder();
+    var nextIndex = state.wizardPlatformIndex + 1;
+    var next = App.getNextPendingPlatform(state, nextIndex);
+    if (!next) next = App.getNextPendingPlatform(state, 0);
+    if (next && next.index !== state.wizardPlatformIndex) {
+      state.wizardPlatformIndex = next.index;
+      App.storage.save(state);
+      render();
+    }
+  });
+
+  bindAction('wizard-view-guide', function() {
+    var current = App.getNextPendingPlatform(state, state.wizardPlatformIndex);
+    if (!current) current = App.getNextPendingPlatform(state, 0);
+    if (current) {
+      navigateTo('guide', { guide: current.id, step: 0 });
+    }
+  });
+
+  bindAction('wizard-back-platforms', function() {
+    state.wizardMode = false;
+    navigateTo('platforms');
+  });
+
+  bindAction('wizard-update-username', function() {
+    var input = document.getElementById('wizard-username-input');
+    if (input && input.value.trim()) {
+      state.employee.emailDesejado = input.value.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '');
+      App.storage.save(state);
+      render();
+    }
+  });
+
+  bindAction('wizard-pick-variation', function(e, el) {
+    var variation = el.getAttribute('data-variation');
+    if (variation) {
+      state.employee.emailDesejado = variation;
+      App.storage.save(state);
+      render();
+    }
+  });
+
+  bindAction('resume-wizard', function() {
+    var next = App.getNextPendingPlatform(state, 0);
+    if (next) {
+      state.wizardMode = true;
+      state.wizardPlatformIndex = next.index;
+      navigateTo('wizard');
+    }
+  });
+
+  // ============================================================
   // === Bind de eventos de formulário (precisam re-bindar     ===
   // === após cada render pois os elementos são recriados)     ===
   // ============================================================
@@ -605,8 +845,10 @@ var App = App || {};
         if (!state.suggestedPassword) {
           state.suggestedPassword = App.generatePassword(14);
         }
+        state.wizardMode = true;
+        state.wizardPlatformIndex = 0;
         App.storage.save(state);
-        navigateTo('platforms');
+        navigateTo('wizard');
       });
 
       // Máscara de telefone
@@ -626,22 +868,29 @@ var App = App || {};
         });
       }
 
-      // Auto-sugestão de email a partir do nome
+      // Auto-gerar chips de variações ao digitar o nome
       var nameInput = form.querySelector('[name="nomeCompleto"]');
       if (nameInput) {
-        nameInput.addEventListener('input', function() {
-          var suggestion = App.generateEmailFromName(nameInput.value);
-          var suggestionContainer = document.getElementById('email-suggestion');
-          var suggestionText = document.getElementById('email-suggestion-text');
-          if (suggestionContainer && suggestionText) {
-            if (suggestion) {
-              suggestionText.textContent = 'Usar: ' + suggestion;
-              suggestionContainer.style.display = '';
-            } else {
-              suggestionContainer.style.display = 'none';
-            }
-          }
-        });
+        var updateEmailChips = function() {
+          var chipsContainer = document.getElementById('email-variations-chips');
+          if (!chipsContainer) return;
+          var name = nameInput.value;
+          if (!name || name.trim().length < 3) { chipsContainer.innerHTML = ''; return; }
+          var variations = App.generateEmailVariations(name);
+          var emailInput = form.querySelector('[name="emailDesejado"]');
+          var currentEmail = emailInput ? emailInput.value : '';
+          chipsContainer.innerHTML = variations.map(function(v) {
+            var isActive = v === currentEmail;
+            return '<button type="button" data-action="select-email-variation" data-email="' + App.escapeHtml(v) + '" class="rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ' +
+              (isActive
+                ? 'bg-brand-500 text-white'
+                : 'bg-dark-800 border border-dark-600 text-dark-300 hover:border-brand-500/50 hover:text-brand-400') +
+              '">' + App.escapeHtml(v) + '</button>';
+          }).join('');
+        };
+        nameInput.addEventListener('input', updateEmailChips);
+        // Preencher chips iniciais se o nome já existe
+        updateEmailChips();
       }
     }
 
@@ -678,7 +927,38 @@ var App = App || {};
         if (accountInfo) {
           state.platforms[state.currentGuide] = { completed: true, accountInfo: accountInfo };
           App.storage.save(state);
-          navigateTo('platforms');
+          if (state.wizardMode) {
+            var next = App.getNextPendingPlatform(state, 0);
+            if (next) {
+              state.wizardPlatformIndex = next.index;
+              navigateTo('wizard');
+            } else {
+              state.completedAt = new Date().toISOString();
+              state.wizardMode = false;
+              App.storage.save(state);
+              App.storage.saveHistory({
+                employee: JSON.parse(JSON.stringify(state.employee)),
+                platforms: JSON.parse(JSON.stringify(state.platforms)),
+                startedAt: state.startedAt,
+                completedAt: state.completedAt
+              });
+              navigateTo('summary');
+            }
+          } else {
+            navigateTo('platforms');
+          }
+        }
+      });
+    }
+
+    // === Wizard: Enter no campo username dispara Atualizar ===
+    var wizUsernameInput = document.getElementById('wizard-username-input');
+    if (wizUsernameInput) {
+      wizUsernameInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          var btn = document.querySelector('[data-action="wizard-update-username"]');
+          if (btn) btn.click();
         }
       });
     }

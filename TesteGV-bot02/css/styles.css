@@ -88,11 +88,12 @@ input[type="tel"]::placeholder {
   bottom: 0;
   width: 320px;
   max-width: 85vw;
-  background: white;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(20px);
   z-index: 50;
   transform: translateX(100%);
   transition: transform 0.3s ease;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
 }
 .checklist-drawer.active {
   transform: translateX(0);
@@ -139,14 +140,19 @@ input[type="tel"]::placeholder {
   .no-print {
     display: none !important;
   }
+  .bg-overlay {
+    display: none !important;
+  }
   #app-content {
     max-width: 100%;
     padding: 0;
     margin: 0;
   }
   body {
-    background: white;
+    background: white !important;
+    background-image: none !important;
     font-size: 12pt;
+    color: #000;
   }
   .print-only {
     display: block !important;
@@ -171,6 +177,16 @@ input[type="tel"]::placeholder {
   transform: translateY(-2px);
 }
 
+/* ===== Wizard animations ===== */
+.wizard-step-enter {
+  animation: wizardSlideIn 0.4s ease-out;
+}
+
+@keyframes wizardSlideIn {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 /* ===== Guide step image placeholder ===== */
 .step-image-placeholder {
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
@@ -180,4 +196,112 @@ input[type="tel"]::placeholder {
   justify-content: center;
   min-height: 200px;
   border-radius: 12px;
+}
+
+/* ===== Background Natureza HD ===== */
+.bg-nature {
+  background-image: url('https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=1920&q=80');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-color: #020617;
+}
+
+.bg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    rgba(2, 6, 23, 0.82) 0%,
+    rgba(2, 6, 23, 0.75) 30%,
+    rgba(2, 6, 23, 0.70) 60%,
+    rgba(2, 6, 23, 0.80) 100%
+  );
+  backdrop-filter: blur(1px);
+  pointer-events: none;
+}
+
+/* ===== Green BOT — Branding moderno ===== */
+.text-gradient {
+  background: linear-gradient(135deg, #22c55e 0%, #059669 50%, #0d9488 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logo-glow {
+  box-shadow: 0 0 60px rgba(34, 197, 94, 0.4), 0 0 120px rgba(34, 197, 94, 0.2), 0 0 200px rgba(34, 197, 94, 0.08);
+}
+
+/* Glass morphism containers */
+.glass-card {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(51, 65, 85, 0.4);
+}
+
+.logo-float {
+  animation: logoFloat 3s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.welcome-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.welcome-card:hover {
+  transform: translateX(4px);
+}
+
+.btn-gradient {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  transition: all 0.3s ease;
+}
+.btn-gradient:hover {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  box-shadow: 0 8px 30px rgba(22, 163, 74, 0.4);
+  transform: translateY(-1px);
+}
+
+/* ===== Dark Mode Global ===== */
+.dark-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+
+.dark-input {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #f1f5f9;
+}
+.dark-input:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+.dark-input::placeholder {
+  color: #64748b;
+}
+
+/* Header dark */
+.dark-header {
+  background: rgba(15, 23, 42, 0.90);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(30, 41, 59, 0.6);
+}
+
+/* Scrollbar dark */
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }

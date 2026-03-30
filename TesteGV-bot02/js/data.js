@@ -67,6 +67,149 @@ App.generateEmailFromName = function(fullName) {
   return clean.join('.');
 };
 
+App._nicknameMap = {
+  'joao': ['jota', 'jj'], 'jose': ['ze', 'zeze'], 'antonio': ['toninho', 'toni'],
+  'francisco': ['chico', 'francis'], 'carlos': ['carlao', 'cacau'], 'paulo': ['paulinho', 'paul'],
+  'pedro': ['pedrinho', 'pedrao'], 'lucas': ['luc', 'luck'], 'luiz': ['luis', 'lulu'],
+  'marcos': ['marcao', 'marc'], 'gabriel': ['gabi', 'gab'], 'rafael': ['rafa', 'raf'],
+  'daniel': ['dani', 'dan'], 'rodrigo': ['rod', 'digao'], 'bruno': ['bru', 'bruninho'],
+  'eduardo': ['edu', 'dudu'], 'felipe': ['lipe', 'phil'], 'gustavo': ['gus', 'guga'],
+  'andre': ['dede', 'drew'], 'fernando': ['fer', 'nando'], 'ricardo': ['rick', 'rica'],
+  'matheus': ['mat', 'math'], 'leonardo': ['leo', 'leon'], 'henrique': ['rick', 'henri'],
+  'marcelo': ['cel', 'celo'], 'vinicius': ['vini', 'vin'], 'thiago': ['thi', 'thig'],
+  'diego': ['dieguinho', 'dg'], 'alexandre': ['alex', 'xande'], 'roberto': ['beto', 'rob'],
+  'maria': ['mari', 'mah'], 'ana': ['aninha', 'ani'], 'juliana': ['ju', 'juju'],
+  'patricia': ['pat', 'paty'], 'fernanda': ['fer', 'nanda'], 'amanda': ['manda', 'mandy'],
+  'bruna': ['bru', 'bruninha'], 'camila': ['cami', 'cam'], 'carolina': ['carol', 'lina'],
+  'gabriela': ['gabi', 'gab'], 'isabela': ['isa', 'bela'], 'larissa': ['lari', 'lala'],
+  'leticia': ['leti', 'lets'], 'mariana': ['mari', 'mah'], 'natalia': ['nat', 'nati'],
+  'rafaela': ['rafa', 'raf'], 'tatiana': ['tati', 'tat'], 'vanessa': ['van', 'nessa'],
+  'beatriz': ['bia', 'bea'], 'jessica': ['jess', 'jeh'], 'aline': ['ali', 'line'],
+  'renata': ['re', 'renatinha'], 'priscila': ['pri', 'pris'], 'luana': ['lu', 'lua'],
+  'vitoria': ['vic', 'vivi'], 'bianca': ['bia', 'bianquinha'], 'clara': ['clarinha', 'cla'],
+  'sandra': ['san', 'sandy'], 'monica': ['mon', 'moni'], 'simone': ['si', 'mone'],
+  'adriana': ['adri', 'dri'], 'luciana': ['lu', 'luci'], 'cristina': ['cris', 'tina']
+};
+
+App.generateEmailVariations = function(fullName) {
+  if (!fullName || fullName.trim().length < 3) return [];
+  var prepositions = ['da', 'de', 'do', 'das', 'dos', 'e'];
+  var parts = fullName.trim().split(/\s+/).filter(function(w) {
+    return prepositions.indexOf(w.toLowerCase()) === -1;
+  });
+  if (parts.length === 0) return [];
+  var clean = parts.map(function(p) {
+    return App.removeAccents(p).replace(/[^a-z0-9]/g, '');
+  }).filter(function(p) { return p.length > 0; });
+  if (clean.length === 0) return [];
+
+  var f = clean[0];
+  var l = clean.length > 1 ? clean[clean.length - 1] : '';
+  var mid = clean.length > 2 ? clean.slice(1, -1) : [];
+  var initials = clean.map(function(c) { return c[0]; }).join('');
+  var yr = new Date().getFullYear().toString().slice(-2);
+  var rnd = Math.floor(Math.random() * 90 + 10);
+  var nicks = App._nicknameMap[f] || [];
+  var nick = nicks.length > 0 ? nicks[0] : '';
+  var nick2 = nicks.length > 1 ? nicks[1] : '';
+  // Diminutivo automático se não tem no mapa
+  var dim = '';
+  if (!nick) {
+    if (f.length > 3) dim = f.slice(0, -1) + 'inho';
+    if (f[f.length - 1] === 'a' && f.length > 3) dim = f.slice(0, -1) + 'inha';
+  }
+  // Primeiras 3 letras
+  var f3 = f.length > 3 ? f.slice(0, 3) : f;
+
+  var variations = [];
+  var seen = {};
+  function add(v) {
+    v = v.replace(/[^a-z0-9._-]/g, '');
+    if (v && !seen[v] && v.length >= 3) { seen[v] = true; variations.push(v); }
+  }
+
+  // ── Clássico ──
+  add(f + '.' + l);                                   // joao.silva
+  add(f + l);                                         // joaosilva
+  add(f + '_' + l);                                   // joao_silva
+  add(l + '.' + f);                                   // silva.joao
+
+  // ── Iniciais e abreviações ──
+  if (l) {
+    add(f[0] + '.' + l);                             // j.silva
+    add(f[0] + l);                                   // jsilva
+    add(f + '.' + l[0]);                             // joao.s
+    add(l + '.' + f[0]);                             // silva.j
+  }
+  if (initials.length >= 2) {
+    add(initials + '.' + l);                         // jms.silva
+  }
+
+  // ── Apelidos brasileiros ──
+  if (nick) {
+    add(nick + '.' + l);                             // jota.silva
+    add(nick + l);                                   // jotasilva
+    add(nick + yr);                                  // jota26
+    if (l) add(nick + '.' + l[0]);                   // jota.s
+  }
+  if (nick2) {
+    add(nick2 + '.' + l);                            // jj.silva
+    add(nick2 + l);                                  // jjsilva
+  }
+  if (dim) {
+    add(dim + '.' + l);                              // joaozinho.silva
+    add(dim);                                        // joaozinho
+  }
+
+  // ── Truncado (3 letras) ──
+  if (l) {
+    add(f3 + '.' + l);                               // joa.silva
+    add(f + '.' + l.slice(0, 3));                    // joao.sil
+    add(f3 + l.slice(0, 3));                         // joasil
+  }
+
+  // ── Nome do meio ──
+  if (mid.length > 0) {
+    add(f + '.' + mid[0] + '.' + l);                 // joao.maria.silva
+    add(f + '.' + mid[0][0] + '.' + l);             // joao.m.silva
+    add(mid[0] + '.' + l);                           // maria.silva
+    add(f + '.' + mid[0]);                           // joao.maria
+  }
+
+  // ── Com números ──
+  add(f + '.' + l + yr);                             // joao.silva26
+  add(f + '.' + l + '01');                           // joao.silva01
+  add(f + l + rnd);                                  // joaosilva47
+  add(f + yr);                                       // joao26
+  add(l + '.' + f + yr);                             // silva.joao26
+
+  // ── Corporativo ──
+  add(f + '.gv');                                     // joao.gv
+  add(f + '.' + l + '.gv');                           // joao.silva.gv
+  add('gv.' + f + '.' + l);                          // gv.joao.silva
+  add(f + '.greenvillage');                           // joao.greenvillage
+
+  // ── Letras dobradas / estilo redes sociais ──
+  add(f + f[f.length - 1] + '.' + l);               // joaoo.silva (dobra última)
+  if (l) add('o' + f + '.' + l);                    // ojoao.silva
+  add(f + '.oficial');                               // joao.oficial
+  add('eu' + f + l);                                 // eujoaosilva
+  add('sou' + f + l);                               // soujoaosilva
+  add(f + '.' + l + '.real');                        // joao.silva.real
+
+  // ── Só primeiro nome (sem sobrenome) ──
+  if (!l) {
+    add(f + '.oficial');
+    add(f + '.pro');
+    add(f + '.work');
+    add(f + '.' + rnd);
+    if (nick) add(nick);
+    if (dim) add(dim);
+  }
+
+  return variations;
+};
+
 App.copyToClipboard = function(text, buttonEl) {
   // Fallback para file:// protocol
   var textarea = document.createElement('textarea');
@@ -211,7 +354,10 @@ App.icons = {
   checkCircle: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
   copy: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
   key: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
-  download: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>'
+  download: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>',
+  robot: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="8" y1="16" x2="8" y2="16.01"/><line x1="16" y1="16" x2="16" y2="16.01"/><path d="M9 21v1"/><path d="M15 21v1"/></svg>',
+  robotSmall: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="8" y1="16" x2="8" y2="16.01"/><line x1="16" y1="16" x2="16" y2="16.01"/></svg>',
+  arrowRight: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>'
 };
 
 App.platforms = {
@@ -380,7 +526,7 @@ App.platforms = {
 
 App.formFields = [
   { id: 'nomeCompleto', label: 'Nome completo', type: 'text', placeholder: 'Ex: João da Silva', required: true, minLength: 3, icon: 'user' },
-  { id: 'emailDesejado', label: 'E-mail desejado (usuário para o Gmail)', type: 'text', placeholder: 'Ex: joao.silva.empresa', required: true, minLength: 3, helpText: 'Apenas letras, números e pontos. O "@gmail.com" será adicionado automaticamente.', icon: 'mail' },
+  { id: 'emailDesejado', label: 'E-mail desejado (usuário para o Gmail)', type: 'text', placeholder: 'nome.sobrenome ou nome.empresa', required: true, minLength: 3, helpText: 'Sugestões: maria.santos, pedro.costa.gv, ana.tech — o "@gmail.com" será adicionado automaticamente.', icon: 'mail' },
   { id: 'telefone', label: 'Telefone (com DDD)', type: 'tel', placeholder: '(11) 99999-9999', required: true, icon: 'phone' },
   { id: 'dataNascimento', label: 'Data de nascimento', type: 'date', required: true, icon: 'calendar' },
   { id: 'cargo', label: 'Cargo', type: 'text', placeholder: 'Ex: Analista de Marketing', required: true, icon: 'briefcase' },
@@ -401,6 +547,79 @@ App.formFields = [
   },
   { id: 'dataAdmissao', label: 'Data de admissão', type: 'date', required: true, icon: 'calendar-check' }
 ];
+
+// === Wizard helpers ===
+
+App.getWizardPlatformOrder = function() {
+  return Object.keys(App.platforms);
+};
+
+App.getNextPendingPlatform = function(state, startIndex) {
+  var order = App.getWizardPlatformOrder();
+  for (var i = startIndex || 0; i < order.length; i++) {
+    if (!state.platforms[order[i]].completed) {
+      return { id: order[i], index: i };
+    }
+  }
+  return null;
+};
+
+App.getWizardCredentials = function(platformId, state) {
+  var names = App.splitName(state.employee.nomeCompleto);
+  var email = state.employee.emailDesejado + '@gmail.com';
+  var username = '@' + state.employee.emailDesejado;
+  var senha = state.suggestedPassword || '';
+  var dataNasc = App.formatDateBR(state.employee.dataNascimento);
+  var telefone = state.employee.telefone || '';
+
+  var senhaRow = { label: 'Senha sugerida', value: senha };
+
+  switch (platformId) {
+    case 'gmail':
+      return [
+        { label: 'Primeiro nome', value: names.first },
+        { label: 'Sobrenome', value: names.last },
+        { label: 'E-mail desejado', value: state.employee.emailDesejado },
+        { label: 'Data de nascimento', value: dataNasc },
+        { label: 'Telefone', value: telefone },
+        senhaRow
+      ];
+    case 'instagram':
+      return [
+        { label: 'E-mail (Gmail)', value: email, autoCopy: true },
+        { label: 'Nome completo', value: state.employee.nomeCompleto },
+        { label: 'Username sugerido', value: state.employee.emailDesejado },
+        senhaRow
+      ];
+    case 'facebook':
+      return [
+        { label: 'E-mail (Gmail)', value: email, autoCopy: true },
+        { label: 'Primeiro nome', value: names.first },
+        { label: 'Sobrenome', value: names.last },
+        { label: 'Data de nascimento', value: dataNasc },
+        senhaRow
+      ];
+    case 'tiktok':
+      return [
+        { label: 'E-mail (Gmail)', value: email, autoCopy: true },
+        { label: 'Data de nascimento', value: dataNasc },
+        senhaRow
+      ];
+    default:
+      return [senhaRow];
+  }
+};
+
+App.getWizardAutoCopyData = function(platformId, state) {
+  var email = state.employee.emailDesejado + '@gmail.com';
+  switch (platformId) {
+    case 'gmail': return { value: state.employee.emailDesejado, label: 'E-mail desejado' };
+    case 'instagram': return { value: email, label: 'E-mail Gmail' };
+    case 'facebook': return { value: email, label: 'E-mail Gmail' };
+    case 'tiktok': return { value: email, label: 'E-mail Gmail' };
+    default: return { value: email, label: 'E-mail' };
+  }
+};
 
 App.departmentLabels = {
   marketing: 'Marketing', vendas: 'Vendas', ti: 'Tecnologia da Informação',

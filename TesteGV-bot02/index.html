@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Onboarding - Criação de Contas</title>
+  <title>Green BOT - Criação de Contas</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -21,6 +21,20 @@
               700: '#15803d',
               800: '#166534',
               900: '#14532d'
+            },
+            dark: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              200: '#e2e8f0',
+              300: '#cbd5e1',
+              400: '#94a3b8',
+              500: '#64748b',
+              600: '#475569',
+              700: '#334155',
+              800: '#1e293b',
+              850: '#172033',
+              900: '#0f172a',
+              950: '#020617'
             }
           },
           fontFamily: {
@@ -43,19 +57,21 @@
     });
   </script>
 </head>
-<body class="min-h-screen bg-gray-50 font-sans antialiased">
-  <header id="app-header"></header>
-  <main id="app-content" class="container mx-auto max-w-3xl px-4 py-8"></main>
-  <div id="app-checklist"></div>
+<body class="min-h-screen font-sans antialiased text-gray-100 bg-nature">
+  <div class="bg-overlay"></div>
+  <header id="app-header" class="relative z-10"></header>
+  <main id="app-content" class="container mx-auto px-4 py-8 relative z-10"></main>
+  <div id="app-checklist" class="relative z-10"></div>
 
-  <script src="js/data.js?v=6"></script>
-  <script src="js/storage.js?v=6"></script>
-  <script src="js/components/header.js?v=6"></script>
-  <script src="js/components/form.js?v=6"></script>
-  <script src="js/components/platform-card.js?v=6"></script>
-  <script src="js/components/guide-viewer.js?v=6"></script>
-  <script src="js/components/checklist.js?v=6"></script>
-  <script src="js/components/summary.js?v=6"></script>
-  <script src="js/app.js?v=6"></script>
+  <script src="js/data.js?v=27"></script>
+  <script src="js/storage.js?v=27"></script>
+  <script src="js/components/header.js?v=27"></script>
+  <script src="js/components/form.js?v=27"></script>
+  <script src="js/components/platform-card.js?v=27"></script>
+  <script src="js/components/guide-viewer.js?v=27"></script>
+  <script src="js/components/checklist.js?v=27"></script>
+  <script src="js/components/wizard.js?v=27"></script>
+  <script src="js/components/summary.js?v=27"></script>
+  <script src="js/app.js?v=27"></script>
 </body>
 </html>

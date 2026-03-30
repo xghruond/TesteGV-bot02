@@ -8,19 +8,20 @@ App.renderSummary = function(state) {
 
   var email = state.employee.emailDesejado ? state.employee.emailDesejado + '@gmail.com' : '-';
   var username = state.employee.emailDesejado ? '@' + state.employee.emailDesejado : '-';
-  var senha = state.suggestedPassword || '-';
+  var senha = state.suggestedPassword || App.generatePassword(14);
 
   function copyBtn(text) {
     if (!text || text === '-') return '';
     return '<button data-action="copy" data-copy-text="' + esc(text) + '" class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors" title="Copiar">' + App.icons.copy + '</button>';
   }
 
-  function credRow(label, value) {
+  function credRow(label, value, highlight) {
     if (!value || value === '-') return '';
+    var cls = highlight ? 'text-sm font-semibold text-brand-700' : 'text-sm font-medium text-gray-900';
     return '' +
       '<div class="flex items-center justify-between gap-2">' +
         '<span class="text-xs text-gray-500">' + label + '</span>' +
-        '<span class="flex items-center gap-1 text-sm font-medium text-gray-900">' + esc(value) + ' ' + copyBtn(value) + '</span>' +
+        '<span class="flex items-center gap-1 ' + cls + '">' + esc(value) + ' ' + copyBtn(value) + '</span>' +
       '</div>';
   }
 
@@ -28,28 +29,28 @@ App.renderSummary = function(state) {
     gmail: {
       credentials: [
         { label: 'E-mail', value: email },
-        { label: 'Senha', value: senha }
+        { label: 'Senha', value: senha, highlight: true }
       ]
     },
     instagram: {
       credentials: [
         { label: 'Username', value: username },
         { label: 'E-mail de cadastro', value: email },
-        { label: 'Senha', value: senha }
+        { label: 'Senha', value: senha, highlight: true }
       ]
     },
     facebook: {
       credentials: [
         { label: 'Conta', value: state.platforms.facebook.accountInfo || '-' },
         { label: 'E-mail de cadastro', value: email },
-        { label: 'Senha', value: senha }
+        { label: 'Senha', value: senha, highlight: true }
       ]
     },
     tiktok: {
       credentials: [
         { label: 'Username', value: username },
         { label: 'E-mail de cadastro', value: email },
-        { label: 'Senha', value: senha }
+        { label: 'Senha', value: senha, highlight: true }
       ]
     }
   };
@@ -64,7 +65,7 @@ App.renderSummary = function(state) {
       : '<span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">Pendente</span>';
 
     var credRows = details.credentials.map(function(c) {
-      return credRow(c.label, c.value);
+      return credRow(c.label, c.value, c.highlight);
     }).join('');
 
     return '' +
@@ -94,14 +95,14 @@ App.renderSummary = function(state) {
   return '' +
     '<div>' +
       '<div class="print-only mb-6 border-b-2 border-gray-900 pb-4">' +
-        '<h1 class="text-2xl font-bold">Relatório de Onboarding</h1>' +
+        '<h1 class="text-2xl font-bold">Relatório - Green BOT</h1>' +
         '<p class="text-sm text-gray-600">Gerado em: ' + completedAt + '</p>' +
       '</div>' +
       '<div class="mb-6 text-center no-print">' +
         '<div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">' +
           App.icons.checkCircle +
         '</div>' +
-        '<h2 class="text-2xl font-bold text-gray-900">Onboarding Concluído!</h2>' +
+        '<h2 class="text-2xl font-bold text-gray-900">Processo Concluído!</h2>' +
         '<p class="mt-1 text-gray-500">Todas as contas foram criadas com sucesso</p>' +
       '</div>' +
       '<div class="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">' +
