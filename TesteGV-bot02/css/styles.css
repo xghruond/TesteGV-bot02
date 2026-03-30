@@ -30,19 +30,23 @@
 .no-tailwind table { width: 100%; border-collapse: collapse; }
 .no-tailwind th, .no-tailwind td { padding: 0.75rem 0.5rem; text-align: left; border-bottom: 1px solid #e5e7eb; }
 
-/* ===== Transições de tela ===== */
+/* ===== Transições de tela — Premium ===== */
 .screen-enter {
-  animation: screenSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: screenSlideIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
   outline: none !important;
 }
 
 @keyframes screenSlideIn {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(30px) scale(0.97);
-    filter: blur(4px);
+    transform: translateY(50px) scale(0.96);
+    filter: blur(8px);
   }
-  to {
+  40% {
+    opacity: 0.6;
+    filter: blur(3px);
+  }
+  100% {
     opacity: 1;
     transform: translateY(0) scale(1);
     filter: blur(0);
@@ -51,20 +55,35 @@
 
 /* Transição de saída */
 #app-content.screen-exit {
-  animation: screenSlideOut 0.3s cubic-bezier(0.55, 0, 1, 0.45) both;
+  animation: screenSlideOut 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 @keyframes screenSlideOut {
-  from {
+  0% {
     opacity: 1;
     transform: translateY(0) scale(1);
     filter: blur(0);
   }
-  to {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.98);
-    filter: blur(3px);
+  60% {
+    opacity: 0.3;
+    filter: blur(4px);
   }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.97);
+    filter: blur(8px);
+  }
+}
+
+/* Vinheta atmosférica — escurece bordas durante transição */
+.bg-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 5, 3, 0.4) 100%);
+  opacity: var(--vignette-intensity, 0);
+  transition: opacity 1s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
 }
 
 /* ===== Máscara de telefone ===== */
@@ -235,9 +254,9 @@ input[type="tel"]::placeholder {
   background-position: center bottom;
   background-repeat: no-repeat;
   transform: scale(var(--forest-scale, 1)) translateY(var(--forest-y, 0px));
-  filter: brightness(var(--forest-brightness, 1));
-  transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              filter 0.8s ease;
+  filter: brightness(var(--forest-brightness, 1)) saturate(var(--forest-saturate, 1));
+  transition: transform 1.4s cubic-bezier(0.22, 1, 0.36, 1),
+              filter 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   will-change: transform, filter;
 }
 
@@ -255,7 +274,7 @@ input[type="tel"]::placeholder {
   backdrop-filter: blur(0.5px);
   pointer-events: none;
   opacity: var(--overlay-opacity, 1);
-  transition: opacity 0.8s ease;
+  transition: opacity 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 /* Particle canvas */
@@ -522,6 +541,10 @@ input[type="tel"]::placeholder {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(34, 197, 94, 0.1);
+  transition: opacity 0.4s ease;
+}
+#app-header.header-transitioning .dark-header {
+  opacity: 0.6;
 }
 
 /* Scrollbar dark */

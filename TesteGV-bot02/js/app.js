@@ -104,14 +104,14 @@ var App = App || {};
 
   // === Profundidade da floresta (parallax entre telas) ===
   var forestDepth = {
-    welcome:          { scale: 1.0,  y: '0px',   brightness: 1.0,  overlay: 1.0  },
-    form:             { scale: 1.06, y: '-8px',   brightness: 0.92, overlay: 1.05 },
-    platforms:        { scale: 1.12, y: '-16px',  brightness: 0.85, overlay: 1.10 },
-    wizard:           { scale: 1.12, y: '-16px',  brightness: 0.85, overlay: 1.10 },
-    guide:            { scale: 1.18, y: '-24px',  brightness: 0.78, overlay: 1.15 },
-    summary:          { scale: 1.24, y: '-32px',  brightness: 0.72, overlay: 1.18 },
-    history:          { scale: 1.10, y: '-12px',  brightness: 0.88, overlay: 1.08 },
-    'history-detail': { scale: 1.15, y: '-20px',  brightness: 0.82, overlay: 1.12 }
+    welcome:          { scale: 1.0,  y: '0px',   brightness: 1.0,  saturate: 1.1,  overlay: 1.0,  vignette: 0   },
+    form:             { scale: 1.06, y: '-8px',   brightness: 0.92, saturate: 1.05, overlay: 1.05, vignette: 0.2 },
+    platforms:        { scale: 1.12, y: '-16px',  brightness: 0.85, saturate: 1.0,  overlay: 1.10, vignette: 0.35 },
+    wizard:           { scale: 1.12, y: '-16px',  brightness: 0.85, saturate: 1.0,  overlay: 1.10, vignette: 0.35 },
+    guide:            { scale: 1.18, y: '-24px',  brightness: 0.78, saturate: 0.95, overlay: 1.15, vignette: 0.5 },
+    summary:          { scale: 1.24, y: '-32px',  brightness: 0.72, saturate: 0.9,  overlay: 1.18, vignette: 0.6 },
+    history:          { scale: 1.10, y: '-12px',  brightness: 0.88, saturate: 1.0,  overlay: 1.08, vignette: 0.25 },
+    'history-detail': { scale: 1.15, y: '-20px',  brightness: 0.82, saturate: 0.95, overlay: 1.12, vignette: 0.4 }
   };
 
   function updateForestDepth(screen) {
@@ -122,9 +122,11 @@ var App = App || {};
       forest.style.setProperty('--forest-scale', depth.scale);
       forest.style.setProperty('--forest-y', depth.y);
       forest.style.setProperty('--forest-brightness', depth.brightness);
+      forest.style.setProperty('--forest-saturate', depth.saturate);
     }
     if (overlay) {
       overlay.style.setProperty('--overlay-opacity', depth.overlay);
+      overlay.style.setProperty('--vignette-intensity', depth.vignette);
     }
   }
 
@@ -151,19 +153,29 @@ var App = App || {};
       return;
     }
 
-    // Animação de saída → troca → animação de entrada
+    // Premium transition — staggered cinematic timing
     isTransitioning = true;
-    content.classList.add('screen-exit');
+    var headerEl = document.getElementById('app-header');
+
+    // Phase 1: header dims + background starts moving (0ms)
+    if (headerEl) headerEl.classList.add('header-transitioning');
     updateForestDepth(screen);
 
+    // Phase 2: content fades out (100ms after bg starts — feels layered)
+    setTimeout(function() {
+      content.classList.add('screen-exit');
+    }, 100);
+
+    // Phase 3: swap content after exit completes (100 + 480 = 580ms)
     setTimeout(function() {
       content.classList.remove('screen-exit');
+      if (headerEl) headerEl.classList.remove('header-transitioning');
       state.currentScreen = screen;
       App.storage.save(state);
       render();
       window.scrollTo({ top: 0 });
       isTransitioning = false;
-    }, 280);
+    }, 580);
   }
 
   function resetApp() {
