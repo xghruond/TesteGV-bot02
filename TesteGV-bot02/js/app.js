@@ -646,7 +646,7 @@ var App = App || {};
           } else {
             content.innerHTML = App.renderTwilio(twilioState);
           }
-          loadTwilioStatus();
+          if (!twilioState.status) loadTwilioStatus();
           break;
         default:
           content.innerHTML = renderWelcome();
