@@ -14,15 +14,6 @@
   overflow: hidden;
 }
 
-/* Vinheta verde suave sobre o blur */
-#splash-screen::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: none;
-  pointer-events: none;
-}
-
 #splash-screen.splash-exit {
   animation: splashFadeOut 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
@@ -796,17 +787,7 @@ input[type="tel"]::placeholder {
   opacity: 0.6;
 }
 
-/* Scrollbar dark — higher contrast */
-::-webkit-scrollbar-track {
-  background: #0f172a;
-}
-::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
-}
+/* (scrollbar rules in lines 272-284) */
 
 /* ===== Toast Notifications ===== */
 .toast-container {

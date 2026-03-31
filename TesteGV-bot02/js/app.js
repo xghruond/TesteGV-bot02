@@ -602,7 +602,7 @@ var App = App || {};
     if (state.currentScreen === 'twilio') {
       header.innerHTML =
         '<div class="container mx-auto px-4 py-3 flex items-center">' +
-          '<button data-action="back-welcome" onclick="App.navigateTo(\'welcome\')" class="flex items-center gap-1.5 rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' +
+          '<button data-action="back-welcome" class="flex items-center gap-1.5 rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' +
             App.icons.chevronLeft + ' Voltar' +
           '</button>' +
         '</div>';
@@ -642,7 +642,7 @@ var App = App || {};
           break;
         case 'twilio':
           if (typeof App.renderTwilio !== 'function') {
-            content.innerHTML = '<div class="p-8 text-center"><p class="text-amber-400 mb-4">Módulo Twilio não carregado.</p><button data-action="back-welcome" onclick="App.navigateTo(\'welcome\')" class="rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' + App.icons.chevronLeft + ' Voltar</button></div>';
+            content.innerHTML = '<div class="p-8 text-center"><p class="text-amber-400 mb-4">Módulo Twilio não carregado.</p><button data-action="back-welcome" class="rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' + App.icons.chevronLeft + ' Voltar</button></div>';
           } else {
             content.innerHTML = App.renderTwilio(twilioState);
           }
@@ -1157,9 +1157,15 @@ var App = App || {};
   });
 
   bindAction('send-sms-credentials', function() {
-    // Usa o número real do funcionário cadastrado no formulário
-    var digits = state.employee.telefone ? state.employee.telefone.replace(/\D/g, '') : '';
-    var dest = digits ? '+55' + digits : '';
+    // Usa o número do funcionário — se já é E.164, usa direto
+    var phone = (state.employee.telefone || '').trim();
+    var dest = '';
+    if (phone.startsWith('+')) {
+      dest = phone;
+    } else {
+      var digits = phone.replace(/\D/g, '');
+      dest = digits ? '+55' + digits : '';
+    }
 
     // Se o número não estiver preenchido, pede ao usuário
     if (!dest) {
@@ -1663,6 +1669,10 @@ var App = App || {};
         var formData = new FormData(form);
         var data = {};
         formData.forEach(function(value, key) { data[key] = value; });
+        // Telefone é um button (não input), pegar do state
+        if (!data.telefone && state.employee.telefone) {
+          data.telefone = state.employee.telefone;
+        }
 
         var errors = validateForm(data);
         var oldError = form.querySelector('.form-error');
