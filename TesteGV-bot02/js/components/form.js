@@ -41,7 +41,7 @@ App.renderForm = function(state) {
             '<button type="button" data-action="select-twilio-number" ' +
               'class="dark-input flex items-center w-full rounded-xl py-3 pl-10 pr-4 text-base transition-colors text-left cursor-pointer hover:border-brand-500/50">' +
               (phoneVal
-                ? '<span class="font-mono text-dark-100">' + '••••••' + App.escapeHtml(phoneVal.slice(-4)) + '</span><span class="ml-2 text-xs text-green-400 font-medium">Selecionado</span>'
+                ? '<span class="text-green-400 font-medium flex items-center gap-1.5">' + App.icons.check + ' Número selecionado</span>'
                 : '<span class="text-dark-500">' + App.escapeHtml(field.placeholder || 'Selecionar número Twilio') + '</span>'
               ) +
               '<span class="ml-auto text-xs text-dark-600 shrink-0">' + App.icons.chevronRight + '</span>' +
