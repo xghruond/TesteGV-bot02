@@ -133,9 +133,10 @@ const TWILIO_ERRORS = {
 };
 
 function handleTwilioError(err, res) {
-  console.error('[Twilio Error]', err.code || '', err.message);
-  const msg = TWILIO_ERRORS[err.code] || 'Operação falhou. Verifique sua conta Twilio.';
-  res.status(400).json({ error: msg });
+  console.error('[Twilio Error]', err.code || err.status || '', err.message);
+  const code = err.code || err.status;
+  const msg = TWILIO_ERRORS[code] || 'Operação falhou. Verifique sua conta Twilio.';
+  res.status(err.status || 400).json({ error: msg });
 }
 
 // ============================================================
@@ -205,7 +206,7 @@ app.get('/api/numbers/search', limiterSearch, async (req, res) => {
   if (!VALID_COUNTRIES.has(country)) return res.status(400).json({ error: 'Código de país inválido.' });
   if (!VALID_TYPES.has(type))        return res.status(400).json({ error: 'Tipo inválido.' });
 
-  const typeMap = { local: 'localNumbers', mobile: 'mobileNumbers', tollFree: 'tollFreeNumbers' };
+  const typeMap = { local: 'local', mobile: 'mobile', tollFree: 'tollFree' };
 
   try {
     const available = await client.availablePhoneNumbers(country)[typeMap[type]].list({
