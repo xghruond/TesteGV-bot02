@@ -2,6 +2,15 @@ var App = App || {};
 
 App.storage = {
   KEY: 'gv-onboarding-state',
+  VERSION: 2,
+
+  _checkVersion: function() {
+    var v = localStorage.getItem('gv-storage-version');
+    if (v !== String(this.VERSION)) {
+      localStorage.removeItem(this.KEY);
+      localStorage.setItem('gv-storage-version', String(this.VERSION));
+    }
+  },
 
   save: function(state) {
     try {
@@ -12,6 +21,7 @@ App.storage = {
   },
 
   load: function() {
+    this._checkVersion();
     try {
       var raw = localStorage.getItem(this.KEY);
       if (!raw) return null;
