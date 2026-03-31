@@ -6,7 +6,7 @@ App.renderPlatformCards = function(state) {
   var totalCount = Object.keys(state.platforms).length;
   var allDone = completedCount === totalCount;
 
-  var cardsHtml = Object.values(App.platforms).map(function(platform) {
+  var cardsHtml = Object.values(App.platforms).map(function(platform, idx) {
     var pState = state.platforms[platform.id];
     var isCompleted = pState.completed;
 
@@ -28,7 +28,7 @@ App.renderPlatformCards = function(state) {
       : '';
 
     return '' +
-      '<div class="platform-card flex flex-col items-center gap-3 rounded-xl border ' + borderColor + ' backdrop-blur-sm p-5 text-center transition-all hover:shadow-lg hover:shadow-brand-500/5">' +
+      '<div class="platform-card stagger-in flex flex-col items-center gap-3 rounded-xl border ' + borderColor + ' backdrop-blur-sm p-5 text-center transition-all hover:shadow-lg hover:shadow-brand-500/5" style="animation-delay:' + (idx * 0.1) + 's">' +
         '<button data-platform="' + platform.id + '" aria-label="Abrir guia de ' + platform.name + '" class="flex flex-col items-center gap-3 w-full">' +
           '<div class="flex h-14 w-14 items-center justify-center rounded-2xl ' + platform.color.accent + ' text-white shadow-lg shadow-black/20">' +
             '<div class="flex items-center justify-center [&>svg]:!fill-white [&>svg]:!w-7 [&>svg]:!h-7">' + platform.icon + '</div>' +

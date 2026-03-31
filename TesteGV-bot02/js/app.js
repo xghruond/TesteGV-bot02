@@ -85,6 +85,20 @@ var App = App || {};
     }
   }
 
+  // Validação visual por campo (blur)
+  function validateFieldVisual(fieldId, value) {
+    switch (fieldId) {
+      case 'nomeCompleto': return value && value.trim().length >= 3;
+      case 'emailDesejado': return value && /^[a-zA-Z0-9._-]+$/.test(value) && !/\.{2,}/.test(value) && !/^[.\-]|[.\-]$/.test(value);
+      case 'telefone': var p = (value||'').trim(); return /^\+[1-9]\d{6,14}$/.test(p) || (p.replace(/\D/g,'').length >= 10 && p.replace(/\D/g,'').length <= 11);
+      case 'dataNascimento': if(!value) return false; var d=new Date(value+'T00:00:00'); var t=new Date(); t.setHours(0,0,0,0); var a=t.getFullYear()-d.getFullYear(); return d<t && a>=13 && a<=120;
+      case 'cargo': return value && value.trim().length >= 2;
+      case 'departamento': return !!value;
+      case 'dataAdmissao': return !!value;
+      default: return !!value;
+    }
+  }
+
   // Validação do formulário
   function validateForm(data) {
     var errors = [];
@@ -1456,6 +1470,13 @@ var App = App || {};
     window.print();
   });
 
+  bindAction('export-pdf', function() {
+    var originalTitle = document.title;
+    document.title = 'Onboarding - ' + (state.employee.nomeCompleto || 'Relatorio');
+    window.print();
+    document.title = originalTitle;
+  });
+
   // Resetar
   bindAction('reset', function() {
     if (confirm('Tem certeza que deseja começar um novo onboarding? Todos os dados serão apagados.')) {
@@ -1718,10 +1739,11 @@ var App = App || {};
         updateEmailChips();
       }
 
-      // Auto-save form fields on blur (prevent data loss)
+      // Auto-save form fields on blur + visual validation
       var formFields = form.querySelectorAll('input, select');
       for (var fi = 0; fi < formFields.length; fi++) {
         formFields[fi].addEventListener('blur', function() {
+          var input = this;
           var inputs = form.querySelectorAll('input, select');
           for (var j = 0; j < inputs.length; j++) {
             var name = inputs[j].getAttribute('name');
@@ -1730,6 +1752,30 @@ var App = App || {};
             }
           }
           App.storage.save(state);
+
+          // Visual validation feedback
+          var fieldName = input.getAttribute('name');
+          var value = input.value;
+          var wrapper = input.closest('div');
+          if (!wrapper || !fieldName) return;
+
+          input.classList.remove('field-valid', 'field-invalid');
+          var oldErr = wrapper.parentElement ? wrapper.parentElement.querySelector('.field-error-msg') : null;
+          if (oldErr) oldErr.remove();
+          var oldIcon = wrapper.querySelector('.field-valid-icon');
+          if (oldIcon) oldIcon.remove();
+
+          if (!value || value.trim() === '') return;
+
+          if (validateFieldVisual(fieldName, value)) {
+            input.classList.add('field-valid');
+            var icon = document.createElement('div');
+            icon.className = 'field-valid-icon';
+            icon.innerHTML = '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
+            wrapper.appendChild(icon);
+          } else {
+            input.classList.add('field-invalid');
+          }
         });
       }
     }
@@ -1820,6 +1866,13 @@ var App = App || {};
 
     function closeSplash() {
       if (splash.classList.contains('splash-exit')) return;
+
+      // Smooth forest reveal
+      var forest = document.getElementById('bg-forest');
+      var overlay = document.querySelector('.bg-overlay');
+      if (forest) { forest.style.opacity = '0'; forest.offsetHeight; forest.style.opacity = '1'; }
+      if (overlay) { overlay.style.opacity = '0'; overlay.offsetHeight; overlay.style.opacity = '1'; }
+
       if (logo) logo.classList.add('logo-exit');
       setTimeout(function() {
         splash.classList.add('splash-exit');

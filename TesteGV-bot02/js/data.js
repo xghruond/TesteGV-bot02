@@ -317,10 +317,10 @@ App._showCopyFeedback = function(buttonEl, success) {
   if (buttonEl) {
     var original = buttonEl.innerHTML;
     buttonEl.innerHTML = App.icons.check + ' Copiado!';
-    buttonEl.classList.add('text-green-400');
+    buttonEl.classList.add('text-green-400', 'copy-success-flash');
     setTimeout(function() {
       buttonEl.innerHTML = original;
-      buttonEl.classList.remove('text-green-400');
+      buttonEl.classList.remove('text-green-400', 'copy-success-flash');
     }, 1500);
   }
 };
@@ -467,7 +467,7 @@ App.platforms = {
       bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700',
       accent: 'bg-red-500', hover: 'hover:border-red-400', light: 'bg-red-100', icon: '#EA4335'
     },
-    icon: '<svg viewBox="0 0 24 24" fill="none" class="w-8 h-8"><path d="M20 18H18V9.25L12 13L6 9.25V18H4V6H5.2L12 10.8L18.8 6H20V18Z" fill="currentColor"/><path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4Z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
+    icon: '<svg viewBox="0 0 24 24" class="w-8 h-8"><path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 010 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z" fill="#EA4335"/></svg>',
     steps: [
       {
         title: 'Abra a página de criação de conta do Google',

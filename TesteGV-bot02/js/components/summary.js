@@ -55,7 +55,7 @@ App.renderSummary = function(state) {
     }
   };
 
-  var accountCards = Object.values(App.platforms).map(function(platform) {
+  var accountCards = Object.values(App.platforms).map(function(platform, idx) {
     var pState = state.platforms[platform.id];
     var details = platformDetails[platform.id];
     var isCompleted = pState.completed;
@@ -69,7 +69,7 @@ App.renderSummary = function(state) {
     }).join('');
 
     return '' +
-      '<div class="rounded-xl border border-dark-700/40 bg-dark-900/30 backdrop-blur-sm p-4 shadow-lg shadow-black/10">' +
+      '<div class="stagger-in rounded-xl border border-dark-700/40 bg-dark-900/30 backdrop-blur-sm p-4 shadow-lg shadow-black/10" style="animation-delay:' + (idx * 0.1) + 's">' +
         '<div class="flex items-center justify-between mb-3">' +
           '<div class="flex items-center gap-2">' +
             '<div class="flex h-9 w-9 items-center justify-center rounded-lg ' + platform.color.accent + ' text-white [&>svg]:w-4 [&>svg]:h-4">' + platform.icon + '</div>' +
@@ -129,8 +129,8 @@ App.renderSummary = function(state) {
           App.icons.download + ' Exportar TXT</button>' +
         '<button data-action="copy-summary" aria-label="Copiar resumo para área de transferência" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-6 py-3 text-base font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
           App.icons.copy + ' Copiar Resumo</button>' +
-        '<button data-action="print" aria-label="Imprimir relatório" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-6 py-3 text-base font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
-          App.icons.printer + ' Imprimir</button>' +
+        '<button data-action="export-pdf" aria-label="Exportar resumo como PDF" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-6 py-3 text-base font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
+          App.icons.download + ' Exportar PDF</button>' +
         '<button data-action="send-sms-credentials" aria-label="Enviar credenciais por SMS via Twilio" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-brand-500/30 bg-brand-500/10 px-6 py-3 text-base font-medium text-brand-400 transition-colors hover:bg-brand-500/20">' +
           App.icons.phone + ' Enviar SMS</button>' +
         '<button data-action="reset" aria-label="Iniciar novo onboarding" class="flex flex-1 items-center justify-center gap-2 btn-futuristic rounded-xl px-6 py-3 text-base font-medium text-white">' +

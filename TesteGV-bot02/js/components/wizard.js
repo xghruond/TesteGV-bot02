@@ -50,7 +50,7 @@ App.renderWizard = function(state) {
       ? '<span class="ml-2 inline-flex items-center gap-0.5 text-xs text-green-400 font-medium">' + App.icons.copy + '</span>'
       : '';
     credRows +=
-      '<div class="flex items-center justify-between gap-2 py-2.5 ' + (c > 0 ? 'border-t border-dark-700/50' : '') + '">' +
+      '<div class="stagger-in flex items-center justify-between gap-2 py-2.5 ' + (c > 0 ? 'border-t border-dark-700/50' : '') + '" style="animation-delay:' + (c * 0.08) + 's">' +
         '<span class="text-sm text-dark-400 min-w-[120px]">' + esc(cred.label) + autoBadge + '</span>' +
         '<div class="flex items-center gap-1.5">' +
           '<span class="text-sm font-medium text-dark-100 select-all">' + esc(cred.value) + '</span>' +

@@ -10,8 +10,33 @@ App.renderHeader = function(state) {
   var currentLabel = state.currentScreen === 'wizard' ? 'Assistente' : (screenLabels[state.currentScreen] || '');
 
   var progressSteps = screenOrder.slice(1).map(function(screen, i) {
-    var isActive = i <= currentIndex - 1;
-    return '<div class="h-1.5 flex-1 rounded-full ' + (isActive ? 'bg-brand-500' : 'bg-dark-700') + ' transition-colors duration-300"></div>';
+    var isCompleted = i < currentIndex - 1;
+    var isActive = i === currentIndex - 1;
+    var label = screenLabels[screen];
+
+    var circleClass = isCompleted
+      ? 'bg-brand-500 text-white'
+      : isActive
+        ? 'bg-brand-500/20 border-2 border-brand-500 text-brand-400'
+        : 'bg-dark-700 text-dark-500';
+
+    var circleContent = isCompleted
+      ? '<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>'
+      : '<span class="text-[10px] font-bold">' + (i + 1) + '</span>';
+
+    var labelClass = isActive ? 'text-brand-400 font-medium' : isCompleted ? 'text-dark-300' : 'text-dark-600';
+
+    var line = i > 0
+      ? '<div class="flex-1 h-0.5 ' + (isCompleted || isActive ? 'bg-brand-500/50' : 'bg-dark-700') + ' mx-1 transition-colors duration-300"></div>'
+      : '';
+
+    return line +
+      '<div class="flex flex-col items-center gap-1">' +
+        '<div class="flex h-6 w-6 items-center justify-center rounded-full ' + circleClass + ' transition-all duration-300">' +
+          circleContent +
+        '</div>' +
+        '<span class="text-[9px] ' + labelClass + ' hidden sm:block whitespace-nowrap transition-colors duration-300">' + label + '</span>' +
+      '</div>';
   }).join('');
 
   return '' +
@@ -34,7 +59,7 @@ App.renderHeader = function(state) {
             '</button>' +
           '</div>' +
         '</div>' +
-        '<div class="flex gap-1.5 pb-3">' + progressSteps + '</div>' +
+        '<div class="flex items-center pb-3">' + progressSteps + '</div>' +
       '</div>' +
     '</div>';
 };
