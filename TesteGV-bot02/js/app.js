@@ -1273,6 +1273,7 @@ var App = App || {};
   });
 
   bindAction('back-to-welcome', function() {
+    resetApp();
     navigateTo('welcome');
   });
 
