@@ -88,17 +88,17 @@ App.renderForm = function(state) {
       '</div>' +
       '<form id="employee-form" class="p-2" novalidate>' +
         '<div class="space-y-5">' + fieldsHtml + '</div>' +
-        '<div class="mt-8 flex flex-col sm:flex-row gap-3">' +
+        '<div class="mt-8 flex gap-3">' +
           '<button type="button" data-action="back-to-welcome" aria-label="Voltar para tela inicial" class="rounded-xl border border-dark-700/50 px-4 py-3.5 text-sm font-semibold text-dark-300 transition-all hover:bg-dark-800/50 hover:text-white backdrop-blur-sm">' +
             App.icons.chevronLeft + ' Voltar' +
           '</button>' +
           '<button type="button" data-action="auto-fill-form" aria-label="Preencher formulário com dados de teste" class="flex-1 rounded-xl border border-brand-500/30 bg-brand-500/10 px-4 py-3.5 text-sm font-semibold text-brand-400 transition-all hover:bg-brand-500/20 backdrop-blur-sm">' +
             App.icons.sparkles + ' Dados de Teste' +
           '</button>' +
-          '<button type="submit" class="btn-futuristic flex-1 rounded-xl px-6 py-3.5 text-base font-semibold text-white active:scale-[0.98]">' +
-            'Continuar' +
-          '</button>' +
         '</div>' +
+        '<button type="submit" class="mt-3 w-full btn-futuristic rounded-xl px-6 py-3.5 text-base font-semibold text-white active:scale-[0.98]">' +
+          'Continuar' +
+        '</button>' +
         '<div class="mt-3 flex justify-center">' +
           '<button type="button" data-action="submit-form-to-platforms" class="flex items-center gap-1.5 text-sm text-dark-500 hover:text-brand-400 transition-colors">' +
             App.icons.chevronRight + ' Ir para o Painel Manual' +

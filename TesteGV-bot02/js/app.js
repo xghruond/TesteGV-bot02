@@ -115,7 +115,7 @@ var App = App || {};
     var phoneDigits = phone.replace(/\D/g, '');
     var isBR = phoneDigits.length >= 10 && phoneDigits.length <= 11;
     if (!isE164 && !isBR) {
-      errors.push('Informe um telefone válido com DDD (ex: 11999999999).');
+      errors.push('Clique no campo "Telefone" e selecione um número.');
     }
     if (!data.dataNascimento) {
       errors.push('Data de nascimento é obrigatória.');
