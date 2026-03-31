@@ -874,7 +874,12 @@ var App = App || {};
     }
 
     document.body.appendChild(overlay);
-    renderStep1();
+    // Se já tem número selecionado, ir direto para a senha (segurança)
+    if (state.employee.telefone) {
+      renderStep2();
+    } else {
+      renderStep1();
+    }
   }
 
   // ============================================================
