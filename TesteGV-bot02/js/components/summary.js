@@ -124,16 +124,16 @@ App.renderSummary = function(state) {
         '<h3 class="mb-4 flex items-center gap-2 text-lg font-bold text-dark-100">' + App.icons.listChecks + ' Contas Criadas</h3>' +
         '<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">' + accountCards + '</div>' +
       '</div>' +
-      '<div class="flex flex-col gap-3 no-print sm:flex-row sm:flex-wrap">' +
-        '<button data-action="export-txt" aria-label="Exportar relatório como arquivo de texto" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-6 py-3 text-base font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
+      '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 no-print">' +
+        '<button data-action="export-txt" aria-label="Exportar relatório como arquivo de texto" class="flex items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-5 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
           App.icons.download + ' Exportar TXT</button>' +
-        '<button data-action="copy-summary" aria-label="Copiar resumo para área de transferência" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-6 py-3 text-base font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
+        '<button data-action="copy-summary" aria-label="Copiar resumo para área de transferência" class="flex items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-5 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
           App.icons.copy + ' Copiar Resumo</button>' +
-        '<button data-action="export-pdf" aria-label="Exportar resumo como PDF" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-6 py-3 text-base font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
+        '<button data-action="export-pdf" aria-label="Exportar resumo como PDF" class="flex items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-5 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
           App.icons.download + ' Exportar PDF</button>' +
-        '<button data-action="send-sms-credentials" aria-label="Enviar credenciais por SMS via Twilio" class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-brand-500/30 bg-brand-500/10 px-6 py-3 text-base font-medium text-brand-400 transition-colors hover:bg-brand-500/20">' +
+        '<button data-action="send-sms-credentials" aria-label="Enviar credenciais por SMS via Twilio" class="flex items-center justify-center gap-2 rounded-xl border border-brand-500/30 bg-brand-500/10 px-5 py-3 text-sm font-medium text-brand-400 transition-colors hover:bg-brand-500/20">' +
           App.icons.phone + ' Enviar SMS</button>' +
-        '<button data-action="reset" aria-label="Iniciar novo onboarding" class="flex flex-1 items-center justify-center gap-2 btn-futuristic rounded-xl px-6 py-3 text-base font-medium text-white">' +
+        '<button data-action="reset" aria-label="Iniciar novo onboarding" class="sm:col-span-2 lg:col-span-3 flex items-center justify-center gap-2 btn-futuristic rounded-xl px-6 py-3.5 text-base font-semibold text-white">' +
           App.icons.refresh + ' Novo Colaborador</button>' +
       '</div>' +
     '</div>';

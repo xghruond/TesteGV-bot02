@@ -430,16 +430,16 @@ var App = App || {};
           '<div class="mb-8">' +
             '<div class="futuristic-separator mb-5"><span class="dot"></span></div>' +
             '<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">' +
-              renderWelcomeItem('bg-red-500/10 text-red-400', App.platforms.gmail.icon, 'Gmail', 0) +
-              renderWelcomeItem('bg-pink-500/10 text-pink-400', App.platforms.instagram.icon, 'Instagram', 1) +
-              renderWelcomeItem('bg-blue-500/10 text-blue-400', App.platforms.facebook.icon, 'Facebook', 2) +
-              renderWelcomeItem('bg-gray-500/10 text-gray-300', App.platforms.tiktok.icon, 'TikTok', 3) +
+              renderWelcomeItem('bg-red-500/10 text-red-400', App.platforms.gmail.icon, 'Gmail', 0, 'gmail') +
+              renderWelcomeItem('bg-pink-500/10 text-pink-400', App.platforms.instagram.icon, 'Instagram', 1, 'instagram') +
+              renderWelcomeItem('bg-blue-500/10 text-blue-400', App.platforms.facebook.icon, 'Facebook', 2, 'facebook') +
+              renderWelcomeItem('bg-gray-500/10 text-gray-300', App.platforms.tiktok.icon, 'TikTok', 3, 'tiktok') +
             '</div>' +
             '<div class="futuristic-separator mt-5"><span class="dot"></span></div>' +
           '</div>' +
 
           // Botão Iniciar futurista
-          '<button data-action="start" class="btn-futuristic w-full rounded-xl px-8 py-4 text-lg font-bold text-white active:scale-[0.98] flex items-center justify-center gap-2">' +
+          '<button data-action="start" class="btn-futuristic btn-iniciar-pulse w-full rounded-xl px-8 py-4 text-lg font-bold text-white active:scale-[0.98] flex items-center justify-center gap-2">' +
             App.icons.arrowRight + ' Iniciar' +
           '</button>' +
           (hasSavedState
@@ -456,10 +456,10 @@ var App = App || {};
       '</div>';
   }
 
-  function renderWelcomeItem(classes, icon, title, index) {
+  function renderWelcomeItem(classes, icon, title, index, platformId) {
     var delay = (0.3 + index * 0.12).toFixed(2);
     return '' +
-      '<div class="futuristic-card stagger-in welcome-card flex flex-col items-center gap-2 rounded-xl p-4 cursor-default text-center" style="animation-delay:' + delay + 's">' +
+      '<div class="futuristic-card stagger-in welcome-card welcome-card-' + platformId + ' flex flex-col items-center gap-2 rounded-xl p-4 cursor-default text-center" style="animation-delay:' + delay + 's">' +
         '<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ' + classes + ' [&>svg]:w-6 [&>svg]:h-6">' +
           icon +
         '</div>' +
@@ -1893,7 +1893,11 @@ var App = App || {};
       if (logo) logo.classList.add('logo-exit');
       setTimeout(function() {
         splash.classList.add('splash-exit');
-        setTimeout(function() { splash.style.display = 'none'; }, 900);
+        setTimeout(function() {
+          splash.style.display = 'none';
+          document.body.classList.add('splash-just-closed');
+          setTimeout(function() { document.body.classList.remove('splash-just-closed'); }, 1000);
+        }, 900);
       }, 500);
     }
 
