@@ -646,7 +646,7 @@ var App = App || {};
           } else {
             content.innerHTML = App.renderTwilio(twilioState);
           }
-          if (!twilioState.status) loadTwilioStatus();
+          if (!twilioState._loaded) { twilioState._loaded = true; loadTwilioStatus(); }
           break;
         default:
           content.innerHTML = renderWelcome();
@@ -889,6 +889,7 @@ var App = App || {};
     twilioState.status = null;
     twilioState.searchResults = [];
     twilioState.searchDone = false;
+    twilioState._loaded = false;
     navigateTo('twilio');
   });
 
