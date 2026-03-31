@@ -36,9 +36,9 @@
 
 #splash-logo img {
   display: block;
-  max-height: min(36vh, 280px);
+  height: min(45vh, 360px);
   width: auto;
-  max-width: 72vw;
+  max-width: 85vw;
   position: relative;
   z-index: 1;
 }
