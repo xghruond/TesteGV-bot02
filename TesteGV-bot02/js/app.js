@@ -485,6 +485,24 @@ var App = App || {};
   }
 
   // Ripple effect no botão
+  function showCompletionCelebration(platformName) {
+    var overlay = document.createElement('div');
+    overlay.className = 'celebration-overlay';
+    overlay.innerHTML =
+      '<div class="celebration-content">' +
+        '<div class="celebration-check">' +
+          '<svg class="w-9 h-9" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' +
+        '</div>' +
+        '<p class="celebration-text">' + App.escapeHtml(platformName) + ' criada!</p>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    setTimeout(function() {
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity 0.4s ease';
+      setTimeout(function() { overlay.remove(); }, 400);
+    }, 1200);
+  }
+
   function createRipple(e, el) {
     var rect = el.getBoundingClientRect();
     var ripple = document.createElement('span');
@@ -1567,7 +1585,7 @@ var App = App || {};
     state.platforms[current.id] = { completed: true, accountInfo: accountInfo };
     App.storage.save(state);
 
-    App.showToast(platformName + ' concluída!', 'success');
+    showCompletionCelebration(platformName);
 
     var next = App.getNextPendingPlatform(state, 0);
     if (next) {
@@ -1706,30 +1724,6 @@ var App = App || {};
           navigateTo('wizard');
         }
       });
-
-      // Máscara de telefone
-      var phoneInput = form.querySelector('[name="telefone"]');
-      if (phoneInput) {
-        function applyPhoneMask(input) {
-          var value = input.value.replace(/\D/g, '');
-          if (value.length > 11) value = value.slice(0, 11);
-          if (value.length > 6) {
-            value = '(' + value.slice(0, 2) + ') ' + value.slice(2, 7) + '-' + value.slice(7);
-          } else if (value.length > 2) {
-            value = '(' + value.slice(0, 2) + ') ' + value.slice(2);
-          } else if (value.length > 0) {
-            value = '(' + value;
-          }
-          input.value = value;
-        }
-        phoneInput.addEventListener('input', function(e) { applyPhoneMask(e.target); });
-        phoneInput.addEventListener('paste', function(e) {
-          e.preventDefault();
-          var pasted = (e.clipboardData || window.clipboardData).getData('text');
-          e.target.value = pasted;
-          applyPhoneMask(e.target);
-        });
-      }
 
       // Auto-gerar chips de variações ao digitar o nome
       var nameInput = form.querySelector('[name="nomeCompleto"]');

@@ -341,40 +341,7 @@ input[type="tel"]::placeholder {
 }
 
 /* ===== Print styles ===== */
-@media print {
-  #app-header,
-  #app-checklist,
-  .checklist-fab,
-  .no-print {
-    display: none !important;
-  }
-  .bg-overlay,
-  #bg-forest,
-  #forest-foliage,
-  #particle-canvas {
-    display: none !important;
-  }
-  #app-content {
-    max-width: 100%;
-    padding: 0;
-    margin: 0;
-  }
-  body {
-    background: white !important;
-    background-image: none !important;
-    font-size: 12pt;
-    color: #000;
-  }
-  .print-only {
-    display: block !important;
-  }
-  .rounded-lg, .rounded-xl {
-    border-radius: 0 !important;
-  }
-  .shadow-sm, .shadow-md, .shadow-lg {
-    box-shadow: none !important;
-  }
-}
+/* (print styles consolidados no final do arquivo) */
 
 .print-only {
   display: none;
@@ -1061,13 +1028,15 @@ input[type="tel"]::placeholder {
 }
 
 /* ===== Print styles melhorados ===== */
+/* ===== Print — bloco unico consolidado ===== */
 @media print {
   *, *::before, *::after {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
   #splash-screen, #bg-forest, .bg-overlay, #forest-foliage,
-  #particle-canvas, #app-checklist, .toast-container,
+  #particle-canvas, #app-header, #app-checklist,
+  .checklist-fab, .toast-container, .no-print,
   [data-action="copy"], [data-action="copy-summary"],
   [data-action="export-txt"], [data-action="export-pdf"],
   [data-action="print"], [data-action="send-sms-credentials"],
@@ -1076,11 +1045,16 @@ input[type="tel"]::placeholder {
   }
   body {
     background: #fff !important;
+    background-image: none !important;
     color: #000 !important;
     font-family: 'Georgia', serif;
+    font-size: 12pt;
   }
-  #app-header { display: none !important; }
-  #app-content { padding: 20pt !important; }
+  #app-content {
+    max-width: 100%;
+    padding: 20pt !important;
+    margin: 0;
+  }
   .print-only {
     display: block !important;
     text-align: center;
@@ -1103,5 +1077,6 @@ input[type="tel"]::placeholder {
   .text-dark-100, .text-dark-50, .text-brand-400,
   .font-mono, .font-semibold { color: #000 !important; }
   .text-dark-400, .text-dark-500 { color: #444 !important; }
-  .rounded-xl, .rounded-2xl { border-radius: 6px !important; }
+  .rounded-lg, .rounded-xl, .rounded-2xl { border-radius: 6px !important; }
+  .shadow-sm, .shadow-md, .shadow-lg { box-shadow: none !important; }
 }
