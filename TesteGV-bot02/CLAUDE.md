@@ -62,8 +62,22 @@ python -m http.server 5500
 # Abrir http://localhost:5500
 ```
 
+## Skills Disponiveis
+- `/audit` — Auditoria completa (syntax, dead code, cache, stale files)
+- `/bump-cache` — Incrementa `?v=N` e faz push
+- `/sync-docs` — Sincroniza CLAUDE.md, ARCHITECTURE.md e MEMORY.md com estado real
+- `/status` — Resumo rapido (git, cache, storage, servidor)
+- `/deploy` — Commit + push automatico com mensagem gerada
+- `auto-context` (background) — Atualiza memoria automaticamente apos cada tarefa
+
 ## Convencoes
 - Idioma: Portugues BR
 - Commits: `feat:`, `fix:`, `chore:` com descricao em portugues
 - Push para GitHub apos cada commit
 - Incrementar `?v=N` no index.html ao alterar arquivos JS/CSS
+
+## Auto-Save (IMPORTANTE)
+Ao final de CADA tarefa significativa:
+1. Atualizar auto-memory em `~/.claude/projects/c--/memory/` se contexto mudou
+2. Atualizar CLAUDE.md se estrutura/line counts mudaram significativamente
+3. SEMPRE incrementar cache ao alterar JS/CSS
