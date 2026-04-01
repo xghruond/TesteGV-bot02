@@ -81,40 +81,32 @@ async function createProtonMailAccount(username, password, displayName) {
       // Tentar clicar direto se já passou da seleção
     }
 
-    // 3. Preencher username — esperar a página de criação de conta
+    // 3. Preencher username (input#username)
     currentJob.step = 'Preenchendo e-mail...';
     currentJob.status = 'filling-email';
     try {
-      // Esperar qualquer input aparecer (página de username)
-      const emailInput = page.locator('input[id="email"], input[name="email"], input[type="text"]').first();
-      await emailInput.waitFor({ state: 'visible', timeout: 20000 });
-      await emailInput.fill(username);
-      await page.waitForTimeout(800);
+      const usernameInput = page.locator('#username');
+      await usernameInput.waitFor({ state: 'visible', timeout: 15000 });
+      await usernameInput.fill(username);
+      await page.waitForTimeout(500);
     } catch (e) {
       throw new Error('Não encontrou campo de e-mail. A página pode ter mudado.');
     }
 
-    // 4. Preencher password
+    // 4. Preencher password (input#password)
     currentJob.step = 'Preenchendo senha...';
     currentJob.status = 'filling-password';
     try {
-      const pwInputs = page.locator('input[type="password"]');
-      await pwInputs.first().waitFor({ state: 'visible', timeout: 10000 });
-      const count = await pwInputs.count();
-      if (count >= 2) {
-        await pwInputs.nth(0).fill(password);
-        await page.waitForTimeout(300);
-        await pwInputs.nth(1).fill(password);
-      } else if (count === 1) {
-        await pwInputs.nth(0).fill(password);
-      }
+      const pwInput = page.locator('#password');
+      await pwInput.waitFor({ state: 'visible', timeout: 5000 });
+      await pwInput.fill(password);
       await page.waitForTimeout(500);
     } catch (e) {
       // Senha pode estar em outra etapa
     }
 
-    // 5. Clicar em próximo/criar conta
-    currentJob.step = 'Avançando...';
+    // 5. Clicar em criar conta / próximo
+    currentJob.step = 'Criando conta...';
     currentJob.status = 'submitting';
     try {
       const submitBtn = page.locator('button[type="submit"]').first();
@@ -124,19 +116,15 @@ async function createProtonMailAccount(username, password, displayName) {
       }
     } catch (e) {}
 
-    // Se tem mais campos de senha na próxima tela, preencher
+    // Se aparecer confirmação de senha na próxima tela
     try {
-      const pwInputs2 = page.locator('input[type="password"]');
-      if (await pwInputs2.first().isVisible({ timeout: 3000 })) {
-        const count2 = await pwInputs2.count();
-        for (let i = 0; i < count2; i++) {
-          await pwInputs2.nth(i).fill(password);
-          await page.waitForTimeout(200);
-        }
+      const confirmPw = page.locator('input[id="repeat-password"], input[type="password"]').first();
+      if (await confirmPw.isVisible({ timeout: 3000 })) {
+        await confirmPw.fill(password);
         await page.waitForTimeout(500);
-        const submitBtn2 = page.locator('button[type="submit"]').first();
-        if (await submitBtn2.isVisible({ timeout: 2000 })) {
-          await submitBtn2.click();
+        const nextBtn = page.locator('button[type="submit"]').first();
+        if (await nextBtn.isVisible({ timeout: 2000 })) {
+          await nextBtn.click();
         }
       }
     } catch (e) {}
