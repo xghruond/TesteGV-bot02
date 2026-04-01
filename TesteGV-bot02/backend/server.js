@@ -65,8 +65,8 @@ async function createProtonMailAccount(username, password, displayName) {
     // 1. Navegar para signup
     currentJob.step = 'Abrindo ProtonMail...';
     currentJob.status = 'navigating';
-    await page.goto('https://account.proton.me/signup', { waitUntil: 'networkidle', timeout: 30000 });
-    await page.waitForTimeout(2000);
+    await page.goto('https://account.proton.me/signup', { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await page.waitForTimeout(5000);
 
     // 2. Selecionar plano Free (se aparecer seletor de planos)
     currentJob.step = 'Selecionando plano gratuito...';
