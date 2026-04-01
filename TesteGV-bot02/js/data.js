@@ -355,7 +355,7 @@ App.generatePassword = function(length) {
 App.suggestAccountInfo = function(platformId, emailDesejado) {
   if (!emailDesejado) return '';
   switch (platformId) {
-    case 'gmail': return emailDesejado + '@gmail.com';
+    case 'protonmail': return emailDesejado + '@proton.me';
     case 'instagram': return '@' + emailDesejado;
     case 'facebook': return 'facebook.com/' + emailDesejado;
     case 'tiktok': return '@' + emailDesejado;
@@ -374,7 +374,7 @@ App.formatElapsedTime = function(startIso) {
 
 App.generateSummaryText = function(state) {
   var deptLabel = App.departmentLabels[state.employee.departamento] || state.employee.departamento || '-';
-  var email = (state.employee.emailDesejado || '-') + '@gmail.com';
+  var email = (state.employee.emailDesejado || '-') + '@proton.me';
   var username = '@' + (state.employee.emailDesejado || '-');
   var senha = state.suggestedPassword || '-';
   var lines = [
@@ -391,7 +391,7 @@ App.generateSummaryText = function(state) {
     '',
     'CREDENCIAIS DAS CONTAS',
     '---',
-    'Gmail (Google)',
+    'ProtonMail',
     '  Email: ' + email,
     '  Senha: ' + senha,
     '---',
@@ -458,47 +458,37 @@ App.icons = {
 };
 
 App.platforms = {
-  gmail: {
-    id: 'gmail',
-    name: 'Gmail (Google)',
-    description: 'Conta de e-mail profissional do Google',
-    registerUrl: 'https://accounts.google.com/signup',
+  protonmail: {
+    id: 'protonmail',
+    name: 'ProtonMail',
+    description: 'E-mail profissional gratuito e seguro (sem telefone)',
+    registerUrl: 'https://account.proton.me/signup',
     color: {
-      bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700',
-      accent: 'bg-red-500', hover: 'hover:border-red-400', light: 'bg-red-100', icon: '#EA4335'
+      bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700',
+      accent: 'bg-purple-600', hover: 'hover:border-purple-400', light: 'bg-purple-100', icon: '#6D4AFF'
     },
-    icon: '<svg viewBox="0 0 24 24" class="w-8 h-8"><path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 010 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z" fill="#EA4335"/></svg>',
+    icon: '<svg viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8"><path d="M3.5 7.5L12 13l8.5-5.5V6a1 1 0 0 0-1-1h-16a1 1 0 0 0-1 1v1.5zM12 15L3.5 9.5V18a1 1 0 0 0 1 1h15a1 1 0 0 0 1-1V9.5L12 15z"/><path d="M12 2L2 7v11a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7L12 2zm8 16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8.35l8 5.2 8-5.2V18z" fill-rule="evenodd"/></svg>',
     steps: [
       {
-        title: 'Abra a página de criação de conta do Google',
-        description: 'Clique no botão <strong>"Abrir Página de Cadastro"</strong> abaixo. Uma nova aba vai abrir com o formulário do Google para criar sua conta de e-mail.',
-        tip: 'Use o navegador Google Chrome para melhor experiência.',
+        title: 'Abra a página de criação de conta do ProtonMail',
+        description: 'Clique no botão <strong>"Abrir Página de Cadastro"</strong> abaixo. Uma nova aba vai abrir com o formulário do ProtonMail.<br><br><strong>Selecione o plano gratuito (Free).</strong>',
+        tip: 'ProtonMail é gratuito e NÃO pede número de telefone!',
         action: 'open_register'
       },
       {
-        title: 'Preencha seu nome e sobrenome',
-        description: 'Na página do Google, você verá dois campos:<br><br><li class="ml-4"><strong>Nome</strong>: Digite seu primeiro nome</li><li class="ml-4"><strong>Sobrenome</strong>: Digite seu sobrenome</li><br>Depois clique em "Próxima".',
-        tip: 'Use seu nome completo como está registrado no RH da empresa.'
-      },
-      {
-        title: 'Informe sua data de nascimento e gênero',
-        description: 'Preencha:<br><br><li class="ml-4"><strong>Dia, Mês e Ano</strong> do seu nascimento</li><li class="ml-4"><strong>Gênero</strong>: Selecione uma opção</li><br>Depois clique em "Próxima".',
-        tip: 'Essas informações são necessárias pelo Google e ficam privadas.'
-      },
-      {
         title: 'Escolha seu endereço de e-mail',
-        description: 'O Google vai sugerir opções de e-mail ou você pode criar o seu próprio.<br><br><li class="ml-4">Selecione <strong>"Criar seu próprio endereço do Gmail"</strong></li><li class="ml-4">Digite o e-mail que deseja (ex: seunome.empresa@gmail.com)</li><br>Depois clique em "Próxima".',
-        tip: 'Se o e-mail já existir, tente adicionar números ou pontos. Ex: joao.silva2@gmail.com'
+        description: 'Escolha seu nome de usuário:<br><br><li class="ml-4"><strong>E-mail</strong>: Digite o nome desejado (ex: nome.sobrenome)</li><li class="ml-4"><strong>Domínio</strong>: Escolha <strong>@proton.me</strong> ou @protonmail.com</li><br>Depois clique em "Próxima".',
+        tip: 'Se o nome já existir, tente adicionar números ou pontos. Ex: joao.silva2@proton.me'
       },
       {
         title: 'Crie uma senha segura',
-        description: 'Digite uma senha forte nos dois campos:<br><br><li class="ml-4"><strong>Senha</strong>: Mínimo 8 caracteres, com letras e números</li><li class="ml-4"><strong>Confirmar</strong>: Digite a mesma senha novamente</li><br>Depois clique em "Próxima".',
+        description: 'Digite uma senha forte:<br><br><li class="ml-4"><strong>Senha</strong>: Mínimo 8 caracteres</li><li class="ml-4"><strong>Confirmar</strong>: Digite a mesma senha novamente</li><br>Depois clique em "Próxima".',
         tip: 'Anote sua senha em um lugar seguro! Use letras maiúsculas, minúsculas, números e símbolos.'
       },
       {
-        title: 'Adicione um telefone e finalize',
-        description: 'O Google pode pedir:<br><br><li class="ml-4"><strong>Número de telefone</strong> para recuperação (recomendado)</li><li class="ml-4"><strong>E-mail de recuperação</strong> (pode pular)</li><br>Revise seus dados e clique em <strong>"Concordo"</strong> nos termos de uso.<br><br><strong>Parabéns! Sua conta Gmail foi criada!</strong>',
-        tip: 'Adicionar telefone ajuda a recuperar a conta caso esqueça a senha.',
+        title: 'Resolva o CAPTCHA e finalize',
+        description: 'O ProtonMail pede apenas uma verificação simples:<br><br><li class="ml-4">Resolva o <strong>CAPTCHA</strong> (clique nas imagens solicitadas)</li><li class="ml-4">Opcionalmente, adicione um <strong>nome de exibição</strong></li><li class="ml-4">A recuperação por telefone é <strong>opcional — pode pular</strong></li><br><strong>Parabéns! Sua conta ProtonMail foi criada!</strong>',
+        tip: 'Não precisa adicionar telefone nem e-mail de recuperação. Pode pular tudo.',
         action: 'finish'
       }
     ]
@@ -523,7 +513,7 @@ App.platforms = {
       },
       {
         title: 'Preencha seus dados básicos',
-        description: 'Na página de cadastro, preencha:<br><br><li class="ml-4"><strong>E-mail ou telefone</strong>: Use o Gmail que você acabou de criar</li><li class="ml-4"><strong>Nome completo</strong>: Seu nome como deseja que apareça</li><li class="ml-4"><strong>Nome de usuário</strong>: Escolha um nome único (ex: joao.silva.empresa)</li><li class="ml-4"><strong>Senha</strong>: Crie uma senha forte</li><br>Depois clique em <strong>"Cadastre-se"</strong>.',
+        description: 'Na página de cadastro, preencha:<br><br><li class="ml-4"><strong>E-mail ou telefone</strong>: Use o ProtonMail que você acabou de criar</li><li class="ml-4"><strong>Nome completo</strong>: Seu nome como deseja que apareça</li><li class="ml-4"><strong>Nome de usuário</strong>: Escolha um nome único (ex: joao.silva.empresa)</li><li class="ml-4"><strong>Senha</strong>: Crie uma senha forte</li><br>Depois clique em <strong>"Cadastre-se"</strong>.',
         tip: 'O nome de usuário não pode ter espaços. Use pontos ou underlines. Ex: joao_silva'
       },
       {
@@ -533,8 +523,8 @@ App.platforms = {
       },
       {
         title: 'Confirme seu e-mail',
-        description: 'O Instagram enviou um código de confirmação para seu e-mail.<br><br><li class="ml-4">Abra seu <strong>Gmail</strong> (que você acabou de criar)</li><li class="ml-4">Procure o e-mail do Instagram</li><li class="ml-4">Copie o <strong>código de 6 dígitos</strong></li><li class="ml-4">Cole na página do Instagram e clique em <strong>"Avançar"</strong></li>',
-        tip: 'Se não encontrar o e-mail, verifique a pasta "Spam" ou "Promoções" no Gmail.'
+        description: 'O Instagram enviou um código de confirmação para seu e-mail.<br><br><li class="ml-4">Abra seu <strong>ProtonMail</strong> (que você acabou de criar)</li><li class="ml-4">Procure o e-mail do Instagram</li><li class="ml-4">Copie o <strong>código de 6 dígitos</strong></li><li class="ml-4">Cole na página do Instagram e clique em <strong>"Avançar"</strong></li>',
+        tip: 'Se não encontrar o e-mail, verifique a pasta "Spam" ou "Promoções" no ProtonMail.'
       },
       {
         title: 'Finalize a configuração do perfil',
@@ -563,13 +553,13 @@ App.platforms = {
       },
       {
         title: 'Preencha o formulário de cadastro',
-        description: 'Na página do Facebook, preencha todos os campos:<br><br><li class="ml-4"><strong>Nome e Sobrenome</strong>: Seu nome real</li><li class="ml-4"><strong>E-mail ou telefone</strong>: Use o Gmail que você criou</li><li class="ml-4"><strong>Nova senha</strong>: Crie uma senha forte</li><li class="ml-4"><strong>Data de nascimento</strong>: Selecione dia, mês e ano</li><li class="ml-4"><strong>Gênero</strong>: Selecione uma opção</li><br>Depois clique em <strong>"Cadastre-se"</strong>.',
-        tip: 'Use o mesmo e-mail Gmail que foi criado no passo anterior.'
+        description: 'Na página do Facebook, preencha todos os campos:<br><br><li class="ml-4"><strong>Nome e Sobrenome</strong>: Seu nome real</li><li class="ml-4"><strong>E-mail ou telefone</strong>: Use o ProtonMail que você criou</li><li class="ml-4"><strong>Nova senha</strong>: Crie uma senha forte</li><li class="ml-4"><strong>Data de nascimento</strong>: Selecione dia, mês e ano</li><li class="ml-4"><strong>Gênero</strong>: Selecione uma opção</li><br>Depois clique em <strong>"Cadastre-se"</strong>.',
+        tip: 'Use o mesmo e-mail ProtonMail que foi criado no passo anterior.'
       },
       {
         title: 'Confirme seu e-mail',
-        description: 'O Facebook enviou um código de confirmação para seu e-mail.<br><br><li class="ml-4">Abra seu <strong>Gmail</strong></li><li class="ml-4">Procure o e-mail do Facebook</li><li class="ml-4">Clique no link de confirmação ou copie o código</li><li class="ml-4">Volte ao Facebook e confirme</li>',
-        tip: 'Se não encontrar o e-mail, verifique a pasta "Spam" no Gmail.'
+        description: 'O Facebook enviou um código de confirmação para seu e-mail.<br><br><li class="ml-4">Abra seu <strong>ProtonMail</strong></li><li class="ml-4">Procure o e-mail do Facebook</li><li class="ml-4">Clique no link de confirmação ou copie o código</li><li class="ml-4">Volte ao Facebook e confirme</li>',
+        tip: 'Se não encontrar o e-mail, verifique a pasta "Spam" no ProtonMail.'
       },
       {
         title: 'Finalize a configuração do perfil',
@@ -608,12 +598,12 @@ App.platforms = {
       },
       {
         title: 'Cadastre com e-mail e senha',
-        description: 'Agora preencha:<br><br><li class="ml-4">Selecione a aba <strong>"E-mail"</strong> (em vez de telefone)</li><li class="ml-4"><strong>E-mail</strong>: Digite seu Gmail que acabou de criar</li><li class="ml-4"><strong>Senha</strong>: Crie uma senha forte (8-20 caracteres)</li><br>Clique em <strong>"Avançar"</strong>.',
+        description: 'Agora preencha:<br><br><li class="ml-4">Selecione a aba <strong>"E-mail"</strong> (em vez de telefone)</li><li class="ml-4"><strong>E-mail</strong>: Digite seu ProtonMail que acabou de criar</li><li class="ml-4"><strong>Senha</strong>: Crie uma senha forte (8-20 caracteres)</li><br>Clique em <strong>"Avançar"</strong>.',
         tip: 'A senha deve ter letras, números e caracteres especiais.'
       },
       {
         title: 'Verifique seu e-mail e escolha um nome de usuário',
-        description: 'O TikTok enviou um código de verificação para seu e-mail.<br><br><li class="ml-4">Abra seu <strong>Gmail</strong> e encontre o código</li><li class="ml-4">Digite o código no TikTok</li><li class="ml-4">Depois, escolha um <strong>nome de usuário</strong> único</li><br><strong>Parabéns! Sua conta do TikTok foi criada!</strong>',
+        description: 'O TikTok enviou um código de verificação para seu e-mail.<br><br><li class="ml-4">Abra seu <strong>ProtonMail</strong> e encontre o código</li><li class="ml-4">Digite o código no TikTok</li><li class="ml-4">Depois, escolha um <strong>nome de usuário</strong> único</li><br><strong>Parabéns! Sua conta do TikTok foi criada!</strong>',
         tip: 'O nome de usuário será seu @ no TikTok. Escolha algo profissional.',
         action: 'finish'
       }
@@ -623,7 +613,7 @@ App.platforms = {
 
 App.formFields = [
   { id: 'nomeCompleto', label: 'Nome completo', type: 'text', placeholder: 'Ex: João da Silva', required: true, minLength: 3, icon: 'user' },
-  { id: 'emailDesejado', label: 'E-mail desejado (usuário para o Gmail)', type: 'text', placeholder: 'nome.sobrenome ou nome.empresa', required: true, minLength: 3, helpText: 'Sugestões: maria.santos, pedro.costa.gv, ana.tech — o "@gmail.com" será adicionado automaticamente.', icon: 'mail' },
+  { id: 'emailDesejado', label: 'E-mail desejado (usuário ProtonMail)', type: 'text', placeholder: 'nome.sobrenome ou nome.empresa', required: true, minLength: 3, helpText: 'Sugestões: maria.santos, pedro.costa.gv, ana.tech — o "@proton.me" será adicionado automaticamente.', icon: 'mail' },
   { id: 'telefone', label: 'Telefone para verificação', type: 'tel', placeholder: 'Cole o número aqui (ex: +1234567890)', required: true, icon: 'phone', helpText: 'Use o botão abaixo para obter um número gratuito.' },
   { id: 'dataNascimento', label: 'Data de nascimento', type: 'date', required: true, icon: 'calendar' },
   { id: 'cargo', label: 'Cargo', type: 'text', placeholder: 'Ex: Analista de Marketing', required: true, icon: 'briefcase' },
@@ -663,7 +653,7 @@ App.getNextPendingPlatform = function(state, startIndex) {
 
 App.getWizardCredentials = function(platformId, state) {
   var names = App.splitName(state.employee.nomeCompleto);
-  var email = state.employee.emailDesejado + '@gmail.com';
+  var email = state.employee.emailDesejado + '@proton.me';
   var username = '@' + state.employee.emailDesejado;
   var senha = state.suggestedPassword || '';
   var dataNasc = App.formatDateBR(state.employee.dataNascimento);
@@ -672,7 +662,7 @@ App.getWizardCredentials = function(platformId, state) {
   var senhaRow = { label: 'Senha sugerida', value: senha };
 
   switch (platformId) {
-    case 'gmail':
+    case 'protonmail':
       return [
         { label: 'Primeiro nome', value: names.first },
         { label: 'Sobrenome', value: names.last },
@@ -683,14 +673,14 @@ App.getWizardCredentials = function(platformId, state) {
       ];
     case 'instagram':
       return [
-        { label: 'E-mail (Gmail)', value: email, autoCopy: true },
+        { label: 'E-mail (ProtonMail)', value: email, autoCopy: true },
         { label: 'Nome completo', value: state.employee.nomeCompleto },
         { label: 'Username sugerido', value: state.employee.emailDesejado },
         senhaRow
       ];
     case 'facebook':
       return [
-        { label: 'E-mail (Gmail)', value: email, autoCopy: true },
+        { label: 'E-mail (ProtonMail)', value: email, autoCopy: true },
         { label: 'Primeiro nome', value: names.first },
         { label: 'Sobrenome', value: names.last },
         { label: 'Data de nascimento', value: dataNasc },
@@ -698,7 +688,7 @@ App.getWizardCredentials = function(platformId, state) {
       ];
     case 'tiktok':
       return [
-        { label: 'E-mail (Gmail)', value: email, autoCopy: true },
+        { label: 'E-mail (ProtonMail)', value: email, autoCopy: true },
         { label: 'Data de nascimento', value: dataNasc },
         senhaRow
       ];
@@ -708,12 +698,12 @@ App.getWizardCredentials = function(platformId, state) {
 };
 
 App.getWizardAutoCopyData = function(platformId, state) {
-  var email = state.employee.emailDesejado + '@gmail.com';
+  var email = state.employee.emailDesejado + '@proton.me';
   switch (platformId) {
-    case 'gmail': return { value: state.employee.emailDesejado, label: 'E-mail desejado' };
-    case 'instagram': return { value: email, label: 'E-mail Gmail' };
-    case 'facebook': return { value: email, label: 'E-mail Gmail' };
-    case 'tiktok': return { value: email, label: 'E-mail Gmail' };
+    case 'protonmail': return { value: state.employee.emailDesejado, label: 'E-mail desejado' };
+    case 'instagram': return { value: email, label: 'E-mail ProtonMail' };
+    case 'facebook': return { value: email, label: 'E-mail ProtonMail' };
+    case 'tiktok': return { value: email, label: 'E-mail ProtonMail' };
     default: return { value: email, label: 'E-mail' };
   }
 };

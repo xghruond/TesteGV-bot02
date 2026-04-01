@@ -6,7 +6,7 @@ App.renderSummary = function(state) {
     ? App.formatDateTimeBR(state.completedAt)
     : App.formatDateTimeBR(new Date().toISOString());
 
-  var email = state.employee.emailDesejado ? state.employee.emailDesejado + '@gmail.com' : '-';
+  var email = state.employee.emailDesejado ? state.employee.emailDesejado + '@proton.me' : '-';
   var username = state.employee.emailDesejado ? '@' + state.employee.emailDesejado : '-';
   var senha = state.suggestedPassword || App.generatePassword(14);
 
@@ -26,7 +26,7 @@ App.renderSummary = function(state) {
   }
 
   var platformDetails = {
-    gmail: {
+    protonmail: {
       credentials: [
         { label: 'E-mail', value: email },
         { label: 'Senha', value: senha, highlight: true }

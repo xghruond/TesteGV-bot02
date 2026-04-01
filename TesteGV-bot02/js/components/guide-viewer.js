@@ -23,7 +23,7 @@ App.renderGuide = function(state) {
     : '';
 
   var placeholders = {
-    gmail: 'Ex: seunome@gmail.com',
+    protonmail: 'Ex: seunome@proton.me',
     instagram: 'Ex: @seunome',
     facebook: 'Ex: facebook.com/seunome',
     tiktok: 'Ex: @seunome'

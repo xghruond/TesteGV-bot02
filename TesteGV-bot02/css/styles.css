@@ -658,9 +658,9 @@ input[type="tel"]::placeholder {
 .welcome-card:hover {
   transform: translateY(-3px) scale(1.02);
 }
-.welcome-card-gmail:hover {
-  border-color: rgba(234, 67, 53, 0.4) !important;
-  box-shadow: 0 4px 20px rgba(234, 67, 53, 0.15);
+.welcome-card-protonmail:hover {
+  border-color: rgba(109, 74, 255, 0.4) !important;
+  box-shadow: 0 4px 20px rgba(109, 74, 255, 0.15);
 }
 .welcome-card-instagram:hover {
   border-color: rgba(225, 48, 108, 0.4) !important;

@@ -60,7 +60,7 @@ App.renderPlatformCards = function(state) {
 
   // === Painel de informações do funcionário para copiar ===
   var names = App.splitName(state.employee.nomeCompleto);
-  var email = state.employee.emailDesejado ? state.employee.emailDesejado + '@gmail.com' : '-';
+  var email = state.employee.emailDesejado ? state.employee.emailDesejado + '@proton.me' : '-';
   var username = state.employee.emailDesejado ? '@' + state.employee.emailDesejado : '-';
   var dataNasc = App.formatDateBR(state.employee.dataNascimento);
   var telefone = state.employee.telefone || '-';

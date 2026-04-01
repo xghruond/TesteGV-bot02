@@ -16,7 +16,7 @@ var App = App || {};
       dataAdmissao: ''
     },
     platforms: {
-      gmail: { completed: false, accountInfo: '' },
+      protonmail: { completed: false, accountInfo: '' },
       instagram: { completed: false, accountInfo: '' },
       facebook: { completed: false, accountInfo: '' },
       tiktok: { completed: false, accountInfo: '' }
@@ -419,7 +419,7 @@ var App = App || {};
           '<div class="mb-8">' +
             '<div class="futuristic-separator mb-5"><span class="dot"></span></div>' +
             '<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">' +
-              renderWelcomeItem('bg-red-500/10 text-red-400', App.platforms.gmail.icon, 'Gmail', 0, 'gmail') +
+              renderWelcomeItem('bg-purple-500/10 text-purple-400', App.platforms.protonmail.icon, 'ProtonMail', 0, 'protonmail') +
               renderWelcomeItem('bg-pink-500/10 text-pink-400', App.platforms.instagram.icon, 'Instagram', 1, 'instagram') +
               renderWelcomeItem('bg-blue-500/10 text-blue-400', App.platforms.facebook.icon, 'Facebook', 2, 'facebook') +
               renderWelcomeItem('bg-gray-500/10 text-gray-300', App.platforms.tiktok.icon, 'TikTok', 3, 'tiktok') +
@@ -594,7 +594,7 @@ var App = App || {};
           '<div class="flex-1 min-w-0">' +
             '<p class="font-semibold text-dark-100 truncate group-hover:text-white transition-colors">' + App.escapeHtml(record.employee.nomeCompleto) + '</p>' +
             '<div class="flex items-center gap-2 mt-1">' +
-              '<span class="text-xs text-dark-500">' + App.escapeHtml(record.employee.emailDesejado) + '@gmail.com</span>' +
+              '<span class="text-xs text-dark-500">' + App.escapeHtml(record.employee.emailDesejado) + '@proton.me</span>' +
               '<div class="flex items-center gap-1">' + platformIcons + '</div>' +
             '</div>' +
           '</div>' +
