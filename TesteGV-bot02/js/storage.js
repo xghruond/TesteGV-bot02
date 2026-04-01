@@ -27,7 +27,7 @@ App.storage = {
       if (!raw) return null;
       var state = JSON.parse(raw);
       // Telas que não devem ser restauradas ao recarregar
-      var noRestore = ['twilio', 'history', 'history-detail'];
+      var noRestore = ['history', 'history-detail'];
       if (state && noRestore.indexOf(state.currentScreen) !== -1) {
         state.currentScreen = 'welcome';
       }

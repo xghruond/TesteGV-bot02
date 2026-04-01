@@ -28,28 +28,7 @@ App.renderForm = function(state) {
         '</div>';
     }
 
-    // Campo telefone → botão de seleção de número Twilio
-    if (field.id === 'telefone') {
-      var phoneVal = state.employee.telefone || '';
-      return '' +
-        '<div>' +
-          '<label class="mb-1.5 block text-sm font-medium text-dark-200">' +
-            field.label + requiredMark +
-          '</label>' +
-          '<div class="relative">' +
-            '<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-500">' + iconHtml + '</div>' +
-            '<button type="button" data-action="select-twilio-number" ' +
-              'class="dark-input flex items-center w-full rounded-xl py-3 pl-10 pr-4 text-base transition-colors text-left cursor-pointer hover:border-brand-500/50">' +
-              (phoneVal
-                ? '<span class="text-green-400 font-medium flex items-center gap-1.5">' + App.icons.check + ' Número selecionado</span>'
-                : '<span class="text-dark-500">' + App.escapeHtml(field.placeholder || 'Selecionar número Twilio') + '</span>'
-              ) +
-              '<span class="ml-auto text-xs text-dark-600 shrink-0">' + App.icons.chevronRight + '</span>' +
-            '</button>' +
-          '</div>' +
-          (field.helpText ? '<p class="mt-1 text-xs text-dark-500">' + field.helpText + '</p>' : '') +
-        '</div>';
-    }
+
 
     var emailExtras = '';
     if (field.id === 'emailDesejado') {

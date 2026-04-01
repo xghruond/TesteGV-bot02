@@ -33,17 +33,6 @@ var App = App || {};
   var state = JSON.parse(JSON.stringify(defaultState));
   var hasSavedState = false;
 
-  // Estado da tela Twilio (não persistido — carregado ao entrar na tela)
-  var twilioState = {
-    status: null,
-    ownedNumbers: [],
-    searchResults: [],
-    selectedCountry: 'US',
-    selectedType: 'local',
-    searching: false,
-    searchDone: false
-  };
-
   // Restaurar estado salvo
   var saved = App.storage.load();
   if (saved) {
@@ -167,7 +156,6 @@ var App = App || {};
     summary:          { scale: 1.24, y: '-32px',  brightness: 0.72, saturate: 0.9,  overlay: 1.18, vignette: 0.6,  farOp: 0.85, farSc: 1.06, midOp: 0.7,  midX: '-15px', nearOp: 0.55, nearX: '0px',  nearSc: 1.0  },
     history:          { scale: 1.10, y: '-12px',  brightness: 0.88, saturate: 1.0,  overlay: 1.08, vignette: 0.25, farOp: 0.35, farSc: 0.97, midOp: 0.15, midX: '30px',  nearOp: 0,    nearX: '40px', nearSc: 0.95 },
     'history-detail': { scale: 1.15, y: '-20px',  brightness: 0.82, saturate: 0.95, overlay: 1.12, vignette: 0.4,  farOp: 0.5,  farSc: 1.0,  midOp: 0.3,  midX: '15px',  nearOp: 0.15, nearX: '20px', nearSc: 0.97 },
-    twilio:           { scale: 1.10, y: '-12px',  brightness: 0.88, saturate: 1.0,  overlay: 1.08, vignette: 0.25, farOp: 0.35, farSc: 0.97, midOp: 0.15, midX: '30px',  nearOp: 0,    nearX: '40px', nearSc: 0.95 }
   };
 
   // SVGs de folhagem para as 3 camadas — silhuetas escuras contrastantes
@@ -446,8 +434,6 @@ var App = App || {};
             ? '<button data-action="continue" class="mt-3 w-full rounded-xl border border-brand-500/30 bg-brand-500/10 px-8 py-3.5 text-base font-semibold text-brand-400 backdrop-blur-sm transition-all hover:bg-brand-500/20 hover:border-brand-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)]">Continuar de onde parei</button>'
             : '') +
           historyButton +
-          '<button data-action="view-twilio" class="mt-3 w-full rounded-xl border border-dark-700/50 bg-dark-800/40 px-8 py-3.5 text-base font-medium text-dark-300 backdrop-blur-sm transition-all hover:bg-dark-800/60 hover:border-brand-500/30 hover:text-white">' +
-            App.icons.phone + ' Configura\u00e7\u00e3o Twilio (SMS)</button>' +
 
           // Versão com separador
           '<div class="futuristic-separator mt-8"><span class="dot"></span></div>' +
@@ -617,14 +603,7 @@ var App = App || {};
     var content = document.getElementById('app-content');
     var checklistContainer = document.getElementById('app-checklist');
 
-    if (state.currentScreen === 'twilio') {
-      header.innerHTML =
-        '<div class="container mx-auto px-4 py-3 flex items-center">' +
-          '<button data-action="back-welcome" class="flex items-center gap-1.5 rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' +
-            App.icons.chevronLeft + ' Voltar' +
-          '</button>' +
-        '</div>';
-    } else if (state.currentScreen === 'welcome' || state.currentScreen === 'history' || state.currentScreen === 'history-detail') {
+    if (state.currentScreen === 'welcome' || state.currentScreen === 'history' || state.currentScreen === 'history-detail') {
       header.innerHTML = '';
     } else {
       header.innerHTML = App.renderHeader(state);
@@ -657,14 +636,6 @@ var App = App || {};
           break;
         case 'history-detail':
           content.innerHTML = renderHistoryDetail(state.viewingHistoryId);
-          break;
-        case 'twilio':
-          if (typeof App.renderTwilio !== 'function') {
-            content.innerHTML = '<div class="p-8 text-center"><p class="text-amber-400 mb-4">Módulo Twilio não carregado.</p><button data-action="back-welcome" class="rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' + App.icons.chevronLeft + ' Voltar</button></div>';
-          } else {
-            content.innerHTML = App.renderTwilio(twilioState);
-          }
-          if (!twilioState._loaded) { twilioState._loaded = true; loadTwilioStatus(); }
           break;
         default:
           content.innerHTML = renderWelcome();
@@ -718,229 +689,12 @@ var App = App || {};
   }
 
   // ============================================================
-  // === Twilio — helpers de fetch                             ===
-  // ============================================================
 
-  function twilioFetch(path, options) {
-    return App.twilioGetApiKey().then(function(key) {
-      var opts = options || {};
-      opts.headers = Object.assign({}, opts.headers || {});
-      if (key) opts.headers['X-API-Key'] = key;
-      return fetch(App.BACKEND_URL + path, opts).then(function(r) { return r.json(); });
-    });
-  }
-
-  function loadTwilioStatus() {
-    twilioFetch('/api/status').then(function(data) {
-      twilioState.status = data;
-      // Carregar números comprados se conectado
-      if (data.connected) {
-        twilioFetch('/api/numbers/owned').then(function(owned) {
-          twilioState.ownedNumbers = owned.numbers || [];
-          if (state.currentScreen === 'twilio') render();
-        }).catch(function() {
-          if (state.currentScreen === 'twilio') render();
-        });
-      } else {
-        if (state.currentScreen === 'twilio') render();
-      }
-    }).catch(function() {
-      twilioState.status = { connected: false, message: 'Backend não encontrado em ' + App.BACKEND_URL + '. Inicie com: cd backend && node server.js' };
-      if (state.currentScreen === 'twilio') render();
-    });
-  }
-
-  // ============================================================
-  // === Modal: Selecionar número Twilio (campo telefone no form)===
-  // ============================================================
-
-  var SELECT_WARN_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
-
-  function showTwilioSelectModal() {
-    var old = document.getElementById('twilio-select-overlay');
-    if (old) old.remove();
-
-    var overlay = document.createElement('div');
-    overlay.id = 'twilio-select-overlay';
-    overlay.className = 'purchase-modal-overlay';
-
-    function renderStep1() {
-      overlay.innerHTML =
-        '<div class="purchase-modal" role="dialog" aria-modal="true">' +
-          '<div class="flex items-center gap-2 mb-6">' +
-            '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-white text-xs font-bold">1</div>' +
-            '<div class="h-px flex-1 bg-amber-500/40"></div>' +
-            '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-dark-700 text-dark-500 text-xs font-bold">2</div>' +
-            '<div class="h-px flex-1 bg-dark-700/40"></div>' +
-            '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-dark-700 text-dark-500 text-xs font-bold">3</div>' +
-          '</div>' +
-          '<div class="flex flex-col items-center text-center mb-6">' +
-            '<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-400 mb-4">' + SELECT_WARN_ICON + '</div>' +
-            '<h3 class="text-xl font-bold text-dark-50 mb-1">Acesso Restrito</h3>' +
-            '<p class="text-sm text-dark-400">Este recurso requer autenticação. Os números Twilio são pagos e estão vinculados à sua conta.</p>' +
-          '</div>' +
-          '<p class="text-sm text-center text-dark-300 mb-6">Deseja continuar e selecionar um número?</p>' +
-          '<div class="flex gap-3">' +
-            '<button id="ts-step1-no" class="flex-1 rounded-xl border border-dark-700 py-3 text-sm font-semibold text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">Não</button>' +
-            '<button id="ts-step1-yes" class="flex-1 rounded-xl btn-gradient py-3 text-sm font-semibold text-white transition-all">Sim, continuar</button>' +
-          '</div>' +
-        '</div>';
-      document.getElementById('ts-step1-no').addEventListener('click', function() { overlay.remove(); });
-      document.getElementById('ts-step1-yes').addEventListener('click', function() { renderStep2(); });
-    }
-
-    function renderStep2() {
-      var card = overlay.querySelector('.purchase-modal');
-      card.innerHTML =
-        '<div class="flex items-center gap-2 mb-6">' +
-          '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-dark-700 text-dark-500 text-xs font-bold">1</div>' +
-          '<div class="h-px flex-1 bg-dark-700/40"></div>' +
-          '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-white text-xs font-bold">2</div>' +
-          '<div class="h-px flex-1 bg-brand-500/40"></div>' +
-          '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-dark-700 text-dark-500 text-xs font-bold">3</div>' +
-        '</div>' +
-        '<div class="flex flex-col items-center text-center mb-6">' +
-          '<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/15 text-brand-400 mb-4">' + SELECT_WARN_ICON + '</div>' +
-          '<h3 class="text-xl font-bold text-dark-50 mb-1">Senha de Acesso</h3>' +
-          '<p class="text-sm text-dark-400">Digite a senha para acessar os números.</p>' +
-        '</div>' +
-        '<div class="relative mb-4">' +
-          '<input id="ts-pw-input" type="password" placeholder="Digite a senha..." class="dark-input w-full rounded-xl py-3 px-4 pr-12 text-base focus:outline-none" />' +
-          '<button id="ts-pw-eye" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-dark-200">' + App.icons.eye + '</button>' +
-        '</div>' +
-        '<p id="ts-pw-error" class="text-xs text-red-400 mb-4 hidden">Senha incorreta.</p>' +
-        '<div class="flex gap-3">' +
-          '<button id="ts-step2-back" class="rounded-xl border border-dark-700 px-4 py-3 text-sm font-semibold text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' + App.icons.chevronLeft + ' Voltar</button>' +
-          '<button id="ts-step2-confirm" class="flex-1 rounded-xl btn-gradient py-3 text-sm font-semibold text-white transition-all">Confirmar</button>' +
-        '</div>';
-
-      var eyeToggled = false;
-      document.getElementById('ts-pw-eye').addEventListener('click', function() {
-        var inp = document.getElementById('ts-pw-input');
-        eyeToggled = !eyeToggled;
-        inp.type = eyeToggled ? 'text' : 'password';
-      });
-      document.getElementById('ts-step2-back').addEventListener('click', function() { renderStep1(); });
-      document.getElementById('ts-step2-confirm').addEventListener('click', function() {
-        var pw = document.getElementById('ts-pw-input').value;
-        hashSHA256(pw).then(function(hash) {
-          if (hash !== PURCHASE_PASSWORD_HASH) {
-            document.getElementById('ts-pw-error').classList.remove('hidden');
-            document.getElementById('ts-pw-input').classList.add('border-red-500/50');
-            return;
-          }
-          renderStep3();
-        });
-      });
-      document.getElementById('ts-pw-input').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') document.getElementById('ts-step2-confirm').click();
-      });
-    }
-
-    function renderStep3() {
-      var card = overlay.querySelector('.purchase-modal');
-      card.innerHTML =
-        '<div class="flex items-center gap-2 mb-6">' +
-          '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-dark-700 text-dark-500 text-xs font-bold">1</div>' +
-          '<div class="h-px flex-1 bg-dark-700/40"></div>' +
-          '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-dark-700 text-dark-500 text-xs font-bold">2</div>' +
-          '<div class="h-px flex-1 bg-brand-500/40"></div>' +
-          '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-white text-xs font-bold">3</div>' +
-        '</div>' +
-        '<h3 class="text-lg font-bold text-dark-50 mb-4">Selecionar Número</h3>' +
-        '<div id="ts-numbers-list" class="space-y-2 min-h-[80px] flex items-center justify-center">' +
-          '<div class="h-2.5 w-2.5 rounded-full bg-brand-500 animate-pulse"></div>' +
-          '<span class="text-sm text-dark-400 ml-2">Carregando números...</span>' +
-        '</div>' +
-        '<button id="ts-step3-back" class="mt-4 rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' + App.icons.chevronLeft + ' Voltar</button>';
-
-      document.getElementById('ts-step3-back').addEventListener('click', function() { renderStep2(); });
-
-      twilioFetch('/api/numbers/owned').then(function(data) {
-        var nums = data.numbers || [];
-        var list = document.getElementById('ts-numbers-list');
-        if (!list) return;
-        if (nums.length === 0) {
-          list.innerHTML = '<p class="text-sm text-dark-500 text-center py-4">Nenhum número encontrado. Compre um na tela Twilio.</p>';
-          return;
-        }
-        list.className = 'space-y-2 max-h-60 overflow-y-auto';
-        list.innerHTML = nums.map(function(n) {
-          var isActive = n.phoneNumber === (twilioState.status && twilioState.status.phoneNumber);
-          return '<div class="flex items-center gap-3 rounded-lg border border-dark-700/40 bg-dark-900/40 px-3 py-2.5">' +
-            '<div class="flex-1 min-w-0">' +
-              '<p class="text-sm font-mono font-semibold text-dark-100">' + App.escapeHtml(n.phoneNumber) + '</p>' +
-              '<p class="text-xs text-dark-500">' + App.escapeHtml(n.friendlyName || '') + '</p>' +
-            '</div>' +
-            (isActive ? '<span class="text-xs text-green-400 font-semibold">Ativo</span>' : '') +
-            '<button data-ts-phone="' + App.escapeHtml(n.phoneNumber) + '" class="ts-select-btn rounded-lg px-3 py-1.5 text-xs font-semibold btn-gradient text-white">Usar</button>' +
-          '</div>';
-        }).join('');
-
-        list.querySelectorAll('.ts-select-btn').forEach(function(btn) {
-          btn.addEventListener('click', function() {
-            state.employee.telefone = btn.getAttribute('data-ts-phone');
-            App.storage.save(state);
-            overlay.remove();
-            render();
-          });
-        });
-      }).catch(function() {
-        var list = document.getElementById('ts-numbers-list');
-        if (list) list.innerHTML = '<p class="text-sm text-red-400 text-center py-4">Backend não disponível. Inicie o servidor Twilio.</p>';
-      });
-    }
-
-    document.body.appendChild(overlay);
-    // Se já tem número selecionado, ir direto para a senha (segurança)
-    if (state.employee.telefone) {
-      renderStep2();
-    } else {
-      renderStep1();
-    }
-  }
-
-  // ============================================================
   // === Registro de handlers (delegados pelo listener global) ===
   // ============================================================
 
-  bindAction('select-twilio-number', function() {
-    showTwilioSelectModal();
-  });
 
-  bindAction('view-twilio', function() {
-    twilioState.status = null;
-    twilioState.searchResults = [];
-    twilioState.searchDone = false;
-    twilioState._loaded = false;
-    navigateTo('twilio');
-  });
 
-  bindAction('twilio-search', function() {
-    var countryEl = document.getElementById('twilio-country');
-    var typeEl = document.getElementById('twilio-type');
-    var country = countryEl ? countryEl.value : 'US';
-    var type = typeEl ? typeEl.value : 'local';
-    twilioState.selectedCountry = country;
-    twilioState.selectedType = type;
-    twilioState.searching = true;
-    twilioState.searchResults = [];
-    twilioState.searchDone = false;
-    render();
-    twilioFetch('/api/numbers/search?country=' + country + '&type=' + type + '&limit=10')
-      .then(function(data) {
-        twilioState.searching = false;
-        twilioState.searchDone = true;
-        twilioState.searchResults = data.numbers || [];
-        render();
-      })
-      .catch(function(err) {
-        twilioState.searching = false;
-        twilioState.searchDone = true;
-        App.showToast('Erro na busca: ' + err.message, 'error');
-        render();
-      });
-  });
 
   // Hash SHA-256 da senha de autorização de compra (nunca armazenar o texto puro)
   var PURCHASE_PASSWORD_HASH = 'b1dfdec95c76124d322254713c29f73995c80022a36d369121b5209bb4764e44';
@@ -954,269 +708,10 @@ var App = App || {};
     });
   }
 
-  var WARN_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
-  var LOCK_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
 
-  function showPurchaseModal(phone, friendlyName, country, monthlyFee) {
-    var old = document.getElementById('purchase-modal-overlay');
-    if (old) old.remove();
 
-    var overlay = document.createElement('div');
-    overlay.id = 'purchase-modal-overlay';
-    overlay.className = 'purchase-modal-overlay';
 
-    // ── Tela 1: Aviso ──────────────────────────────────────
-    function renderStep1() {
-      overlay.innerHTML =
-        '<div class="purchase-modal" role="dialog" aria-modal="true">' +
 
-          // Indicador de passos
-          '<div class="flex items-center gap-2 mb-6">' +
-            '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-white text-xs font-bold">1</div>' +
-            '<div class="h-px flex-1 bg-amber-500/40"></div>' +
-            '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-dark-700 text-dark-500 text-xs font-bold">2</div>' +
-          '</div>' +
-
-          // Ícone + título
-          '<div class="flex flex-col items-center text-center mb-6">' +
-            '<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-400 mb-4">' +
-              WARN_ICON +
-            '</div>' +
-            '<h3 class="text-xl font-bold text-dark-50 mb-1">Atenção!</h3>' +
-            '<p class="text-sm text-dark-400">Este número gera cobrança recorrente</p>' +
-          '</div>' +
-
-          // Detalhes do número
-          '<div class="rounded-xl border border-amber-500/25 bg-amber-500/8 p-4 mb-6 space-y-2.5">' +
-            '<div class="flex justify-between text-sm">' +
-              '<span class="text-dark-400">Número</span>' +
-              '<span class="font-mono font-semibold text-dark-100">' + App.escapeHtml(friendlyName || phone) + '</span>' +
-            '</div>' +
-            '<div class="flex justify-between text-sm">' +
-              '<span class="text-dark-400">País</span>' +
-              '<span class="font-medium text-dark-200">' + App.escapeHtml(country) + '</span>' +
-            '</div>' +
-            '<div class="flex justify-between text-sm">' +
-              '<span class="text-dark-400">Custo mensal</span>' +
-              '<span class="font-bold text-amber-400">' + App.escapeHtml(monthlyFee || '~$1.00') + ' / mês</span>' +
-            '</div>' +
-            '<div class="pt-2 border-t border-amber-500/20 text-xs text-amber-300/75 leading-relaxed">' +
-              '⚠️ O valor será debitado da sua conta Twilio todos os meses até o número ser liberado manualmente.' +
-            '</div>' +
-          '</div>' +
-
-          // Pergunta central
-          '<p class="text-center text-base font-semibold text-dark-100 mb-6">' +
-            'Deseja continuar com essa compra?' +
-          '</p>' +
-
-          // Botões
-          '<div class="flex gap-3">' +
-            '<button id="pm-step1-no"  class="flex-1 rounded-xl border border-dark-600 py-3.5 text-sm font-bold text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">Não</button>' +
-            '<button id="pm-step1-yes" class="flex-1 rounded-xl bg-amber-500 hover:bg-amber-400 py-3.5 text-sm font-bold text-white transition-colors">Sim, continuar</button>' +
-          '</div>' +
-
-        '</div>';
-
-      document.getElementById('pm-step1-no').addEventListener('click', function() { overlay.remove(); });
-      document.getElementById('pm-step1-yes').addEventListener('click', function() { renderStep2(); });
-      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
-    }
-
-    // ── Tela 2: Senha ──────────────────────────────────────
-    function renderStep2() {
-      var card = overlay.querySelector('.purchase-modal');
-      card.style.animation = 'slideUpModal 0.25s cubic-bezier(0.22, 1, 0.36, 1)';
-
-      card.innerHTML =
-        // Indicador de passos
-        '<div class="flex items-center gap-2 mb-6">' +
-          '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-dark-700 text-dark-500 text-xs font-bold">1</div>' +
-          '<div class="h-px flex-1 bg-brand-500/40"></div>' +
-          '<div class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-white text-xs font-bold">2</div>' +
-        '</div>' +
-
-        // Ícone + título
-        '<div class="flex flex-col items-center text-center mb-6">' +
-          '<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/15 text-brand-400 mb-4">' +
-            LOCK_ICON +
-          '</div>' +
-          '<h3 class="text-xl font-bold text-dark-50 mb-1">Autorização necessária</h3>' +
-          '<p class="text-sm text-dark-400">Digite a senha para confirmar a compra</p>' +
-        '</div>' +
-
-        // Campo de senha
-        '<div class="mb-6">' +
-          '<label class="mb-2 block text-sm font-medium text-dark-200">Senha de autorização</label>' +
-          '<div class="relative">' +
-            '<input id="purchase-password-input" type="password" autocomplete="off" ' +
-              'placeholder="Digite a senha de autorização" ' +
-              'class="dark-input block w-full rounded-xl py-3 pl-4 pr-12 text-base focus:outline-none" />' +
-            '<button type="button" id="purchase-pw-toggle" tabindex="-1" class="password-toggle">' +
-              App.icons.eye +
-            '</button>' +
-          '</div>' +
-          '<p id="purchase-pw-error" class="mt-1.5 text-xs text-red-400 hidden">Senha incorreta. Tente novamente.</p>' +
-        '</div>' +
-
-        // Botões
-        '<div class="flex gap-3">' +
-          '<button id="pm-step2-back"    class="flex-1 rounded-xl border border-dark-600 py-3.5 text-sm font-bold text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">← Voltar</button>' +
-          '<button id="pm-step2-confirm" class="flex-1 rounded-xl bg-brand-500 hover:bg-brand-600 py-3.5 text-sm font-bold text-white transition-colors">Confirmar Compra</button>' +
-        '</div>';
-
-      // Foco automático
-      setTimeout(function() {
-        var inp = document.getElementById('purchase-password-input');
-        if (inp) inp.focus();
-      }, 60);
-
-      // Toggle olho
-      document.getElementById('purchase-pw-toggle').addEventListener('click', function() {
-        var inp = document.getElementById('purchase-password-input');
-        if (!inp) return;
-        if (inp.type === 'password') { inp.type = 'text'; this.innerHTML = App.icons.eyeOff; }
-        else                         { inp.type = 'password'; this.innerHTML = App.icons.eye; }
-      });
-
-      // Voltar
-      document.getElementById('pm-step2-back').addEventListener('click', function() { renderStep1(); });
-
-      // Confirmar
-      function doConfirm() {
-        var inp    = document.getElementById('purchase-password-input');
-        var errEl  = document.getElementById('purchase-pw-error');
-        var btn    = document.getElementById('pm-step2-confirm');
-        var pw     = inp ? inp.value : '';
-        if (!pw) { errEl.classList.remove('hidden'); inp.focus(); return; }
-
-        btn.disabled    = true;
-        btn.textContent = 'Verificando...';
-
-        hashSHA256(pw).then(function(hash) {
-          if (hash !== PURCHASE_PASSWORD_HASH) {
-            errEl.classList.remove('hidden');
-            inp.value       = '';
-            inp.focus();
-            btn.disabled    = false;
-            btn.textContent = 'Confirmar Compra';
-            return;
-          }
-          errEl.classList.add('hidden');
-          btn.textContent = 'Comprando...';
-          App.showToast('Comprando ' + phone + '...', 'info');
-
-          twilioFetch('/api/numbers/purchase', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ phoneNumber: phone })
-          }).then(function(data) {
-            overlay.remove();
-            if (data.error) { App.showToast('Erro: ' + data.error, 'error'); return; }
-            App.showToast(data.message, 'success');
-            twilioState.searchResults = [];
-            twilioState.searchDone    = false;
-            loadTwilioStatus();
-          }).catch(function() {
-            overlay.remove();
-            App.showToast('Erro ao comprar número.', 'error');
-          });
-        });
-      }
-
-      document.getElementById('pm-step2-confirm').addEventListener('click', doConfirm);
-      document.getElementById('purchase-password-input').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter')  doConfirm();
-        if (e.key === 'Escape') overlay.remove();
-      });
-    }
-
-    // Inicia na tela 1
-    document.body.appendChild(overlay);
-    renderStep1();
-  }
-
-  bindAction('twilio-purchase', function(e, el) {
-    var phone       = el.getAttribute('data-phone');
-    var friendly    = el.getAttribute('data-friendly') || phone;
-    var country     = el.getAttribute('data-country') || '';
-    var fee         = el.getAttribute('data-fee') || '~$1.00';
-    if (!phone) return;
-    showPurchaseModal(phone, friendly, country, fee);
-  });
-
-  bindAction('twilio-set-active', function(e, el) {
-    var phone = el.getAttribute('data-phone');
-    if (!phone) return;
-    twilioFetch('/api/numbers/set-active', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phoneNumber: phone })
-    }).then(function(data) {
-      if (data.error) { App.showToast('Erro: ' + data.error, 'error'); return; }
-      twilioState.status.phoneNumber = phone;
-      App.showToast('Número ativo atualizado para ' + phone, 'success');
-      render();
-    }).catch(function() { App.showToast('Erro ao atualizar número ativo', 'error'); });
-  });
-
-  bindAction('twilio-release-number', function(e, el) {
-    var sid = el.getAttribute('data-sid');
-    var phone = el.getAttribute('data-phone');
-    if (!sid) return;
-    if (!confirm('Liberar o número ' + phone + '?\nVocê deixará de ser cobrado por ele, mas não poderá recuperá-lo.')) return;
-    twilioFetch('/api/numbers/' + sid, { method: 'DELETE' })
-      .then(function(data) {
-        if (data.error) { App.showToast('Erro: ' + data.error, 'error'); return; }
-        App.showToast('Número ' + phone + ' liberado', 'info');
-        loadTwilioStatus();
-      })
-      .catch(function() { App.showToast('Erro ao liberar número', 'error'); });
-  });
-
-  bindAction('send-sms-credentials', function() {
-    // Usa o número do funcionário — se já é E.164, usa direto
-    var phone = (state.employee.telefone || '').trim();
-    var dest = '';
-    if (phone.startsWith('+')) {
-      dest = phone;
-    } else {
-      var digits = phone.replace(/\D/g, '');
-      dest = digits ? '+55' + digits : '';
-    }
-
-    // Se o número não estiver preenchido, pede ao usuário
-    if (!dest) {
-      dest = prompt('Número do funcionário não encontrado.\nDigite manualmente (ex: +5511999999999):');
-      if (!dest) return;
-    } else {
-      if (!confirm('Enviar SMS com as credenciais para ' + dest + '?')) return;
-    }
-
-    var completedPlatforms = Object.keys(state.platforms)
-      .filter(function(id) { return state.platforms[id].completed; })
-      .map(function(id) {
-        return { name: App.platforms[id].name, username: state.employee.emailDesejado };
-      });
-
-    App.showToast('Enviando SMS...', 'info');
-    twilioFetch('/api/sms/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        to: dest,
-        employeeName: state.employee.nomeCompleto,
-        email: state.employee.emailDesejado,
-        password: state.suggestedPassword || '',
-        platforms: completedPlatforms
-      })
-    }).then(function(data) {
-      if (data.error) { App.showToast('Erro: ' + data.error, 'error'); return; }
-      App.showToast('SMS enviado para ' + dest + '!', 'success');
-    }).catch(function() {
-      App.showToast('Backend n\u00e3o encontrado. Inicie o servidor primeiro.', 'error');
-    });
-  });
 
   bindAction('start', function(e, el) {
     createRipple(e, el);
@@ -1329,8 +824,7 @@ var App = App || {};
 
     var emailSuggestion = App.generateEmailFromName(nome);
 
-    // telefone não é preenchido automaticamente — deve ser o número real
-    // do funcionário para receber SMS via Twilio
+    // telefone não é preenchido automaticamente
     var fields = {
       nomeCompleto:  nome,
       emailDesejado: emailSuggestion,
@@ -1687,10 +1181,6 @@ var App = App || {};
         var formData = new FormData(form);
         var data = {};
         formData.forEach(function(value, key) { data[key] = value; });
-        // Telefone é um button (não input), pegar do state
-        if (!data.telefone && state.employee.telefone) {
-          data.telefone = state.employee.telefone;
-        }
 
         var errors = validateForm(data);
         var oldError = form.querySelector('.form-error');
