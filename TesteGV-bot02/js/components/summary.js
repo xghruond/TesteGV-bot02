@@ -68,6 +68,20 @@ App.renderSummary = function(state) {
       return credRow(c.label, c.value, c.highlight);
     }).join('');
 
+    // Link de acesso ao perfil criado
+    var profileUrl = '';
+    if (isCompleted && pState.accountInfo) {
+      var info = pState.accountInfo;
+      if (platform.id === 'protonmail') profileUrl = 'https://mail.proton.me';
+      else if (platform.id === 'instagram') profileUrl = 'https://instagram.com/' + info.replace('@', '');
+      else if (platform.id === 'facebook') profileUrl = 'https://facebook.com';
+      else if (platform.id === 'tiktok') profileUrl = 'https://tiktok.com/@' + info.replace('@', '');
+    }
+    var profileLink = profileUrl
+      ? '<a href="' + profileUrl + '" target="_blank" rel="noopener noreferrer" class="mt-2 flex items-center justify-center gap-1.5 rounded-lg bg-brand-500/10 border border-brand-500/30 px-3 py-2 text-xs font-semibold text-brand-400 hover:bg-brand-500/20 transition-colors no-print">' +
+          App.icons.externalLink + ' Acessar conta: ' + App.escapeHtml(pState.accountInfo || '') + '</a>'
+      : '';
+
     return '' +
       '<div class="stagger-in rounded-xl border border-dark-700/40 bg-dark-900/30 backdrop-blur-sm p-4 shadow-lg shadow-black/10" style="animation-delay:' + (idx * 0.1) + 's">' +
         '<div class="flex items-center justify-between mb-3">' +
@@ -85,6 +99,7 @@ App.renderSummary = function(state) {
         '<div class="space-y-1.5 rounded-lg bg-dark-900/30 p-3">' +
           credRows +
         '</div>' +
+        profileLink +
       '</div>';
   }).join('');
 
