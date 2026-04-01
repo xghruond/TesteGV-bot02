@@ -954,11 +954,18 @@ var App = App || {};
     var url = el.getAttribute('data-url');
     if (!url) return;
 
-    var platform = App.platforms[state.currentGuide];
+    // Encontrar qual plataforma está ativa
+    var platformId = state.currentGuide;
+    if (!platformId) {
+      var pending = App.getNextPendingPlatform(state, state.wizardPlatformIndex);
+      if (!pending) pending = App.getNextPendingPlatform(state, 0);
+      if (pending) platformId = pending.id;
+    }
+    var platform = platformId ? App.platforms[platformId] : null;
     var platformName = platform ? platform.name : '';
 
     // Copiar dados silenciosamente
-    var creds = App.getWizardCredentials(state.currentGuide, state);
+    var creds = App.getWizardCredentials(platformId, state);
     var credsText = '';
     if (creds) {
       credsText = creds.map(function(c) { return c.value; }).join('\n');
