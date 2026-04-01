@@ -116,10 +116,16 @@ App.renderWizard = function(state) {
         '</div>' +
       '</div>' +
 
-      // Open register button
-      '<a href="' + platform.registerUrl + '" target="_blank" rel="noopener noreferrer" data-action="wizard-open-register" class="btn-gradient flex items-center justify-center gap-2 w-full rounded-xl px-6 py-4 text-base font-bold text-white shadow-lg shadow-green-600/20">' +
-        App.icons.externalLink + ' Abrir Cadastro do ' + esc(platform.name) +
-      '</a>' +
+      // Open register button (com automação para ProtonMail)
+      (platform.id === 'protonmail'
+        ? '<button data-action="auto-create-protonmail" class="btn-futuristic flex items-center justify-center gap-2 w-full rounded-xl px-6 py-4 text-base font-bold text-white shadow-lg shadow-green-600/20 mb-3">' +
+            App.icons.sparkles + ' Criar Conta Automaticamente</button>' +
+          '<a href="' + platform.registerUrl + '" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 w-full rounded-xl border border-dark-700/50 px-6 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-white">' +
+            App.icons.externalLink + ' Abrir Manualmente</a>'
+        : '<a href="' + platform.registerUrl + '" target="_blank" rel="noopener noreferrer" data-action="wizard-open-register" class="btn-gradient flex items-center justify-center gap-2 w-full rounded-xl px-6 py-4 text-base font-bold text-white shadow-lg shadow-green-600/20">' +
+            App.icons.externalLink + ' Abrir Cadastro do ' + esc(platform.name) +
+          '</a>'
+      ) +
 
       // Divider
       '<div class="relative my-6">' +
