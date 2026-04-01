@@ -874,6 +874,8 @@ var App = App || {};
   });
 
   // Criar conta ProtonMail automaticamente
+
+  // Criar conta ProtonMail — abre site + mostra dados para copiar
   bindAction('auto-create-protonmail', function() {
     var username = state.employee.emailDesejado;
     var password = state.suggestedPassword || App.generatePassword(14);
@@ -884,112 +886,66 @@ var App = App || {};
       return;
     }
 
-    // Modal de progresso
+    // Abrir ProtonMail em nova aba
+    var link = document.createElement('a');
+    link.href = 'https://account.proton.me/signup';
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.click();
+
+    // Mostrar modal com dados para copiar
     var overlay = document.createElement('div');
     overlay.id = 'automation-overlay';
     overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;padding:1rem;';
-    overlay.innerHTML =
-      '<div style="background:rgba(15,23,42,0.97);border:1px solid rgba(109,74,255,0.3);border-radius:20px;padding:1.75rem;width:100%;max-width:420px;box-shadow:0 24px 60px rgba(0,0,0,0.6);text-align:center;">' +
-        '<div id="auto-icon" style="width:56px;height:56px;border-radius:16px;background:rgba(109,74,255,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#6D4AFF;font-size:24px;">⚡</div>' +
-        '<h3 id="auto-title" style="font-size:18px;font-weight:700;color:#f1f5f9;margin-bottom:8px;">Criando conta ProtonMail</h3>' +
-        '<p id="auto-step" style="font-size:14px;color:#94a3b8;margin-bottom:20px;">Iniciando navegador...</p>' +
-        '<div id="auto-steps" style="text-align:left;margin-bottom:20px;">' +
-          '<div id="step-browser" class="flex items-center gap-2 py-1.5 text-sm text-dark-500"><span>⏳</span> Abrindo navegador</div>' +
-          '<div id="step-fill" class="flex items-center gap-2 py-1.5 text-sm text-dark-500"><span>⏳</span> Preenchendo dados</div>' +
-          '<div id="step-captcha" class="flex items-center gap-2 py-1.5 text-sm text-dark-500"><span>⏳</span> Aguardando CAPTCHA</div>' +
-          '<div id="step-done" class="flex items-center gap-2 py-1.5 text-sm text-dark-500"><span>⏳</span> Finalizando</div>' +
-        '</div>' +
-        '<button id="auto-cancel" style="border:1px solid rgba(100,116,139,0.4);border-radius:12px;padding:10px 24px;color:#94a3b8;font-size:14px;font-weight:600;cursor:pointer;background:none;transition:all 0.2s;">Cancelar</button>' +
-      '</div>';
-    document.body.appendChild(overlay);
 
-    document.getElementById('auto-cancel').addEventListener('click', function() {
-      overlay.remove();
-    });
-
-    function updateStep(stepId, status) {
-      var el = document.getElementById(stepId);
-      if (!el) return;
-      var icon = status === 'done' ? '✅' : status === 'active' ? '🔄' : '⏳';
-      var color = status === 'done' ? '#4ade80' : status === 'active' ? '#6D4AFF' : '#64748b';
-      el.style.color = color;
-      el.querySelector('span').textContent = icon;
+    function copyField(text, btnId) {
+      App.copyToClipboard(text, document.getElementById(btnId));
     }
 
-    // Polling de status
-    var pollInterval = setInterval(function() {
-      fetch('http://127.0.0.1:3001/api/automation-status')
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (!data.active) return;
-          var stepEl = document.getElementById('auto-step');
-          if (stepEl) stepEl.textContent = data.step;
+    overlay.innerHTML =
+      '<div style="background:rgba(15,23,42,0.97);border:1px solid rgba(109,74,255,0.3);border-radius:20px;padding:1.75rem;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,0.6);">' +
+        '<div style="text-align:center;margin-bottom:20px;">' +
+          '<div style="width:56px;height:56px;border-radius:16px;background:rgba(109,74,255,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#6D4AFF;font-size:24px;">📋</div>' +
+          '<h3 style="font-size:18px;font-weight:700;color:#f1f5f9;margin-bottom:4px;">Dados para o ProtonMail</h3>' +
+          '<p style="font-size:13px;color:#94a3b8;">Copie cada campo e cole no site que abriu</p>' +
+        '</div>' +
 
-          if (data.status === 'browser' || data.status === 'navigating') {
-            updateStep('step-browser', 'active');
-          } else if (data.status === 'filling-email' || data.status === 'filling-password' || data.status === 'selecting-plan' || data.status === 'submitting') {
-            updateStep('step-browser', 'done');
-            updateStep('step-fill', 'active');
-          } else if (data.status === 'waiting-captcha') {
-            updateStep('step-browser', 'done');
-            updateStep('step-fill', 'done');
-            updateStep('step-captcha', 'active');
-          } else if (data.status === 'success') {
-            updateStep('step-browser', 'done');
-            updateStep('step-fill', 'done');
-            updateStep('step-captcha', 'done');
-            updateStep('step-done', 'done');
-          }
-        }).catch(function() {});
-    }, 1000);
-
-    // Fazer a requisição
-    fetch('http://127.0.0.1:3001/api/create-protonmail', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: username, password: password, displayName: displayName })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      clearInterval(pollInterval);
-      if (data.success) {
-        // Sucesso — mostrar credenciais
-        state.platforms.protonmail = { completed: true, accountInfo: data.email };
-        App.storage.save(state);
-
-        overlay.querySelector('div').innerHTML =
-          '<div style="width:56px;height:56px;border-radius:16px;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#22c55e;font-size:28px;">✅</div>' +
-          '<h3 style="font-size:20px;font-weight:700;color:#f1f5f9;margin-bottom:16px;">Conta Criada!</h3>' +
-          '<div style="background:rgba(10,18,32,0.85);border:1px solid rgba(51,65,85,0.4);border-radius:12px;padding:16px;margin-bottom:20px;text-align:left;">' +
-            '<p style="font-size:12px;color:#64748b;margin-bottom:4px;">E-mail</p>' +
-            '<p style="font-size:16px;font-weight:600;color:#f1f5f9;font-family:monospace;margin-bottom:12px;">' + App.escapeHtml(data.email) + '</p>' +
-            '<p style="font-size:12px;color:#64748b;margin-bottom:4px;">Senha</p>' +
-            '<p style="font-size:16px;font-weight:600;color:#4ade80;font-family:monospace;">' + App.escapeHtml(data.password) + '</p>' +
+        '<div style="space-y:3;margin-bottom:16px;">' +
+          '<div style="background:rgba(10,18,32,0.85);border:1px solid rgba(51,65,85,0.4);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">' +
+            '<div><p style="font-size:11px;color:#64748b;margin-bottom:2px;">Username</p><p style="font-size:15px;font-weight:600;color:#f1f5f9;font-family:monospace;">' + App.escapeHtml(username) + '</p></div>' +
+            '<button id="copy-username" onclick="App.copyToClipboard(\'' + App.escapeHtml(username) + '\', this)" style="background:rgba(109,74,255,0.15);border:1px solid rgba(109,74,255,0.3);border-radius:8px;padding:8px 14px;color:#a78bfa;font-size:12px;font-weight:600;cursor:pointer;">Copiar</button>' +
           '</div>' +
-          '<button id="auto-continue" class="btn-futuristic" style="width:100%;border-radius:12px;padding:12px;font-size:16px;font-weight:700;color:#fff;border:none;cursor:pointer;">Continuar</button>';
 
-        document.getElementById('auto-continue').addEventListener('click', function() {
-          overlay.remove();
-          render();
-        });
-      } else {
-        overlay.querySelector('div').innerHTML =
-          '<div style="width:56px;height:56px;border-radius:16px;background:rgba(239,68,68,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#ef4444;font-size:28px;">❌</div>' +
-          '<h3 style="font-size:18px;font-weight:700;color:#f1f5f9;margin-bottom:8px;">Erro</h3>' +
-          '<p style="font-size:14px;color:#f87171;margin-bottom:20px;">' + App.escapeHtml(data.error || 'Erro desconhecido') + '</p>' +
-          '<button id="auto-close" style="border:1px solid rgba(100,116,139,0.4);border-radius:12px;padding:10px 24px;color:#94a3b8;font-size:14px;font-weight:600;cursor:pointer;background:none;">Fechar</button>';
-        document.getElementById('auto-close').addEventListener('click', function() { overlay.remove(); });
-      }
-    })
-    .catch(function(err) {
-      clearInterval(pollInterval);
-      overlay.querySelector('div').innerHTML =
-        '<div style="width:56px;height:56px;border-radius:16px;background:rgba(239,68,68,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#ef4444;font-size:28px;">❌</div>' +
-        '<h3 style="font-size:18px;font-weight:700;color:#f1f5f9;margin-bottom:8px;">Backend não disponível</h3>' +
-        '<p style="font-size:14px;color:#f87171;margin-bottom:8px;">Inicie o servidor de automação:</p>' +
-        '<code style="display:block;background:#0a1220;padding:12px;border-radius:8px;color:#94a3b8;font-size:13px;margin-bottom:20px;">cd backend && node server.js</code>' +
-        '<button id="auto-close" style="border:1px solid rgba(100,116,139,0.4);border-radius:12px;padding:10px 24px;color:#94a3b8;font-size:14px;font-weight:600;cursor:pointer;background:none;">Fechar</button>';
-      document.getElementById('auto-close').addEventListener('click', function() { overlay.remove(); });
+          '<div style="background:rgba(10,18,32,0.85);border:1px solid rgba(51,65,85,0.4);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">' +
+            '<div><p style="font-size:11px;color:#64748b;margin-bottom:2px;">Senha</p><p style="font-size:15px;font-weight:600;color:#4ade80;font-family:monospace;">' + App.escapeHtml(password) + '</p></div>' +
+            '<button id="copy-password" onclick="App.copyToClipboard(\'' + App.escapeHtml(password) + '\', this)" style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:8px 14px;color:#4ade80;font-size:12px;font-weight:600;cursor:pointer;">Copiar</button>' +
+          '</div>' +
+
+          '<div style="background:rgba(10,18,32,0.85);border:1px solid rgba(51,65,85,0.4);border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;">' +
+            '<div><p style="font-size:11px;color:#64748b;margin-bottom:2px;">Nome de exibição</p><p style="font-size:15px;font-weight:600;color:#f1f5f9;">' + App.escapeHtml(displayName) + '</p></div>' +
+            '<button id="copy-name" onclick="App.copyToClipboard(\'' + App.escapeHtml(displayName) + '\', this)" style="background:rgba(51,65,85,0.3);border:1px solid rgba(51,65,85,0.4);border-radius:8px;padding:8px 14px;color:#94a3b8;font-size:12px;font-weight:600;cursor:pointer;">Copiar</button>' +
+          '</div>' +
+        '</div>' +
+
+        '<div style="background:rgba(109,74,255,0.08);border:1px solid rgba(109,74,255,0.2);border-radius:10px;padding:12px;margin-bottom:16px;">' +
+          '<p style="font-size:12px;color:#a78bfa;line-height:1.5;"><strong>Passos no ProtonMail:</strong><br>1. Escolha plano <strong>Free</strong><br>2. Cole o <strong>username</strong> e a <strong>senha</strong><br>3. Resolva o <strong>CAPTCHA</strong><br>4. Volte aqui e clique em "Conta Criada"</p>' +
+        '</div>' +
+
+        '<div style="display:flex;gap:8px;">' +
+          '<button id="auto-cancel" style="flex:1;border:1px solid rgba(100,116,139,0.4);border-radius:12px;padding:12px;color:#94a3b8;font-size:14px;font-weight:600;cursor:pointer;background:none;">Cancelar</button>' +
+          '<button id="auto-done" class="btn-futuristic" style="flex:2;border-radius:12px;padding:12px;font-size:14px;font-weight:700;color:#fff;border:none;cursor:pointer;">Conta Criada!</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('auto-cancel').addEventListener('click', function() { overlay.remove(); });
+    document.getElementById('auto-done').addEventListener('click', function() {
+      state.platforms.protonmail = { completed: true, accountInfo: username + '@proton.me' };
+      App.storage.save(state);
+      overlay.remove();
+      App.showToast('ProtonMail criado com sucesso!', 'success');
+      render();
     });
   });
 
