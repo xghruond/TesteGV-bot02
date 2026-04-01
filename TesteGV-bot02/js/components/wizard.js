@@ -126,10 +126,21 @@ App.renderWizard = function(state) {
             App.icons.sparkles + ' Criar Conta Automaticamente</button>' +
           '<a href="' + platform.registerUrl + '" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 w-full rounded-xl border border-dark-700/50 px-6 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-white">' +
             App.icons.externalLink + ' Abrir Manualmente</a>'
-        : '<button data-action="wizard-open-incognito" data-url="' + platform.registerUrl + '" class="btn-gradient flex items-center justify-center gap-2 w-full rounded-xl px-6 py-4 text-base font-bold text-white shadow-lg shadow-green-600/20 mb-2">' +
-            App.icons.externalLink + ' Abrir Cadastro do ' + esc(platform.name) +
-          '</button>' +
-          '<p class="text-center text-xs text-amber-400/80 mb-1">⚠️ Use <strong>Ctrl+Shift+N</strong> primeiro (janela anônima) para não usar sua conta pessoal</p>'
+        : '<div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 mb-4 text-center">' +
+            '<p class="text-sm font-bold text-amber-400 mb-2">⚠️ IMPORTANTE — Leia antes de clicar!</p>' +
+            '<p class="text-sm text-amber-300/80 mb-3">Para NÃO usar sua conta pessoal:</p>' +
+            '<div class="flex items-center justify-center gap-2 mb-3">' +
+              '<kbd class="rounded bg-dark-800 border border-dark-600 px-2 py-1 text-xs font-mono text-white">Ctrl</kbd>' +
+              '<span class="text-dark-500">+</span>' +
+              '<kbd class="rounded bg-dark-800 border border-dark-600 px-2 py-1 text-xs font-mono text-white">Shift</kbd>' +
+              '<span class="text-dark-500">+</span>' +
+              '<kbd class="rounded bg-dark-800 border border-dark-600 px-2 py-1 text-xs font-mono text-white">N</kbd>' +
+            '</div>' +
+            '<p class="text-xs text-dark-400">Primeiro abra uma <strong class="text-amber-400">janela anônima</strong>, depois cole o link abaixo nela</p>' +
+          '</div>' +
+          '<button data-action="wizard-open-incognito" data-url="' + platform.registerUrl + '" class="btn-gradient flex items-center justify-center gap-2 w-full rounded-xl px-6 py-4 text-base font-bold text-white shadow-lg shadow-green-600/20">' +
+            App.icons.externalLink + ' Copiar Link + Abrir Cadastro' +
+          '</button>'
       ) +
 
       // Divider

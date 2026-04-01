@@ -949,24 +949,27 @@ var App = App || {};
     });
   });
 
-  // Abrir cadastro em nova aba + copiar dados ao clipboard
+  // Copiar link + dados e abrir cadastro
   bindAction('wizard-open-incognito', function(e, el) {
     var url = el.getAttribute('data-url');
     if (!url) return;
-    // Abrir site
+    // Copiar link + dados ao clipboard
+    var creds = App.getWizardCredentials(state.currentGuide, state);
+    var text = url + '\n\n';
+    if (creds) {
+      text += creds.map(function(c) { return c.label + ': ' + c.value; }).join('\n');
+    }
+    navigator.clipboard.writeText(text).then(function() {
+      App.showToast('Link + dados copiados! Abra a janela anônima (Ctrl+Shift+N) e cole o link.', 'success');
+    }).catch(function() {
+      App.showToast('Cole este link na janela anônima: ' + url, 'info');
+    });
+    // Também abrir o site (o usuario pode fechar se preferir usar anonima)
     var link = document.createElement('a');
     link.href = url;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.click();
-    // Copiar dados automaticamente
-    var creds = App.getWizardCredentials(state.currentGuide, state);
-    if (creds) {
-      var text = creds.map(function(c) { return c.label + ': ' + c.value; }).join('\n');
-      navigator.clipboard.writeText(text).then(function() {
-        App.showToast('Dados copiados! Cole no formulário do site.', 'success');
-      }).catch(function() {});
-    }
   });
 
   // Abrir link de cadastro
