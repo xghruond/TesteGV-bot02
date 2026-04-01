@@ -990,10 +990,6 @@ var App = App || {};
     App.showToast('Arquivo exportado!', 'success');
   });
 
-  // Imprimir
-  bindAction('print', function() {
-    window.print();
-  });
 
   bindAction('export-pdf', function() {
     var originalTitle = document.title;

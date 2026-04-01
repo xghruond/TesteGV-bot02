@@ -332,10 +332,6 @@ input[type="tel"]::placeholder {
   box-shadow: 0 6px 20px rgba(22, 163, 74, 0.5);
 }
 
-/* ===== Pulse animation para badge ===== */
-.pulse-badge {
-  animation: pulse 2s infinite;
-}
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
@@ -646,13 +642,6 @@ input[type="tel"]::placeholder {
   animation: pulse 2s infinite;
 }
 
-/* Glass morphism containers */
-.glass-card {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(51, 65, 85, 0.4);
-}
 
 .logo-float {
   animation: logoFloat 3s ease-in-out infinite;
@@ -701,10 +690,6 @@ input[type="tel"]::placeholder {
 }
 
 /* ===== Dark Mode Global ===== */
-.dark-card {
-  background: #1e293b;
-  border: 1px solid #334155;
-}
 
 .dark-input {
   background: rgba(10, 18, 32, 0.85);
@@ -883,15 +868,6 @@ input[type="tel"]::placeholder {
   margin-left: 4px;
 }
 
-/* ===== Completion pulse animation ===== */
-@keyframes completionPulse {
-  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
-  70% { box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-}
-.completion-pulse {
-  animation: completionPulse 0.6s ease-out;
-}
 
 /* ===== Form field validation ===== */
 .dark-input.field-valid {

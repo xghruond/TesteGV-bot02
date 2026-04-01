@@ -29,24 +29,31 @@ Sistema web SPA (Single Page Application) que guia novos funcionários na criaç
 
 ```
 TesteGV-bot02/
-├── index.html                          # Página principal (SPA shell)        53 linhas
+├── index.html                          # SPA shell + splash screen             96 linhas
+├── CLAUDE.md                           # Instruções para Claude Code
+├── ARCHITECTURE.md                     # Este documento
+├── MEMORY.md                           # Contexto de negócio
 ├── css/
-│   └── styles.css                      # Estilos: animações, print, drawer   151 linhas
+│   └── styles.css                      # Animações, print, dark theme        1050 linhas
 ├── js/
-│   ├── data.js                         # Dados estáticos (plataformas, ícones) 217 linhas
-│   ├── storage.js                      # Abstração do localStorage            27 linhas
-│   ├── app.js                          # Controlador principal (estado, rota)  299 linhas
+│   ├── data.js                         # Plataformas, ícones, helpers         725 linhas
+│   ├── storage.js                      # localStorage + version check          76 linhas
+│   ├── particles.js                    # Canvas de partículas                 200 linhas
+│   ├── app.js                          # Controlador principal               1397 linhas
 │   └── components/
-│       ├── header.js                   # Cabeçalho + barra de progresso       39 linhas
-│       ├── form.js                     # Formulário de dados do funcionário   60 linhas
-│       ├── platform-card.js            # Cards de seleção de plataformas      61 linhas
-│       ├── guide-viewer.js             # Guia passo a passo interativo        81 linhas
-│       ├── checklist.js                # Drawer de progresso + FAB            66 linhas
-│       └── summary.js                  # Resumo final + impressão             83 linhas
-└── ARCHITECTURE.md                     # Este documento
+│       ├── header.js                   # Stepper de progresso                  65 linhas
+│       ├── form.js                     # Formulário de dados                   88 linhas
+│       ├── platform-card.js            # Cards de plataformas                 178 linhas
+│       ├── guide-viewer.js             # Guia passo a passo                   105 linhas
+│       ├── wizard.js                   # Assistente automático                150 linhas
+│       ├── checklist.js                # FAB + drawer de progresso             69 linhas
+│       └── summary.js                  # Resumo final + export                138 linhas
+└── assets/
+    ├── logo-gv.png                     # Logo oficial HD (1536x1024)
+    └── icons/                          # Ícones SVG
 ```
 
-**Total: ~1.137 linhas de código**
+**Total: ~4.337 linhas de código**
 
 ---
 
