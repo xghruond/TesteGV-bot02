@@ -115,21 +115,11 @@
   flex-shrink: 0;
 }
 
-/* ── Bloco inferior centralizado como flex item ── */
-.splash-bottom {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  margin-top: 20px;
-  flex-shrink: 0;
-  width: 100%;
-}
-
 /* ── Barra de progresso ── */
 .splash-bar-wrap {
   width: 160px;
   height: 1px;
+  margin-top: 20px;
   background: rgba(255,255,255,0.08);
   border-radius: 2px;
   overflow: hidden;
@@ -153,6 +143,7 @@
 .splash-skip {
   font-size: 9px;
   color: rgba(255,255,255,0.12);
+  margin-top: 10px;
   letter-spacing: 3px;
   text-transform: uppercase;
   font-family: Inter, system-ui, sans-serif;
