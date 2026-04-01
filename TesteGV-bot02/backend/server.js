@@ -68,28 +68,28 @@ async function createProtonMailAccount(username, password, displayName) {
     await page.goto('https://account.proton.me/signup', { waitUntil: 'domcontentloaded', timeout: 60000 });
     await page.waitForTimeout(5000);
 
-    // 2. Selecionar plano Free (se aparecer seletor de planos)
+    // 2. Selecionar plano Free
     currentJob.step = 'Selecionando plano gratuito...';
     currentJob.status = 'selecting-plan';
     try {
-      const freeButton = page.locator('button:has-text("Free"), [data-testid="select-free"]').first();
-      if (await freeButton.isVisible({ timeout: 5000 })) {
-        await freeButton.click();
-        await page.waitForTimeout(1500);
-      }
+      // O botão Free contém "Free" e "Gratuito" no texto
+      const freeButton = page.locator('button.card-plan').filter({ hasText: /Free|Gratuito/i }).first();
+      await freeButton.waitFor({ state: 'visible', timeout: 15000 });
+      await freeButton.click();
+      await page.waitForTimeout(3000);
     } catch (e) {
-      // Plano Free pode já estar selecionado ou não ter seletor
+      // Tentar clicar direto se já passou da seleção
     }
 
-    // 3. Preencher username
+    // 3. Preencher username — esperar a página de criação de conta
     currentJob.step = 'Preenchendo e-mail...';
     currentJob.status = 'filling-email';
     try {
-      // Tentar vários seletores possíveis
-      const emailInput = page.locator('input[id="email"], input[name="email"], input[placeholder*="mail" i], input[placeholder*="user" i]').first();
-      await emailInput.waitFor({ state: 'visible', timeout: 10000 });
+      // Esperar qualquer input aparecer (página de username)
+      const emailInput = page.locator('input[id="email"], input[name="email"], input[type="text"]').first();
+      await emailInput.waitFor({ state: 'visible', timeout: 20000 });
       await emailInput.fill(username);
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(800);
     } catch (e) {
       throw new Error('Não encontrou campo de e-mail. A página pode ter mudado.');
     }
@@ -99,6 +99,7 @@ async function createProtonMailAccount(username, password, displayName) {
     currentJob.status = 'filling-password';
     try {
       const pwInputs = page.locator('input[type="password"]');
+      await pwInputs.first().waitFor({ state: 'visible', timeout: 10000 });
       const count = await pwInputs.count();
       if (count >= 2) {
         await pwInputs.nth(0).fill(password);
@@ -109,20 +110,36 @@ async function createProtonMailAccount(username, password, displayName) {
       }
       await page.waitForTimeout(500);
     } catch (e) {
-      throw new Error('Não encontrou campo de senha.');
+      // Senha pode estar em outra etapa
     }
 
-    // 5. Clicar em criar conta
-    currentJob.step = 'Clicando em criar conta...';
+    // 5. Clicar em próximo/criar conta
+    currentJob.step = 'Avançando...';
     currentJob.status = 'submitting';
     try {
-      const createBtn = page.locator('button[type="submit"], button:has-text("Create"), button:has-text("Criar"), button:has-text("Next"), button:has-text("Próximo")').first();
-      if (await createBtn.isVisible({ timeout: 3000 })) {
-        await createBtn.click();
+      const submitBtn = page.locator('button[type="submit"]').first();
+      if (await submitBtn.isVisible({ timeout: 3000 })) {
+        await submitBtn.click();
+        await page.waitForTimeout(2000);
       }
-    } catch (e) {
-      // Pode não ter botão visível ainda
-    }
+    } catch (e) {}
+
+    // Se tem mais campos de senha na próxima tela, preencher
+    try {
+      const pwInputs2 = page.locator('input[type="password"]');
+      if (await pwInputs2.first().isVisible({ timeout: 3000 })) {
+        const count2 = await pwInputs2.count();
+        for (let i = 0; i < count2; i++) {
+          await pwInputs2.nth(i).fill(password);
+          await page.waitForTimeout(200);
+        }
+        await page.waitForTimeout(500);
+        const submitBtn2 = page.locator('button[type="submit"]').first();
+        if (await submitBtn2.isVisible({ timeout: 2000 })) {
+          await submitBtn2.click();
+        }
+      }
+    } catch (e) {}
 
     // 6. AGUARDAR CAPTCHA — o usuario resolve manualmente
     currentJob.step = 'Resolva o CAPTCHA no navegador que abriu!';
