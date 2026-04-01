@@ -2,7 +2,7 @@ var App = App || {};
 
 App.storage = {
   KEY: 'gv-onboarding-state',
-  VERSION: 3,
+  VERSION: 4,
 
   _checkVersion: function() {
     var v = localStorage.getItem('gv-storage-version');
@@ -27,7 +27,7 @@ App.storage = {
       if (!raw) return null;
       var state = JSON.parse(raw);
       // Telas que não devem ser restauradas ao recarregar
-      var noRestore = ['history', 'history-detail', 'phone-numbers'];
+      var noRestore = ['history', 'history-detail'];
       if (state && noRestore.indexOf(state.currentScreen) !== -1) {
         state.currentScreen = 'welcome';
       }

@@ -112,7 +112,6 @@ App.renderSummary = function(state) {
         '<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">' +
           '<div><p class="text-xs font-medium uppercase tracking-wide text-dark-500">Nome completo</p><p class="text-base font-medium text-dark-100">' + esc(state.employee.nomeCompleto || '-') + '</p></div>' +
           '<div><p class="text-xs font-medium uppercase tracking-wide text-dark-500">E-mail</p><p class="text-base font-medium text-dark-100">' + esc(email) + '</p></div>' +
-          '<div><p class="text-xs font-medium uppercase tracking-wide text-dark-500">Telefone</p><p class="text-base font-medium text-dark-100">' + esc(state.employee.telefone || '-') + '</p></div>' +
           '<div><p class="text-xs font-medium uppercase tracking-wide text-dark-500">Data de nascimento</p><p class="text-base font-medium text-dark-100">' + dataNascFormatted + '</p></div>' +
           '<div><p class="text-xs font-medium uppercase tracking-wide text-dark-500">Cargo</p><p class="text-base font-medium text-dark-100">' + esc(state.employee.cargo || '-') + '</p></div>' +
           '<div><p class="text-xs font-medium uppercase tracking-wide text-dark-500">Departamento</p><p class="text-base font-medium text-dark-100">' + esc(deptLabel) + '</p></div>' +

@@ -63,7 +63,6 @@ App.renderPlatformCards = function(state) {
   var email = state.employee.emailDesejado ? state.employee.emailDesejado + '@proton.me' : '-';
   var username = state.employee.emailDesejado ? '@' + state.employee.emailDesejado : '-';
   var dataNasc = App.formatDateBR(state.employee.dataNascimento);
-  var telefone = state.employee.telefone || '-';
   var senhaGerada = state.suggestedPassword || App.generatePassword(14);
 
   function infoRow(label, value) {
@@ -95,7 +94,6 @@ App.renderPlatformCards = function(state) {
         infoRow('Username / @', username) +
         infoRow('Senha sugerida', senhaGerada) +
         infoRow('Data de nascimento', dataNasc) +
-        infoRow('Telefone', telefone) +
       '</div>' +
     '</div>' +
   '</div>';

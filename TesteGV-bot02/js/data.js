@@ -383,7 +383,6 @@ App.generateSummaryText = function(state) {
     'DADOS DO FUNCIONARIO',
     'Nome: ' + (state.employee.nomeCompleto || '-'),
     'Email: ' + email,
-    'Telefone: ' + (state.employee.telefone || '-'),
     'Data de Nascimento: ' + App.formatDateBR(state.employee.dataNascimento),
     'Cargo: ' + (state.employee.cargo || '-'),
     'Departamento: ' + deptLabel,
@@ -615,7 +614,6 @@ App.platforms = {
 App.formFields = [
   { id: 'nomeCompleto', label: 'Nome completo', type: 'text', placeholder: 'Ex: João da Silva', required: true, minLength: 3, icon: 'user' },
   { id: 'emailDesejado', label: 'E-mail desejado (usuário ProtonMail)', type: 'text', placeholder: 'nome.sobrenome ou nome.empresa', required: true, minLength: 3, helpText: 'Sugestões: maria.santos, pedro.costa.gv, ana.tech — o "@proton.me" será adicionado automaticamente.', icon: 'mail' },
-  { id: 'telefone', label: 'Telefone para verificação', type: 'tel', placeholder: 'Cole o número aqui (ex: +1234567890)', required: true, icon: 'phone', helpText: 'Use o botão abaixo para obter um número gratuito.' },
   { id: 'dataNascimento', label: 'Data de nascimento', type: 'date', required: true, icon: 'calendar' },
   { id: 'cargo', label: 'Cargo', type: 'text', placeholder: 'Ex: Analista de Marketing', required: true, icon: 'briefcase' },
   {
@@ -658,8 +656,6 @@ App.getWizardCredentials = function(platformId, state) {
   var username = '@' + state.employee.emailDesejado;
   var senha = state.suggestedPassword || '';
   var dataNasc = App.formatDateBR(state.employee.dataNascimento);
-  var telefone = state.employee.telefone || '';
-
   var senhaRow = { label: 'Senha sugerida', value: senha };
 
   switch (platformId) {
@@ -668,8 +664,6 @@ App.getWizardCredentials = function(platformId, state) {
         { label: 'Primeiro nome', value: names.first },
         { label: 'Sobrenome', value: names.last },
         { label: 'E-mail desejado', value: state.employee.emailDesejado },
-        { label: 'Data de nascimento', value: dataNasc },
-        { label: 'Telefone', value: telefone },
         senhaRow
       ];
     case 'instagram':

@@ -9,7 +9,6 @@ var App = App || {};
     employee: {
       nomeCompleto: '',
       emailDesejado: '',
-      telefone: '',
       dataNascimento: '',
       cargo: '',
       departamento: '',
@@ -79,7 +78,6 @@ var App = App || {};
     switch (fieldId) {
       case 'nomeCompleto': return value && value.trim().length >= 3;
       case 'emailDesejado': return value && /^[a-zA-Z0-9._-]+$/.test(value) && !/\.{2,}/.test(value) && !/^[.\-]|[.\-]$/.test(value);
-      case 'telefone': var p = (value||'').trim(); return /^\+[1-9]\d{6,14}$/.test(p) || (p.replace(/\D/g,'').length >= 10 && p.replace(/\D/g,'').length <= 11);
       case 'dataNascimento': if(!value) return false; var d=new Date(value+'T00:00:00'); var t=new Date(); t.setHours(0,0,0,0); var a=t.getFullYear()-d.getFullYear(); return d<t && a>=13 && a<=120;
       case 'cargo': return value && value.trim().length >= 2;
       case 'departamento': return !!value;
@@ -98,13 +96,6 @@ var App = App || {};
       errors.push('E-mail desejado deve conter apenas letras, números, pontos e hífens.');
     } else if (/\.{2,}/.test(data.emailDesejado) || /^[.\-]|[.\-]$/.test(data.emailDesejado)) {
       errors.push('E-mail não pode começar/terminar com ponto ou hífen, nem ter pontos consecutivos.');
-    }
-    var phone = (data.telefone || '').trim();
-    var isE164 = /^\+[1-9]\d{6,14}$/.test(phone);
-    var phoneDigits = phone.replace(/\D/g, '');
-    var isBR = phoneDigits.length >= 10 && phoneDigits.length <= 11;
-    if (!isE164 && !isBR) {
-      errors.push('Clique no campo "Telefone" e selecione um número.');
     }
     if (!data.dataNascimento) {
       errors.push('Data de nascimento é obrigatória.');
@@ -156,7 +147,6 @@ var App = App || {};
     summary:          { scale: 1.24, y: '-32px',  brightness: 0.72, saturate: 0.9,  overlay: 1.18, vignette: 0.6,  farOp: 0.85, farSc: 1.06, midOp: 0.7,  midX: '-15px', nearOp: 0.55, nearX: '0px',  nearSc: 1.0  },
     history:          { scale: 1.10, y: '-12px',  brightness: 0.88, saturate: 1.0,  overlay: 1.08, vignette: 0.25, farOp: 0.35, farSc: 0.97, midOp: 0.15, midX: '30px',  nearOp: 0,    nearX: '40px', nearSc: 0.95 },
     'history-detail': { scale: 1.15, y: '-20px',  brightness: 0.82, saturate: 0.95, overlay: 1.12, vignette: 0.4,  farOp: 0.5,  farSc: 1.0,  midOp: 0.3,  midX: '15px',  nearOp: 0.15, nearX: '20px', nearSc: 0.97 },
-    'phone-numbers':  { scale: 1.06, y: '-8px',   brightness: 0.92, saturate: 1.05, overlay: 1.05, vignette: 0.2,  farOp: 0.2,  farSc: 0.97, midOp: 0,    midX: '30px',  nearOp: 0,    nearX: '40px', nearSc: 0.95 },
   };
 
   // SVGs de folhagem para as 3 camadas — silhuetas escuras contrastantes
@@ -502,59 +492,6 @@ var App = App || {};
     setTimeout(function() { ripple.remove(); }, 600);
   }
 
-  // === Tela de números temporários gratuitos ===
-  function renderPhoneProviders() {
-    var providers = [
-      { name: 'Receive SMSs', url: 'https://receive-smss.com', flags: '🇧🇷 🇺🇸 🇬🇧 🇩🇪 🇪🇸 🇳🇱 🇨🇦 🇮🇳', countries: 'Brasil, EUA, UK, Alemanha, Espanha, Holanda, Canadá, Índia + 4' },
-      { name: 'Quackr', url: 'https://quackr.io', flags: '🇺🇸 🇬🇧 🇨🇦 🇦🇺 🇩🇪 🇫🇷', countries: 'EUA, UK, Canadá, Austrália, Alemanha, França + 24' },
-      { name: 'Temp Number', url: 'https://temp-number.com', flags: '🇺🇸 🇬🇧 🇩🇪 🇫🇷 🇪🇸 🇮🇹', countries: 'EUA, UK, Alemanha, França, Espanha, Itália + 10' },
-      { name: 'Receive SMS Free', url: 'https://receive-sms-free.cc', flags: '🇺🇸 🇬🇧 🇨🇦 🇦🇺 🇩🇪', countries: 'EUA, UK, Canadá, Austrália, Alemanha' }
-    ];
-
-    var cardsHtml = providers.map(function(p, idx) {
-      return '' +
-        '<div class="stagger-in rounded-xl border border-dark-700/40 bg-dark-900/30 backdrop-blur-sm p-5 transition-all hover:border-brand-500/40 hover:shadow-lg hover:shadow-brand-500/5" style="animation-delay:' + (idx * 0.1) + 's">' +
-          '<div class="flex items-center gap-3 mb-3">' +
-            '<div class="text-2xl">' + p.flags.split(' ').slice(0, 3).join(' ') + '</div>' +
-            '<div class="flex-1 min-w-0">' +
-              '<h3 class="text-base font-bold text-dark-100">' + App.escapeHtml(p.name) + '</h3>' +
-              '<p class="text-xs text-dark-500 truncate">' + App.escapeHtml(p.countries) + '</p>' +
-            '</div>' +
-          '</div>' +
-          '<a href="' + App.escapeHtml(p.url) + '" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 w-full rounded-lg btn-gradient py-2.5 text-sm font-semibold text-white transition-all">' +
-            App.icons.externalLink + ' Abrir Site</a>' +
-        '</div>';
-    }).join('');
-
-    return '' +
-      '<div class="max-w-2xl mx-auto">' +
-        '<button data-action="back-to-form" class="mb-4 flex items-center gap-1 text-sm font-medium text-dark-400 transition-colors hover:text-brand-400">' +
-          App.icons.chevronLeft + ' Voltar ao formulário</button>' +
-
-        '<div class="text-center mb-6">' +
-          '<div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-500/15 text-brand-400 mx-auto mb-3">' +
-            App.icons.phone +
-          '</div>' +
-          '<h2 class="text-2xl font-bold text-dark-50 mb-1">Números Temporários Gratuitos</h2>' +
-          '<p class="text-sm text-dark-400">Use um número temporário para verificação das contas</p>' +
-        '</div>' +
-
-        '<div class="rounded-xl border border-brand-500/20 bg-brand-500/5 p-4 mb-6">' +
-          '<h3 class="text-sm font-semibold text-brand-400 mb-3">Como usar:</h3>' +
-          '<ol class="space-y-2 text-sm text-dark-300">' +
-            '<li class="flex gap-2"><span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-500/20 text-brand-400 text-xs font-bold">1</span> Escolha um provedor abaixo e clique em "Abrir Site"</li>' +
-            '<li class="flex gap-2"><span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-500/20 text-brand-400 text-xs font-bold">2</span> Escolha um número disponível e copie-o</li>' +
-            '<li class="flex gap-2"><span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-500/20 text-brand-400 text-xs font-bold">3</span> Volte aqui e cole no campo "Telefone" do formulário</li>' +
-            '<li class="flex gap-2"><span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-500/20 text-brand-400 text-xs font-bold">4</span> Use esse número na verificação das plataformas</li>' +
-            '<li class="flex gap-2"><span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-500/20 text-brand-400 text-xs font-bold">5</span> Volte ao site do provedor para ver o código SMS recebido</li>' +
-          '</ol>' +
-        '</div>' +
-
-        '<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">' + cardsHtml + '</div>' +
-
-        '<p class="text-center text-xs text-dark-600">Os números são públicos e temporários. Use apenas para verificação de contas.</p>' +
-      '</div>';
-  }
 
   // === Tela de histórico ===
   function renderHistory() {
@@ -658,7 +595,7 @@ var App = App || {};
     var content = document.getElementById('app-content');
     var checklistContainer = document.getElementById('app-checklist');
 
-    if (state.currentScreen === 'welcome' || state.currentScreen === 'history' || state.currentScreen === 'history-detail' || state.currentScreen === 'phone-numbers') {
+    if (state.currentScreen === 'welcome' || state.currentScreen === 'history' || state.currentScreen === 'history-detail') {
       header.innerHTML = '';
     } else {
       header.innerHTML = App.renderHeader(state);
@@ -685,9 +622,6 @@ var App = App || {};
           break;
         case 'summary':
           content.innerHTML = App.renderSummary(state);
-          break;
-        case 'phone-numbers':
-          content.innerHTML = renderPhoneProviders();
           break;
         case 'history':
           content.innerHTML = renderHistory();
@@ -858,9 +792,6 @@ var App = App || {};
     navigateTo('form');
   });
 
-  bindAction('view-phone-numbers', function() {
-    navigateTo('phone-numbers');
-  });
 
   bindAction('back-to-platforms', function() {
     navigateTo('platforms');
@@ -886,7 +817,6 @@ var App = App || {};
 
     var emailSuggestion = App.generateEmailFromName(nome);
 
-    // telefone não é preenchido automaticamente
     var fields = {
       nomeCompleto:  nome,
       emailDesejado: emailSuggestion,

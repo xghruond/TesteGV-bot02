@@ -30,13 +30,6 @@ App.renderForm = function(state) {
 
 
 
-    var phoneExtras = '';
-    if (field.id === 'telefone') {
-      phoneExtras =
-        '<button type="button" data-action="view-phone-numbers" class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand-500/10 border border-brand-500/30 px-3 py-1.5 text-xs font-semibold text-brand-400 hover:bg-brand-500/20 transition-colors">' +
-          App.icons.externalLink + ' Obter Número Grátis</button>';
-    }
-
     var emailExtras = '';
     if (field.id === 'emailDesejado') {
       emailExtras =
@@ -61,7 +54,6 @@ App.renderForm = function(state) {
             ' class="dark-input block w-full rounded-xl py-3 pl-10 pr-4 text-base transition-colors focus:outline-none" />' +
         '</div>' +
         (field.helpText ? '<p id="' + field.id + '-help" class="mt-1 text-xs text-dark-500">' + field.helpText + '</p>' : '') +
-        phoneExtras +
         emailExtras +
       '</div>';
   }).join('');
