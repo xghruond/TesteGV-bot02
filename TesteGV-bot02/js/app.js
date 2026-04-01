@@ -949,21 +949,55 @@ var App = App || {};
     });
   });
 
-  // Abrir cadastro da plataforma + copiar dados
+  // Abrir cadastro da plataforma
   bindAction('wizard-open-incognito', function(e, el) {
     var url = el.getAttribute('data-url');
     if (!url) return;
 
+    var platform = App.platforms[state.currentGuide];
+    var platformName = platform ? platform.name : '';
+
     // Copiar dados silenciosamente
     var creds = App.getWizardCredentials(state.currentGuide, state);
+    var credsText = '';
     if (creds) {
-      var text = creds.map(function(c) { return c.value; }).join('\n');
-      try { navigator.clipboard.writeText(text); } catch(e) {}
+      credsText = creds.map(function(c) { return c.value; }).join('\n');
+      try { navigator.clipboard.writeText(credsText); } catch(e) {}
     }
 
-    // Abrir em nova aba
-    window.open(url, '_blank');
-    App.showToast('Dados copiados! Cole no formulário.', 'success');
+    // Mostrar modal simples com 2 opções
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;padding:1rem;';
+    overlay.innerHTML =
+      '<div style="background:rgba(15,23,42,0.97);border:1px solid rgba(51,65,85,0.4);border-radius:20px;padding:2rem;width:100%;max-width:400px;text-align:center;">' +
+        '<p style="font-size:16px;font-weight:700;color:#f1f5f9;margin-bottom:16px;">Como abrir o ' + App.escapeHtml(platformName) + '?</p>' +
+        '<div style="display:flex;flex-direction:column;gap:10px;">' +
+          '<button id="open-normal" style="width:100%;padding:14px;border-radius:12px;font-size:15px;font-weight:700;color:#fff;border:none;cursor:pointer;background:linear-gradient(135deg,#22c55e,#16a34a);">Não tenho conta pessoal — Abrir direto</button>' +
+          '<button id="open-incognito" style="width:100%;padding:14px;border-radius:12px;font-size:15px;font-weight:700;color:#fff;border:none;cursor:pointer;background:linear-gradient(135deg,#6D4AFF,#4F46E5);">Tenho conta pessoal — Copiar link</button>' +
+          '<p id="link-copied" style="display:none;font-size:13px;color:#4ade80;margin-top:4px;">Link copiado! Abra uma janela anônima (Ctrl+Shift+N) e cole com Ctrl+V</p>' +
+          '<button id="open-cancel" style="width:100%;padding:10px;border-radius:12px;font-size:13px;color:#64748b;border:1px solid rgba(100,116,139,0.3);cursor:pointer;background:none;">Cancelar</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('open-normal').addEventListener('click', function() {
+      overlay.remove();
+      window.open(url, '_blank');
+      App.showToast('Dados copiados! Cole no formulário.', 'success');
+    });
+
+    document.getElementById('open-incognito').addEventListener('click', function() {
+      navigator.clipboard.writeText(url).then(function() {
+        document.getElementById('link-copied').style.display = 'block';
+        document.getElementById('open-incognito').textContent = 'Link copiado!';
+        document.getElementById('open-incognito').style.background = '#22c55e';
+      });
+    });
+
+    document.getElementById('open-cancel').addEventListener('click', function() {
+      overlay.remove();
+    });
   });
 
   // Abrir link de cadastro
