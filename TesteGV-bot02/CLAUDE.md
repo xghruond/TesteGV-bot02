@@ -24,7 +24,7 @@ SPA que guia novos funcionarios de multinacional na criacao de contas Gmail, Ins
 - **Caminhos git**: usar relativos a `C:\` (ex: `git add TesteGV-bot02/js/app.js`)
 - **Commits**: em portugues, prefixos feat/fix/chore
 
-## Estrutura (4.337 linhas)
+## Estrutura (4.309 linhas)
 ```
 TesteGV-bot02/
 ├── index.html              (96 linhas)  — SPA shell + splash screen
@@ -33,12 +33,12 @@ TesteGV-bot02/
 ├── MEMORY.md               — Contexto de negocio e decisoes
 ├── .gitignore
 ├── css/
-│   └── styles.css          (1050 linhas) — Animacoes, print, dark theme
+│   └── styles.css          (1026 linhas) — Animacoes, print, dark theme
 ├── js/
 │   ├── data.js             (725 linhas)  — Plataformas, icones, helpers
 │   ├── storage.js          (76 linhas)   — localStorage + version check
 │   ├── particles.js        (200 linhas)  — Canvas de particulas
-│   ├── app.js              (1397 linhas) — Controlador principal
+│   ├── app.js              (1393 linhas) — Controlador principal
 │   └── components/
 │       ├── header.js       (65 linhas)   — Stepper de progresso
 │       ├── form.js         (88 linhas)   — Formulario de dados
