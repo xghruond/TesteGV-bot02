@@ -949,6 +949,26 @@ var App = App || {};
     });
   });
 
+  // Abrir cadastro em nova aba + copiar dados ao clipboard
+  bindAction('wizard-open-incognito', function(e, el) {
+    var url = el.getAttribute('data-url');
+    if (!url) return;
+    // Abrir site
+    var link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.click();
+    // Copiar dados automaticamente
+    var creds = App.getWizardCredentials(state.currentGuide, state);
+    if (creds) {
+      var text = creds.map(function(c) { return c.label + ': ' + c.value; }).join('\n');
+      navigator.clipboard.writeText(text).then(function() {
+        App.showToast('Dados copiados! Cole no formulário do site.', 'success');
+      }).catch(function() {});
+    }
+  });
+
   // Abrir link de cadastro
   bindAction('open-register', function() {
     var platform = App.platforms[state.currentGuide];

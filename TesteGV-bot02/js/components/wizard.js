@@ -108,9 +108,13 @@ App.renderWizard = function(state) {
 
       // Credentials panel
       '<div class="mb-5 rounded-xl border border-brand-500/30 bg-dark-900/30 backdrop-blur-sm p-5">' +
-        '<h3 class="flex items-center gap-2 text-sm font-bold text-brand-400 mb-3">' +
-          App.icons.clipboard + ' Dados para Cadastro' +
-        '</h3>' +
+        '<div class="flex items-center justify-between mb-3">' +
+          '<h3 class="flex items-center gap-2 text-sm font-bold text-brand-400">' +
+            App.icons.clipboard + ' Dados para Cadastro' +
+          '</h3>' +
+          '<button data-action="copy" data-copy-text="' + App.escapeHtml(credentials.map(function(c) { return c.label + ': ' + c.value; }).join('\n')) + '" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-500/10 border border-brand-500/30 px-3 py-1.5 text-xs font-semibold text-brand-400 hover:bg-brand-500/20 transition-colors">' +
+            App.icons.copy + ' Copiar Tudo</button>' +
+        '</div>' +
         '<div class="bg-dark-900/30 rounded-lg p-3">' +
           credRows +
         '</div>' +
@@ -122,10 +126,10 @@ App.renderWizard = function(state) {
             App.icons.sparkles + ' Criar Conta Automaticamente</button>' +
           '<a href="' + platform.registerUrl + '" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 w-full rounded-xl border border-dark-700/50 px-6 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-white">' +
             App.icons.externalLink + ' Abrir Manualmente</a>'
-        : '<a href="' + platform.registerUrl + '" target="_blank" rel="noopener noreferrer" data-action="wizard-open-register" class="btn-gradient flex items-center justify-center gap-2 w-full rounded-xl px-6 py-4 text-base font-bold text-white shadow-lg shadow-green-600/20 mb-2">' +
+        : '<button data-action="wizard-open-incognito" data-url="' + platform.registerUrl + '" class="btn-gradient flex items-center justify-center gap-2 w-full rounded-xl px-6 py-4 text-base font-bold text-white shadow-lg shadow-green-600/20 mb-2">' +
             App.icons.externalLink + ' Abrir Cadastro do ' + esc(platform.name) +
-          '</a>' +
-          '<p class="text-center text-xs text-amber-400/80 mb-1">⚠️ Abra em <strong>janela anônima</strong> (Ctrl+Shift+N) para não usar sua conta pessoal</p>'
+          '</button>' +
+          '<p class="text-center text-xs text-amber-400/80 mb-1">⚠️ Use <strong>Ctrl+Shift+N</strong> primeiro (janela anônima) para não usar sua conta pessoal</p>'
       ) +
 
       // Divider
