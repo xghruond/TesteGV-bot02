@@ -56,14 +56,10 @@ async function createProtonMailAccount(username, password, displayName) {
 
     browser = await chromium.launch({
       headless: false,
-      args: [
-        '--start-maximized',
-        '--no-sandbox',
-        '--window-position=0,0',
-        '--window-size=1920,1080'
-      ]
+      channel: 'chrome',
+      args: ['--start-maximized']
     });
-    console.log('[Bot] Browser aberto!');
+    console.log('[Bot] Chrome aberto!');
 
     const context = await browser.newContext({ viewport: null });
     const page = await context.newPage();
