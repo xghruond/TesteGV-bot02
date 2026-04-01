@@ -17,9 +17,15 @@ App.renderGuide = function(state) {
     return '<div class="h-1.5 flex-1 rounded-full ' + color + ' transition-colors"></div>';
   }).join('');
 
+  var automationButton = step.hasAutomation
+    ? '<button data-action="auto-create-protonmail" class="mb-3 flex w-full items-center justify-center gap-2 btn-futuristic rounded-xl px-6 py-4 text-base font-semibold text-white active:scale-[0.98]">' +
+        App.icons.sparkles + ' Criar Conta Automaticamente</button>'
+    : '';
+
   var registerButton = step.action === 'open_register'
-    ? '<button data-action="open-register" class="mb-6 flex w-full items-center justify-center gap-2 btn-futuristic rounded-xl px-6 py-4 text-base font-semibold text-white active:scale-[0.98]">' +
-        App.icons.externalLink + ' Abrir Página de Cadastro</button>'
+    ? automationButton +
+      '<button data-action="open-register" class="mb-6 flex w-full items-center justify-center gap-2 rounded-xl border border-dark-700/50 px-6 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-white">' +
+        App.icons.externalLink + ' Abrir Manualmente</button>'
     : '';
 
   var placeholders = {

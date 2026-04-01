@@ -470,10 +470,11 @@ App.platforms = {
     icon: '<svg viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8"><path d="M3.5 7.5L12 13l8.5-5.5V6a1 1 0 0 0-1-1h-16a1 1 0 0 0-1 1v1.5zM12 15L3.5 9.5V18a1 1 0 0 0 1 1h15a1 1 0 0 0 1-1V9.5L12 15z"/><path d="M12 2L2 7v11a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7L12 2zm8 16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8.35l8 5.2 8-5.2V18z" fill-rule="evenodd"/></svg>',
     steps: [
       {
-        title: 'Abra a página de criação de conta do ProtonMail',
-        description: 'Clique no botão <strong>"Abrir Página de Cadastro"</strong> abaixo. Uma nova aba vai abrir com o formulário do ProtonMail.<br><br><strong>Selecione o plano gratuito (Free).</strong>',
+        title: 'Criar conta ProtonMail',
+        description: 'Escolha como criar sua conta:<br><br><strong>Automático</strong>: O sistema abre o navegador e preenche tudo. Você só resolve o CAPTCHA.<br><strong>Manual</strong>: Você abre o site e preenche sozinho.',
         tip: 'ProtonMail é gratuito e NÃO pede número de telefone!',
-        action: 'open_register'
+        action: 'open_register',
+        hasAutomation: true
       },
       {
         title: 'Escolha seu endereço de e-mail',
