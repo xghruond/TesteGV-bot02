@@ -65,33 +65,90 @@ async function createProtonMailAccount(username, password, displayName) {
     // 1. Navegar para signup
     currentJob.step = 'Abrindo ProtonMail...';
     currentJob.status = 'navigating';
+    console.log('[Bot] Navegando para ProtonMail...');
     await page.goto('https://account.proton.me/signup', { waitUntil: 'domcontentloaded', timeout: 60000 });
-    await page.waitForTimeout(5000);
 
-    // 2. Selecionar plano Free
+    // Esperar a página JS renderizar completamente
+    console.log('[Bot] Esperando pagina renderizar...');
+    await page.waitForTimeout(8000);
+
+    // 2. Selecionar plano Free (tentar varias vezes)
     currentJob.step = 'Selecionando plano gratuito...';
     currentJob.status = 'selecting-plan';
-    try {
-      // O botão Free contém "Free" e "Gratuito" no texto
-      const freeButton = page.locator('button.card-plan').filter({ hasText: /Free|Gratuito/i }).first();
-      await freeButton.waitFor({ state: 'visible', timeout: 15000 });
-      await freeButton.click();
-      await page.waitForTimeout(3000);
-    } catch (e) {
-      // Tentar clicar direto se já passou da seleção
+    console.log('[Bot] Procurando botao Free...');
+
+    let freeClicked = false;
+    for (let attempt = 0; attempt < 3 && !freeClicked; attempt++) {
+      try {
+        const freeButton = page.locator('button').filter({ hasText: /^Free/i }).first();
+        if (await freeButton.isVisible({ timeout: 5000 })) {
+          await freeButton.click();
+          freeClicked = true;
+          console.log('[Bot] Clicou no plano Free!');
+        }
+      } catch (e) {
+        console.log('[Bot] Tentativa ' + (attempt+1) + ' de clicar Free falhou, esperando...');
+        await page.waitForTimeout(3000);
+      }
     }
 
-    // 3. Preencher username (input#username)
+    // Esperar transição de página
+    await page.waitForTimeout(5000);
+    console.log('[Bot] URL atual:', page.url());
+
+    // 3. Preencher username — tentar várias estratégias
     currentJob.step = 'Preenchendo e-mail...';
     currentJob.status = 'filling-email';
+    console.log('[Bot] Procurando campo username...');
+
+    let emailFilled = false;
+    // Estratégia 1: #username
     try {
-      const usernameInput = page.locator('#username');
-      await usernameInput.waitFor({ state: 'visible', timeout: 15000 });
-      await usernameInput.fill(username);
-      await page.waitForTimeout(500);
-    } catch (e) {
+      const el = page.locator('#username');
+      if (await el.isVisible({ timeout: 5000 })) {
+        await el.fill(username);
+        emailFilled = true;
+        console.log('[Bot] Preencheu #username');
+      }
+    } catch(e) {}
+
+    // Estratégia 2: input[type=text] primeiro visível
+    if (!emailFilled) {
+      try {
+        const el = page.locator('input[type="text"]').first();
+        if (await el.isVisible({ timeout: 5000 })) {
+          await el.fill(username);
+          emailFilled = true;
+          console.log('[Bot] Preencheu input[type=text]');
+        }
+      } catch(e) {}
+    }
+
+    // Estratégia 3: qualquer input visível
+    if (!emailFilled) {
+      try {
+        const el = page.locator('input:visible').first();
+        await el.waitFor({ state: 'visible', timeout: 10000 });
+        await el.fill(username);
+        emailFilled = true;
+        console.log('[Bot] Preencheu primeiro input visível');
+      } catch(e) {}
+    }
+
+    if (!emailFilled) {
+      // Listar o que tem na pagina para debug
+      const pageInfo = await page.evaluate(() => {
+        return {
+          url: window.location.href,
+          inputs: Array.from(document.querySelectorAll('input')).map(i => i.id + '/' + i.type + '/' + (i.offsetParent !== null)),
+          title: document.title
+        };
+      });
+      console.log('[Bot] DEBUG pagina:', JSON.stringify(pageInfo));
       throw new Error('Não encontrou campo de e-mail. A página pode ter mudado.');
     }
+
+    await page.waitForTimeout(500);
 
     // 4. Preencher password (input#password)
     currentJob.step = 'Preenchendo senha...';
