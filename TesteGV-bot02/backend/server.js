@@ -55,9 +55,15 @@ async function createProtonMailAccount(username, password, displayName) {
     currentJob.status = 'browser';
 
     browser = await chromium.launch({
-      headless: false,  // VISIVEL — usuario precisa resolver CAPTCHA
-      args: ['--start-maximized']
+      headless: false,
+      args: [
+        '--start-maximized',
+        '--no-sandbox',
+        '--window-position=0,0',
+        '--window-size=1920,1080'
+      ]
     });
+    console.log('[Bot] Browser aberto!');
 
     const context = await browser.newContext({ viewport: null });
     const page = await context.newPage();
@@ -67,6 +73,7 @@ async function createProtonMailAccount(username, password, displayName) {
     currentJob.status = 'navigating';
     console.log('[Bot] Navegando para ProtonMail...');
     await page.goto('https://account.proton.me/signup', { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await page.bringToFront();
 
     // Esperar a página JS renderizar completamente
     console.log('[Bot] Esperando pagina renderizar...');
@@ -187,8 +194,10 @@ async function createProtonMailAccount(username, password, displayName) {
     } catch (e) {}
 
     // 6. AGUARDAR CAPTCHA — o usuario resolve manualmente
-    currentJob.step = 'Resolva o CAPTCHA no navegador que abriu!';
+    currentJob.step = 'Resolva o CAPTCHA no navegador Chromium!';
     currentJob.status = 'waiting-captcha';
+    await page.bringToFront();
+    console.log('[Bot] CAPTCHA — esperando usuario resolver...');
 
     // Esperar até que a URL mude (indica que passou do signup)
     // ou que um elemento de sucesso apareça
