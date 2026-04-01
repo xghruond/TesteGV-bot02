@@ -949,27 +949,21 @@ var App = App || {};
     });
   });
 
-  // Copiar link + dados e abrir cadastro
+  // Abrir cadastro da plataforma + copiar dados
   bindAction('wizard-open-incognito', function(e, el) {
     var url = el.getAttribute('data-url');
     if (!url) return;
-    // Copiar link + dados ao clipboard
+
+    // Copiar dados silenciosamente
     var creds = App.getWizardCredentials(state.currentGuide, state);
-    var text = url + '\n\n';
     if (creds) {
-      text += creds.map(function(c) { return c.label + ': ' + c.value; }).join('\n');
+      var text = creds.map(function(c) { return c.value; }).join('\n');
+      try { navigator.clipboard.writeText(text); } catch(e) {}
     }
-    navigator.clipboard.writeText(text).then(function() {
-      App.showToast('Link + dados copiados! Abra a janela anônima (Ctrl+Shift+N) e cole o link.', 'success');
-    }).catch(function() {
-      App.showToast('Cole este link na janela anônima: ' + url, 'info');
-    });
-    // Também abrir o site (o usuario pode fechar se preferir usar anonima)
-    var link = document.createElement('a');
-    link.href = url;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.click();
+
+    // Abrir em nova aba
+    window.open(url, '_blank');
+    App.showToast('Dados copiados! Cole no formulário.', 'success');
   });
 
   // Abrir link de cadastro
