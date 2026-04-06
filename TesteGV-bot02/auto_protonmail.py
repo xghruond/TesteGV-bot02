@@ -52,14 +52,16 @@ def create_account(username, password, display_name):
 
         browser = p.chromium.launch(
             headless=False,
-            channel='chrome',
-            args=['--start-maximized', '--window-position=0,0']
+            executable_path='C:/Program Files/Google/Chrome/Application/chrome.exe',
+            args=['--start-maximized', '--window-position=0,0', '--incognito']
         )
         context = browser.new_context(
             no_viewport=True,
             locale='pt-BR',
             timezone_id='America/Sao_Paulo'
         )
+        # Limpar cookies/storage para evitar sessoes anteriores
+        context.clear_cookies()
         page = context.new_page()
         page.set_default_timeout(30000)
 
@@ -71,26 +73,70 @@ def create_account(username, password, display_name):
         # === Plano Free ===
         update_status(2, 'Selecionando plano Free...')
         print('[2/7] Selecionando plano Free...')
-        try:
-            free_card = page.locator('text=Gratuito para sempre').first
-            if free_card.is_visible(timeout=5000):
-                free_card.click()
-                time.sleep(2)
-        except:
-            try:
-                page.locator('text=Free').first.click()
-                time.sleep(2)
-            except:
-                pass
 
-        # Scroll ate o formulario
-        page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
+        # Clicar no radio/card do plano Free (tentar varios seletores)
+        free_clicked = False
+        free_selectors = [
+            'label:has-text("Free")',
+            'div:has-text("Free"):has-text("BRL 0")',
+            'input[value="free"]',
+            'button:has-text("Free")',
+            'text=Gratuito para sempre',
+            'text=Free >> ..',
+        ]
+        for sel in free_selectors:
+            try:
+                el = page.locator(sel).first
+                if el.is_visible(timeout=3000):
+                    el.click()
+                    free_clicked = True
+                    print('  -> Plano Free clicado! (' + sel + ')')
+                    time.sleep(3)
+                    break
+            except:
+                continue
+
+        if not free_clicked:
+            # Fallback: clicar via JavaScript no primeiro card (Free)
+            page.evaluate('''() => {
+                const cards = document.querySelectorAll('[class*="card"], [class*="plan"]');
+                for (const card of cards) {
+                    if (card.textContent.includes('Free') || card.textContent.includes('BRL 0')) {
+                        card.click();
+                        return true;
+                    }
+                }
+                // Tentar clicar no radio button do Free
+                const radios = document.querySelectorAll('input[type="radio"]');
+                if (radios.length > 0) { radios[0].click(); return true; }
+                return false;
+            }''')
+            print('  -> Plano Free clicado via JS!')
+            time.sleep(3)
+
+        # Scroll forte ate o formulario
+        print('  -> Scrollando ate o formulario...')
+        for i in range(10):
+            page.evaluate('window.scrollBy(0, 300)')
+            time.sleep(0.3)
         time.sleep(2)
-        try:
-            page.locator('#username').scroll_into_view_if_needed()
-        except:
-            page.evaluate('window.scrollTo(0, 9999)')
-        time.sleep(2)
+
+        # Verificar se o campo username esta visivel
+        is_visible = page.evaluate('''() => {
+            const el = document.querySelector('#username');
+            if (!el) return 'NOT_FOUND';
+            const rect = el.getBoundingClientRect();
+            return { visible: rect.height > 0 && rect.top > 0 && rect.top < window.innerHeight, top: rect.top };
+        }''')
+        print('  -> Username visivel: ' + str(is_visible))
+
+        # Se nao visivel, forcar scroll
+        if isinstance(is_visible, dict) and not is_visible.get('visible', False):
+            page.evaluate('''() => {
+                const el = document.querySelector('#username');
+                if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }''')
+            time.sleep(2)
 
         # === Username ===
         update_status(3, 'Preenchendo username: ' + username)
