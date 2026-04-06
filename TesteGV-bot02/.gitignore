@@ -5,3 +5,15 @@ npm-debug.log*
 # Sistema operacional
 .DS_Store
 Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Debug
+debug*.png
+
+# Ambiente
+.env
+node_modules/

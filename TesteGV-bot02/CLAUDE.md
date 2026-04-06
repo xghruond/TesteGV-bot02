@@ -24,29 +24,29 @@ SPA que guia novos funcionarios de multinacional na criacao de contas Gmail, Ins
 - **Caminhos git**: usar relativos a `C:\` (ex: `git add TesteGV-bot02/js/app.js`)
 - **Commits**: em portugues, prefixos feat/fix/chore
 
-## Estrutura (4.309 linhas)
+## Estrutura (4.517 linhas)
 ```
 TesteGV-bot02/
-├── index.html              (96 linhas)  — SPA shell + splash screen
+├── index.html              (94 linhas)  — SPA shell + splash screen
 ├── CLAUDE.md               — Este arquivo
 ├── ARCHITECTURE.md         — Documentacao tecnica detalhada
 ├── MEMORY.md               — Contexto de negocio e decisoes
 ├── .gitignore
 ├── css/
-│   └── styles.css          (1026 linhas) — Animacoes, print, dark theme
+│   └── styles.css          (1017 linhas) — Animacoes, print, dark theme
 ├── js/
-│   ├── data.js             (725 linhas)  — Plataformas, icones, helpers
+│   ├── data.js             (736 linhas)  — Plataformas, icones, helpers
 │   ├── storage.js          (76 linhas)   — localStorage + version check
 │   ├── particles.js        (200 linhas)  — Canvas de particulas
-│   ├── app.js              (1393 linhas) — Controlador principal
+│   ├── app.js              (1547 linhas) — Controlador principal
 │   └── components/
 │       ├── header.js       (65 linhas)   — Stepper de progresso
-│       ├── form.js         (88 linhas)   — Formulario de dados
-│       ├── platform-card.js(178 linhas)  — Cards de plataformas
-│       ├── guide-viewer.js (105 linhas)  — Guia passo-a-passo
-│       ├── wizard.js       (150 linhas)  — Assistente automatico
+│       ├── form.js         (87 linhas)   — Formulario de dados
+│       ├── platform-card.js(176 linhas)  — Cards de plataformas
+│       ├── guide-viewer.js (131 linhas)  — Guia passo-a-passo + SMS virtual
+│       ├── wizard.js       (167 linhas)  — Assistente automatico
 │       ├── checklist.js    (69 linhas)   — FAB + drawer de progresso
-│       └── summary.js      (138 linhas)  — Resumo final + export
+│       └── summary.js      (152 linhas)  — Resumo final + export
 └── assets/
     ├── logo-gv.png         — Logo oficial HD (1536x1024)
     └── icons/              — Icones SVG

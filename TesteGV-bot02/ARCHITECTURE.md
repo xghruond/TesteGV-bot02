@@ -2,7 +2,7 @@
 
 ## 1. Visão Geral
 
-Sistema web SPA (Single Page Application) que guia novos funcionários na criação de contas profissionais em 4 plataformas: **Gmail**, **Instagram**, **Facebook** e **TikTok**.
+Sistema web SPA (Single Page Application) que guia novos funcionários na criação de contas profissionais em 4 plataformas: **ProtonMail**, **Instagram**, **Facebook** e **TikTok**.
 
 ### Stack Tecnológica
 
@@ -34,12 +34,12 @@ TesteGV-bot02/
 ├── ARCHITECTURE.md                     # Este documento
 ├── MEMORY.md                           # Contexto de negócio
 ├── css/
-│   └── styles.css                      # Animações, print, dark theme        1050 linhas
+│   └── styles.css                      # Animações, print, dark theme        1017 linhas
 ├── js/
 │   ├── data.js                         # Plataformas, ícones, helpers         725 linhas
 │   ├── storage.js                      # localStorage + version check          76 linhas
 │   ├── particles.js                    # Canvas de partículas                 200 linhas
-│   ├── app.js                          # Controlador principal               1397 linhas
+│   ├── app.js                          # Controlador principal               1547 linhas
 │   └── components/
 │       ├── header.js                   # Stepper de progresso                  65 linhas
 │       ├── form.js                     # Formulário de dados                   88 linhas
@@ -53,7 +53,7 @@ TesteGV-bot02/
     └── icons/                          # Ícones SVG
 ```
 
-**Total: ~4.337 linhas de código**
+**Total: ~4.517 linhas de código**
 
 ---
 
@@ -85,7 +85,7 @@ Todos os arquivos estendem o objeto global `App` com `var App = App || {};`.
 ```javascript
 {
   currentScreen: 'welcome' | 'form' | 'platforms' | 'guide' | 'summary',
-  currentGuide: null | 'gmail' | 'instagram' | 'facebook' | 'tiktok',
+  currentGuide: null | 'protonmail' | 'instagram' | 'facebook' | 'tiktok',
   currentStep: 0..N,
   employee: {
     nomeCompleto: string,
@@ -97,7 +97,7 @@ Todos os arquivos estendem o objeto global `App` com `var App = App || {};`.
     dataAdmissao: string         // YYYY-MM-DD
   },
   platforms: {
-    gmail:     { completed: boolean, accountInfo: string },
+    protonmail:     { completed: boolean, accountInfo: string },
     instagram: { completed: boolean, accountInfo: string },
     facebook:  { completed: boolean, accountInfo: string },
     tiktok:    { completed: boolean, accountInfo: string }
@@ -172,7 +172,7 @@ function navigateTo(screen, options) {
 ```
 
 Parâmetros opcionais:
-- `options.guide` — ID da plataforma (`'gmail'`, `'instagram'`, etc.)
+- `options.guide` — ID da plataforma (`'protonmail'`, `'instagram'`, etc.)
 - `options.step` — Índice do passo no guia (0-based)
 
 ---
@@ -342,11 +342,11 @@ data.js ────────────────────────
    ↓ Clica "Continuar"
 
 3. PAINEL DE PLATAFORMAS
-   Vê 4 cards: Gmail, Instagram, Facebook, TikTok
+   Vê 4 cards: ProtonMail, Instagram, Facebook, TikTok
    Todos marcados como "Pendente"
-   ↓ Clica em "Gmail"
+   ↓ Clica em "ProtonMail"
 
-4. GUIA PASSO A PASSO (Gmail - 6 passos)
+4. GUIA PASSO A PASSO (ProtonMail - 6 passos)
    Passo 1: Clica "Abrir Página de Cadastro" → abre accounts.google.com em nova aba
    Passos 2-5: Segue instruções com dicas
    Passo 6: Digita o email criado → Clica "Marcar como Concluído"
@@ -432,7 +432,7 @@ Estado restaurado, usuário retoma do ponto exato
 
 | Plataforma | URL |
 |------------|-----|
-| Gmail | `https://accounts.google.com/signup` |
+| ProtonMail | `https://account.proton.me/signup` |
 | Instagram | `https://www.instagram.com/accounts/emailsignup/` |
 | Facebook | `https://www.facebook.com/r.php` |
 | TikTok | `https://www.tiktok.com/signup` |
@@ -459,7 +459,7 @@ Estado restaurado, usuário retoma do ponto exato
 2. **`js/app.js`** — Adicionar entrada no `defaultState.platforms`:
    ```javascript
    platforms: {
-     gmail: { completed: false, accountInfo: '' },
+     protonmail: { completed: false, accountInfo: '' },
      // ...
      linkedin: { completed: false, accountInfo: '' }
    }

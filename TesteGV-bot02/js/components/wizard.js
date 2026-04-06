@@ -120,15 +120,27 @@ App.renderWizard = function(state) {
         '</div>' +
       '</div>' +
 
-      // Open register button (com automação para ProtonMail)
+      // Open register button (com automação para ProtonMail e Instagram)
       (platform.id === 'protonmail'
         ? '<button data-action="auto-create-protonmail" class="btn-futuristic flex items-center justify-center gap-2 w-full rounded-xl px-6 py-4 text-base font-bold text-white shadow-lg shadow-green-600/20 mb-3">' +
             App.icons.sparkles + ' Criar Conta Automaticamente</button>' +
           '<a href="' + platform.registerUrl + '" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 w-full rounded-xl border border-dark-700/50 px-6 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-white">' +
             App.icons.externalLink + ' Abrir Manualmente</a>'
+        : platform.id === 'instagram'
+        ? '<button data-action="auto-create-instagram" class="flex items-center justify-center gap-2 w-full rounded-xl px-6 py-4 text-base font-bold text-white shadow-lg mb-3" style="background:linear-gradient(135deg,#833AB4,#E1306C,#F77737);">' +
+            App.icons.sparkles + ' Criar Conta Automaticamente</button>' +
+          '<button data-action="wizard-open-incognito" data-url="' + platform.registerUrl + '" class="flex items-center justify-center gap-2 w-full rounded-xl border border-dark-700/50 px-6 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-white">' +
+            App.icons.externalLink + ' Abrir Manualmente</button>'
         : '<button data-action="wizard-open-incognito" data-url="' + platform.registerUrl + '" class="btn-gradient flex items-center justify-center gap-2 w-full rounded-xl px-6 py-4 text-base font-bold text-white shadow-lg shadow-green-600/20">' +
             App.icons.externalLink + ' Criar Conta no ' + esc(platform.name) +
           '</button>'
+      ) +
+
+      // Botão para abrir ProtonMail (verificar código de confirmação)
+      (platform.id !== 'protonmail'
+        ? '<a href="https://mail.proton.me" target="_blank" rel="noopener noreferrer" data-action="open-protonmail" class="mt-3 flex items-center justify-center gap-2 w-full rounded-xl px-6 py-3 text-sm font-bold text-white transition-colors hover:opacity-90" style="background:linear-gradient(135deg,#6D4AFF,#4F46E5);">' +
+            App.icons.externalLink + ' Abrir ProtonMail (verificar código)</a>'
+        : ''
       ) +
 
       // Divider

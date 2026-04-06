@@ -513,8 +513,8 @@ App.platforms = {
       },
       {
         title: 'Preencha seus dados básicos',
-        description: 'Na página de cadastro, preencha:<br><br><li class="ml-4"><strong>E-mail ou telefone</strong>: Use o ProtonMail que você acabou de criar</li><li class="ml-4"><strong>Nome completo</strong>: Seu nome como deseja que apareça</li><li class="ml-4"><strong>Nome de usuário</strong>: Escolha um nome único (ex: joao.silva.empresa)</li><li class="ml-4"><strong>Senha</strong>: Crie uma senha forte</li><br>Depois clique em <strong>"Cadastre-se"</strong>.',
-        tip: 'O nome de usuário não pode ter espaços. Use pontos ou underlines. Ex: joao_silva'
+        description: 'Na página de cadastro, preencha:<br><br><li class="ml-4"><strong>E-mail ou telefone</strong>: Use o ProtonMail que você acabou de criar</li><li class="ml-4"><strong>Nome completo</strong>: Seu nome como deseja que apareça</li><li class="ml-4"><strong>Nome de usuário</strong>: Escolha um nome único (ex: joao.silva.empresa)</li><li class="ml-4"><strong>Senha</strong>: Use a <strong>mesma senha sugerida</strong> do painel acima</li><br>Depois clique em <strong>"Cadastre-se"</strong>.',
+        tip: 'Dica: use a mesma senha para todas as plataformas — ela já está no painel "Dados para Cadastro" acima.'
       },
       {
         title: 'Confirme sua data de nascimento',
@@ -523,8 +523,15 @@ App.platforms = {
       },
       {
         title: 'Confirme seu e-mail',
-        description: 'O Instagram enviou um código de confirmação para seu e-mail.<br><br><li class="ml-4">Abra seu <strong>ProtonMail</strong> (que você acabou de criar)</li><li class="ml-4">Procure o e-mail do Instagram</li><li class="ml-4">Copie o <strong>código de 6 dígitos</strong></li><li class="ml-4">Cole na página do Instagram e clique em <strong>"Avançar"</strong></li>',
-        tip: 'Se não encontrar o e-mail, verifique a pasta "Spam" ou "Promoções" no ProtonMail.'
+        description: 'O Instagram enviou um código de confirmação para seu e-mail.<br><br><li class="ml-4">Clique no botão <strong>"Abrir ProtonMail"</strong> abaixo</li><li class="ml-4">Procure o e-mail do Instagram</li><li class="ml-4">Copie o <strong>código de 6 dígitos</strong></li><li class="ml-4">Cole na página do Instagram e clique em <strong>"Avançar"</strong></li>',
+        tip: 'Se não encontrar o e-mail, verifique a pasta "Spam" ou "Promoções" no ProtonMail.',
+        action: 'open_protonmail'
+      },
+      {
+        title: 'Verificação por telefone (se pedido)',
+        description: 'O Instagram pode pedir um <strong>número de celular</strong>. Use um <strong>número virtual gratuito</strong>:<br><br><strong>1.</strong> Acesse um dos sites abaixo e escolha um número:<br><li class="ml-4"><a href="https://mobilesms.io" target="_blank" class="text-brand-400 underline">mobilesms.io</a> — Números US frescos</li><li class="ml-4"><a href="https://anonymsms.com" target="_blank" class="text-brand-400 underline">anonymsms.com</a> — Números novos diariamente</li><li class="ml-4"><a href="https://esimplus.me/temporary-numbers" target="_blank" class="text-brand-400 underline">esimplus.me</a> — Menos conhecido</li><li class="ml-4"><a href="https://receiveasms.com" target="_blank" class="text-brand-400 underline">receiveasms.com</a> — Vários países</li><br><strong>2.</strong> Copie o número e cole no Instagram<br><strong>3.</strong> Volte ao site e <strong>atualize a página</strong> (F5) para ver o código<br><strong>4.</strong> Cole o código no Instagram',
+        tip: 'Se o Instagram NÃO pediu telefone, ótimo! Pule este passo. Se o número não funcionar, tente outro número ou outro site.',
+        action: 'open_sms_sites'
       },
       {
         title: 'Finalize a configuração do perfil',
@@ -553,13 +560,20 @@ App.platforms = {
       },
       {
         title: 'Preencha o formulário de cadastro',
-        description: 'Na página do Facebook, preencha todos os campos:<br><br><li class="ml-4"><strong>Nome e Sobrenome</strong>: Seu nome real</li><li class="ml-4"><strong>E-mail ou telefone</strong>: Use o ProtonMail que você criou</li><li class="ml-4"><strong>Nova senha</strong>: Crie uma senha forte</li><li class="ml-4"><strong>Data de nascimento</strong>: Selecione dia, mês e ano</li><li class="ml-4"><strong>Gênero</strong>: Selecione uma opção</li><br>Depois clique em <strong>"Cadastre-se"</strong>.',
-        tip: 'Use o mesmo e-mail ProtonMail que foi criado no passo anterior.'
+        description: 'Na página do Facebook, preencha todos os campos:<br><br><li class="ml-4"><strong>Nome e Sobrenome</strong>: Seu nome real</li><li class="ml-4"><strong>E-mail ou telefone</strong>: Use o ProtonMail que você criou</li><li class="ml-4"><strong>Nova senha</strong>: Use a <strong>mesma senha sugerida</strong> do painel acima</li><li class="ml-4"><strong>Data de nascimento</strong>: Selecione dia, mês e ano</li><li class="ml-4"><strong>Gênero</strong>: Selecione uma opção</li><br>Depois clique em <strong>"Cadastre-se"</strong>.',
+        tip: 'Dica: use a mesma senha para todas as plataformas — ela já está no painel "Dados para Cadastro" acima.'
       },
       {
         title: 'Confirme seu e-mail',
-        description: 'O Facebook enviou um código de confirmação para seu e-mail.<br><br><li class="ml-4">Abra seu <strong>ProtonMail</strong></li><li class="ml-4">Procure o e-mail do Facebook</li><li class="ml-4">Clique no link de confirmação ou copie o código</li><li class="ml-4">Volte ao Facebook e confirme</li>',
-        tip: 'Se não encontrar o e-mail, verifique a pasta "Spam" no ProtonMail.'
+        description: 'O Facebook enviou um código de confirmação para seu e-mail.<br><br><li class="ml-4">Clique no botão <strong>"Abrir ProtonMail"</strong> abaixo</li><li class="ml-4">Procure o e-mail do Facebook</li><li class="ml-4">Clique no link de confirmação ou copie o código</li><li class="ml-4">Volte ao Facebook e confirme</li>',
+        tip: 'Se não encontrar o e-mail, verifique a pasta "Spam" no ProtonMail.',
+        action: 'open_protonmail'
+      },
+      {
+        title: 'Verificação por telefone (se pedido)',
+        description: 'O Facebook pode pedir um <strong>número de celular</strong>. Use um <strong>número virtual gratuito</strong>:<br><br><strong>1.</strong> Acesse um dos sites abaixo e escolha um número:<br><li class="ml-4"><a href="https://mobilesms.io" target="_blank" class="text-brand-400 underline">mobilesms.io</a> — Números US frescos</li><li class="ml-4"><a href="https://anonymsms.com" target="_blank" class="text-brand-400 underline">anonymsms.com</a> — Números novos diariamente</li><li class="ml-4"><a href="https://esimplus.me/temporary-numbers" target="_blank" class="text-brand-400 underline">esimplus.me</a> — Menos conhecido</li><li class="ml-4"><a href="https://receiveasms.com" target="_blank" class="text-brand-400 underline">receiveasms.com</a> — Vários países</li><br><strong>2.</strong> Copie o número e cole no Facebook<br><strong>3.</strong> Volte ao site e <strong>atualize a página</strong> (F5) para ver o código<br><strong>4.</strong> Cole o código no Facebook',
+        tip: 'Se o Facebook NÃO pediu telefone, ótimo! Pule este passo. Se o número não funcionar, tente outro número ou outro site.',
+        action: 'open_sms_sites'
       },
       {
         title: 'Finalize a configuração do perfil',
@@ -598,12 +612,24 @@ App.platforms = {
       },
       {
         title: 'Cadastre com e-mail e senha',
-        description: 'Agora preencha:<br><br><li class="ml-4">Selecione a aba <strong>"E-mail"</strong> (em vez de telefone)</li><li class="ml-4"><strong>E-mail</strong>: Digite seu ProtonMail que acabou de criar</li><li class="ml-4"><strong>Senha</strong>: Crie uma senha forte (8-20 caracteres)</li><br>Clique em <strong>"Avançar"</strong>.',
-        tip: 'A senha deve ter letras, números e caracteres especiais.'
+        description: 'Agora preencha:<br><br><li class="ml-4">Selecione a aba <strong>"E-mail"</strong> (em vez de telefone)</li><li class="ml-4"><strong>E-mail</strong>: Digite seu ProtonMail que acabou de criar</li><li class="ml-4"><strong>Senha</strong>: Use a <strong>mesma senha sugerida</strong> do painel acima</li><br>Clique em <strong>"Avançar"</strong>.',
+        tip: 'Dica: use a mesma senha para todas as plataformas — ela já está no painel "Dados para Cadastro" acima.'
       },
       {
-        title: 'Verifique seu e-mail e escolha um nome de usuário',
-        description: 'O TikTok enviou um código de verificação para seu e-mail.<br><br><li class="ml-4">Abra seu <strong>ProtonMail</strong> e encontre o código</li><li class="ml-4">Digite o código no TikTok</li><li class="ml-4">Depois, escolha um <strong>nome de usuário</strong> único</li><br><strong>Parabéns! Sua conta do TikTok foi criada!</strong>',
+        title: 'Verifique seu e-mail',
+        description: 'O TikTok enviou um código de verificação para seu e-mail.<br><br><li class="ml-4">Clique no botão <strong>"Abrir ProtonMail"</strong> abaixo</li><li class="ml-4">Encontre o e-mail do TikTok</li><li class="ml-4">Copie o código e cole no TikTok</li>',
+        tip: 'Se não encontrar o e-mail, verifique a pasta "Spam" no ProtonMail.',
+        action: 'open_protonmail'
+      },
+      {
+        title: 'Verificação por telefone (se pedido)',
+        description: 'O TikTok pode pedir um <strong>número de celular</strong>. Use um <strong>número virtual gratuito</strong>:<br><br><strong>1.</strong> Acesse um dos sites abaixo e escolha um número:<br><li class="ml-4"><a href="https://mobilesms.io" target="_blank" class="text-brand-400 underline">mobilesms.io</a> — Números US frescos</li><li class="ml-4"><a href="https://anonymsms.com" target="_blank" class="text-brand-400 underline">anonymsms.com</a> — Números novos diariamente</li><li class="ml-4"><a href="https://esimplus.me/temporary-numbers" target="_blank" class="text-brand-400 underline">esimplus.me</a> — Menos conhecido</li><li class="ml-4"><a href="https://receiveasms.com" target="_blank" class="text-brand-400 underline">receiveasms.com</a> — Vários países</li><br><strong>2.</strong> Copie o número e cole no TikTok<br><strong>3.</strong> Volte ao site e <strong>atualize a página</strong> (F5) para ver o código<br><strong>4.</strong> Cole o código no TikTok',
+        tip: 'Se o TikTok NÃO pediu telefone, ótimo! Pule este passo. Se o número não funcionar, tente outro número ou outro site.',
+        action: 'open_sms_sites'
+      },
+      {
+        title: 'Escolha seu nome de usuário e finalize',
+        description: 'Agora escolha seu nome de usuário:<br><br><li class="ml-4">Escolha um <strong>nome de usuário</strong> único (será seu @ no TikTok)</li><li class="ml-4">Use algo profissional (ex: juliana.rocha.gv)</li><br><strong>Parabéns! Sua conta do TikTok foi criada!</strong>',
         tip: 'O nome de usuário será seu @ no TikTok. Escolha algo profissional.',
         action: 'finish'
       }

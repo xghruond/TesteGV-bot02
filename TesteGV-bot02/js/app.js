@@ -886,66 +886,329 @@ var App = App || {};
       return;
     }
 
-    // Abrir ProtonMail em nova aba
-    var link = document.createElement('a');
-    link.href = 'https://account.proton.me/signup';
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.click();
-
-    // Mostrar modal com dados para copiar
+    // Mostrar modal de progresso
     var overlay = document.createElement('div');
     overlay.id = 'automation-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;padding:1rem;';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;padding:1rem;';
 
-    function copyField(text, btnId) {
-      App.copyToClipboard(text, document.getElementById(btnId));
+    var stepLabels = [
+      'Aguardando...',
+      'Abrindo navegador...',
+      'Selecionando plano Free...',
+      'Preenchendo username: ' + App.escapeHtml(username),
+      'Preenchendo senha...',
+      'Confirmando senha...',
+      'Criando conta...',
+      'Aguardando verificacao...'
+    ];
+
+    function buildStepsHTML(currentStep, message) {
+      var html = '';
+      for (var i = 1; i <= 7; i++) {
+        var icon = i < currentStep ? '<span style="color:#4ade80;">&#10003;</span>'
+                 : i === currentStep ? '<span class="animate-pulse" style="color:#f59e0b;">&#9679;</span>'
+                 : '<span style="color:#475569;">&#9675;</span>';
+        var color = i < currentStep ? '#4ade80' : i === currentStep ? '#f1f5f9' : '#475569';
+        html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">' +
+          icon + ' <span style="color:' + color + ';font-size:13px;">' + stepLabels[i] + '</span></div>';
+      }
+      if (currentStep === 7 && message && message.indexOf('CAPTCHA') > -1) {
+        html += '<div style="margin-top:12px;padding:12px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;">' +
+          '<p style="color:#fbbf24;font-size:13px;font-weight:600;text-align:center;">Resolva o CAPTCHA no navegador que abriu!</p></div>';
+      }
+      return html;
     }
 
     overlay.innerHTML =
-      '<div style="background:rgba(15,23,42,0.97);border:1px solid rgba(109,74,255,0.3);border-radius:20px;padding:1.75rem;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,0.6);">' +
-        '<div style="text-align:center;margin-bottom:20px;">' +
-          '<div style="width:56px;height:56px;border-radius:16px;background:rgba(109,74,255,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#6D4AFF;font-size:24px;">📋</div>' +
-          '<h3 style="font-size:18px;font-weight:700;color:#f1f5f9;margin-bottom:4px;">Dados para o ProtonMail</h3>' +
-          '<p style="font-size:13px;color:#94a3b8;">Copie cada campo e cole no site que abriu</p>' +
+      '<div id="auto-modal" style="background:rgba(15,23,42,0.97);border:1px solid rgba(109,74,255,0.3);border-radius:20px;padding:1.75rem;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,0.6);">' +
+        '<div style="text-align:center;margin-bottom:16px;">' +
+          '<div style="width:56px;height:56px;border-radius:16px;background:rgba(109,74,255,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#a78bfa;font-size:28px;">' + App.icons.sparkles + '</div>' +
+          '<h3 style="font-size:18px;font-weight:700;color:#f1f5f9;">Criando conta ProtonMail...</h3>' +
+          '<p style="font-size:13px;color:#94a3b8;margin-top:4px;">' + App.escapeHtml(username) + '@proton.me</p>' +
         '</div>' +
-
-        '<div style="space-y:3;margin-bottom:16px;">' +
-          '<div style="background:rgba(10,18,32,0.85);border:1px solid rgba(51,65,85,0.4);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">' +
-            '<div><p style="font-size:11px;color:#64748b;margin-bottom:2px;">Username</p><p style="font-size:15px;font-weight:600;color:#f1f5f9;font-family:monospace;">' + App.escapeHtml(username) + '</p></div>' +
-            '<button id="copy-username" onclick="App.copyToClipboard(\'' + App.escapeHtml(username) + '\', this)" style="background:rgba(109,74,255,0.15);border:1px solid rgba(109,74,255,0.3);border-radius:8px;padding:8px 14px;color:#a78bfa;font-size:12px;font-weight:600;cursor:pointer;">Copiar</button>' +
-          '</div>' +
-
-          '<div style="background:rgba(10,18,32,0.85);border:1px solid rgba(51,65,85,0.4);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">' +
-            '<div><p style="font-size:11px;color:#64748b;margin-bottom:2px;">Senha</p><p style="font-size:15px;font-weight:600;color:#4ade80;font-family:monospace;">' + App.escapeHtml(password) + '</p></div>' +
-            '<button id="copy-password" onclick="App.copyToClipboard(\'' + App.escapeHtml(password) + '\', this)" style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:8px 14px;color:#4ade80;font-size:12px;font-weight:600;cursor:pointer;">Copiar</button>' +
-          '</div>' +
-
-          '<div style="background:rgba(10,18,32,0.85);border:1px solid rgba(51,65,85,0.4);border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;">' +
-            '<div><p style="font-size:11px;color:#64748b;margin-bottom:2px;">Nome de exibição</p><p style="font-size:15px;font-weight:600;color:#f1f5f9;">' + App.escapeHtml(displayName) + '</p></div>' +
-            '<button id="copy-name" onclick="App.copyToClipboard(\'' + App.escapeHtml(displayName) + '\', this)" style="background:rgba(51,65,85,0.3);border:1px solid rgba(51,65,85,0.4);border-radius:8px;padding:8px 14px;color:#94a3b8;font-size:12px;font-weight:600;cursor:pointer;">Copiar</button>' +
-          '</div>' +
-        '</div>' +
-
-        '<div style="background:rgba(109,74,255,0.08);border:1px solid rgba(109,74,255,0.2);border-radius:10px;padding:12px;margin-bottom:16px;">' +
-          '<p style="font-size:12px;color:#a78bfa;line-height:1.5;"><strong>Passos no ProtonMail:</strong><br>1. Escolha plano <strong>Free</strong><br>2. Cole o <strong>username</strong> e a <strong>senha</strong><br>3. Resolva o <strong>CAPTCHA</strong><br>4. Volte aqui e clique em "Conta Criada"</p>' +
-        '</div>' +
-
-        '<div style="display:flex;gap:8px;">' +
+        '<div id="auto-steps" style="margin-bottom:16px;">' + buildStepsHTML(0, '') + '</div>' +
+        '<div id="auto-actions" style="display:flex;gap:8px;">' +
           '<button id="auto-cancel" style="flex:1;border:1px solid rgba(100,116,139,0.4);border-radius:12px;padding:12px;color:#94a3b8;font-size:14px;font-weight:600;cursor:pointer;background:none;">Cancelar</button>' +
-          '<button id="auto-done" class="btn-futuristic" style="flex:2;border-radius:12px;padding:12px;font-size:14px;font-weight:700;color:#fff;border:none;cursor:pointer;">Conta Criada!</button>' +
         '</div>' +
       '</div>';
 
     document.body.appendChild(overlay);
 
-    document.getElementById('auto-cancel').addEventListener('click', function() { overlay.remove(); });
-    document.getElementById('auto-done').addEventListener('click', function() {
-      state.platforms.protonmail = { completed: true, accountInfo: username + '@proton.me' };
-      App.storage.save(state);
+    var polling = null;
+    var cancelled = false;
+
+    document.getElementById('auto-cancel').addEventListener('click', function() {
+      cancelled = true;
+      if (polling) clearInterval(polling);
       overlay.remove();
-      App.showToast('ProtonMail criado com sucesso!', 'success');
-      render();
+    });
+
+    // Iniciar automação no servidor
+    fetch('http://localhost:8081/create-protonmail', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username, password: password, displayName: displayName })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (!data.started) {
+        App.showToast('Erro ao iniciar: ' + (data.error || 'desconhecido'), 'error');
+        overlay.remove();
+        return;
+      }
+
+      // Polling de status
+      polling = setInterval(function() {
+        if (cancelled) return;
+        fetch('http://localhost:8081/status')
+          .then(function(r) { return r.json(); })
+          .then(function(s) {
+            // Atualizar modal
+            var stepsEl = document.getElementById('auto-steps');
+            if (stepsEl) stepsEl.innerHTML = buildStepsHTML(s.step, s.message);
+
+            if (s.done) {
+              clearInterval(polling);
+              if (s.success) {
+                // Sucesso!
+                state.platforms.protonmail = { completed: true, accountInfo: username + '@proton.me' };
+                App.storage.save(state);
+
+                var modal = document.getElementById('auto-modal');
+                if (modal) {
+                  modal.innerHTML =
+                    '<div style="text-align:center;padding:20px;">' +
+                      '<div style="width:64px;height:64px;border-radius:50%;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#4ade80;font-size:32px;">&#10003;</div>' +
+                      '<h3 style="font-size:20px;font-weight:700;color:#4ade80;margin-bottom:8px;">Conta criada!</h3>' +
+                      '<p style="font-size:14px;color:#f1f5f9;font-family:monospace;">' + App.escapeHtml(username) + '@proton.me</p>' +
+                      '<p style="font-size:12px;color:#94a3b8;margin-top:4px;">Senha: ' + App.escapeHtml(password) + '</p>' +
+                      '<button id="auto-close-success" class="btn-futuristic" style="margin-top:20px;width:100%;border-radius:12px;padding:14px;font-size:15px;font-weight:700;color:#fff;border:none;cursor:pointer;">Continuar</button>' +
+                    '</div>';
+                  document.getElementById('auto-close-success').addEventListener('click', function() {
+                    overlay.remove();
+                    App.showToast('ProtonMail criado com sucesso!', 'success');
+                    render();
+                  });
+                }
+              } else {
+                // Erro ou timeout
+                var modal = document.getElementById('auto-modal');
+                if (modal) {
+                  modal.innerHTML =
+                    '<div style="text-align:center;padding:20px;">' +
+                      '<div style="width:64px;height:64px;border-radius:50%;background:rgba(239,68,68,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#ef4444;font-size:28px;">!</div>' +
+                      '<h3 style="font-size:18px;font-weight:700;color:#ef4444;margin-bottom:8px;">Não foi possível completar</h3>' +
+                      '<p style="font-size:13px;color:#94a3b8;">' + App.escapeHtml(s.error || s.message) + '</p>' +
+                      '<div style="display:flex;gap:8px;margin-top:20px;">' +
+                        '<button id="auto-close-error" style="flex:1;border:1px solid rgba(100,116,139,0.4);border-radius:12px;padding:12px;color:#94a3b8;font-size:14px;font-weight:600;cursor:pointer;background:none;">Fechar</button>' +
+                        '<button id="auto-done-manual" class="btn-futuristic" style="flex:2;border-radius:12px;padding:12px;font-size:14px;font-weight:700;color:#fff;border:none;cursor:pointer;">Conta Criada (manual)</button>' +
+                      '</div>' +
+                    '</div>';
+                  document.getElementById('auto-close-error').addEventListener('click', function() { overlay.remove(); });
+                  document.getElementById('auto-done-manual').addEventListener('click', function() {
+                    state.platforms.protonmail = { completed: true, accountInfo: username + '@proton.me' };
+                    App.storage.save(state);
+                    overlay.remove();
+                    App.showToast('ProtonMail marcado como criado!', 'success');
+                    render();
+                  });
+                }
+              }
+            }
+          })
+          .catch(function() {});
+      }, 2000);
+    })
+    .catch(function(err) {
+      // Servidor não está rodando — fallback para modo manual
+      overlay.remove();
+      App.showToast('Servidor de automação não encontrado. Iniciando modo manual...', 'info');
+
+      // Abrir ProtonMail manualmente
+      var link = document.createElement('a');
+      link.href = 'https://account.proton.me/signup';
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.click();
+
+      // Modal manual simplificado
+      var manualOverlay = document.createElement('div');
+      manualOverlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;padding:1rem;';
+      manualOverlay.innerHTML =
+        '<div style="background:rgba(15,23,42,0.97);border:1px solid rgba(51,65,85,0.4);border-radius:20px;padding:2rem;width:100%;max-width:400px;">' +
+          '<h3 style="font-size:18px;font-weight:700;color:#f1f5f9;margin-bottom:4px;text-align:center;">Dados para o ProtonMail</h3>' +
+          '<p style="font-size:12px;color:#94a3b8;text-align:center;margin-bottom:16px;">Copie e cole no site que abriu</p>' +
+          '<div style="background:rgba(10,18,32,0.85);border:1px solid rgba(51,65,85,0.4);border-radius:10px;padding:12px;margin-bottom:8px;">' +
+            '<p style="font-size:11px;color:#64748b;">Username</p><p style="font-size:15px;font-weight:600;color:#f1f5f9;font-family:monospace;">' + App.escapeHtml(username) + '</p></div>' +
+          '<div style="background:rgba(10,18,32,0.85);border:1px solid rgba(51,65,85,0.4);border-radius:10px;padding:12px;margin-bottom:8px;">' +
+            '<p style="font-size:11px;color:#64748b;">Senha</p><p style="font-size:15px;font-weight:600;color:#4ade80;font-family:monospace;">' + App.escapeHtml(password) + '</p></div>' +
+          '<div style="display:flex;gap:8px;margin-top:16px;">' +
+            '<button id="manual-cancel" style="flex:1;border:1px solid rgba(100,116,139,0.4);border-radius:12px;padding:12px;color:#94a3b8;font-size:14px;cursor:pointer;background:none;">Cancelar</button>' +
+            '<button id="manual-done" class="btn-futuristic" style="flex:2;border-radius:12px;padding:12px;font-size:14px;font-weight:700;color:#fff;border:none;cursor:pointer;">Conta Criada!</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(manualOverlay);
+      document.getElementById('manual-cancel').addEventListener('click', function() { manualOverlay.remove(); });
+      document.getElementById('manual-done').addEventListener('click', function() {
+        state.platforms.protonmail = { completed: true, accountInfo: username + '@proton.me' };
+        App.storage.save(state);
+        manualOverlay.remove();
+        App.showToast('ProtonMail criado com sucesso!', 'success');
+        render();
+      });
+    });
+  });
+
+  // Criar conta Instagram automaticamente
+  bindAction('auto-create-instagram', function() {
+    var email = state.employee.emailDesejado + '@proton.me';
+    var password = state.suggestedPassword || App.generatePassword(14);
+    var fullName = state.employee.nomeCompleto || '';
+    var username = state.employee.emailDesejado || '';
+    var birthParts = (state.employee.dataNascimento || '2000-01-01').split('-');
+    var birthYear = birthParts[0] || '2000';
+    var birthMonth = String(parseInt(birthParts[1] || '1'));
+    var birthDay = String(parseInt(birthParts[2] || '1'));
+
+    if (!email || !password) {
+      App.showToast('Preencha os dados primeiro.', 'error');
+      return;
+    }
+
+    var overlay = document.createElement('div');
+    overlay.id = 'automation-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;padding:1rem;';
+
+    var stepLabels = [
+      'Aguardando...',
+      'Abrindo navegador...',
+      'Abrindo pagina de cadastro...',
+      'Preenchendo email...',
+      'Preenchendo nome...',
+      'Preenchendo username...',
+      'Preenchendo senha...',
+      'Clicando em Cadastre-se...',
+      'Aguardando verificacao...'
+    ];
+
+    function buildStepsHTML(currentStep, message) {
+      var html = '';
+      for (var i = 1; i <= 8; i++) {
+        var icon = i < currentStep ? '<span style="color:#4ade80;">&#10003;</span>'
+                 : i === currentStep ? '<span class="animate-pulse" style="color:#f59e0b;">&#9679;</span>'
+                 : '<span style="color:#475569;">&#9675;</span>';
+        var color = i < currentStep ? '#4ade80' : i === currentStep ? '#f1f5f9' : '#475569';
+        html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">' +
+          icon + ' <span style="color:' + color + ';font-size:13px;">' + stepLabels[i] + '</span></div>';
+      }
+      if (currentStep === 8 && message) {
+        var alertColor = message.indexOf('ProtonMail') > -1 ? '#a78bfa' : message.indexOf('anonymsms') > -1 ? '#fbbf24' : '#60a5fa';
+        html += '<div style="margin-top:12px;padding:12px;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.3);border-radius:10px;">' +
+          '<p style="color:' + alertColor + ';font-size:13px;font-weight:600;text-align:center;">' + App.escapeHtml(message) + '</p></div>';
+      }
+      return html;
+    }
+
+    overlay.innerHTML =
+      '<div id="auto-modal" style="background:rgba(15,23,42,0.97);border:1px solid rgba(236,72,153,0.3);border-radius:20px;padding:1.75rem;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,0.6);">' +
+        '<div style="text-align:center;margin-bottom:16px;">' +
+          '<div style="width:56px;height:56px;border-radius:16px;background:rgba(236,72,153,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#ec4899;font-size:28px;">' + App.platforms.instagram.icon + '</div>' +
+          '<h3 style="font-size:18px;font-weight:700;color:#f1f5f9;">Criando conta Instagram...</h3>' +
+          '<p style="font-size:13px;color:#94a3b8;margin-top:4px;">@' + App.escapeHtml(username) + '</p>' +
+        '</div>' +
+        '<div id="auto-steps" style="margin-bottom:16px;">' + buildStepsHTML(0, '') + '</div>' +
+        '<div id="auto-actions" style="display:flex;gap:8px;">' +
+          '<button id="auto-cancel" style="flex:1;border:1px solid rgba(100,116,139,0.4);border-radius:12px;padding:12px;color:#94a3b8;font-size:14px;font-weight:600;cursor:pointer;background:none;">Cancelar</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    var polling = null;
+    var cancelled = false;
+
+    document.getElementById('auto-cancel').addEventListener('click', function() {
+      cancelled = true;
+      if (polling) clearInterval(polling);
+      overlay.remove();
+    });
+
+    fetch('http://localhost:8081/create-instagram', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email, password: password, fullName: fullName,
+        username: username, birthDay: birthDay, birthMonth: birthMonth, birthYear: birthYear
+      })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (!data.started) {
+        App.showToast('Erro: ' + (data.error || 'desconhecido'), 'error');
+        overlay.remove();
+        return;
+      }
+
+      polling = setInterval(function() {
+        if (cancelled) return;
+        fetch('http://localhost:8081/status?platform=instagram')
+          .then(function(r) { return r.json(); })
+          .then(function(s) {
+            var stepsEl = document.getElementById('auto-steps');
+            if (stepsEl) stepsEl.innerHTML = buildStepsHTML(s.step, s.message);
+
+            if (s.done) {
+              clearInterval(polling);
+              if (s.success) {
+                state.platforms.instagram = { completed: true, accountInfo: '@' + username };
+                App.storage.save(state);
+                var modal = document.getElementById('auto-modal');
+                if (modal) {
+                  modal.innerHTML =
+                    '<div style="text-align:center;padding:20px;">' +
+                      '<div style="width:64px;height:64px;border-radius:50%;background:rgba(236,72,153,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#ec4899;font-size:32px;">&#10003;</div>' +
+                      '<h3 style="font-size:20px;font-weight:700;color:#ec4899;margin-bottom:8px;">Conta Instagram criada!</h3>' +
+                      '<p style="font-size:14px;color:#f1f5f9;">@' + App.escapeHtml(username) + '</p>' +
+                      '<button id="auto-close-success" class="btn-futuristic" style="margin-top:20px;width:100%;border-radius:12px;padding:14px;font-size:15px;font-weight:700;color:#fff;border:none;cursor:pointer;">Continuar</button>' +
+                    '</div>';
+                  document.getElementById('auto-close-success').addEventListener('click', function() {
+                    overlay.remove();
+                    App.showToast('Instagram criado!', 'success');
+                    render();
+                  });
+                }
+              } else {
+                var modal = document.getElementById('auto-modal');
+                if (modal) {
+                  modal.innerHTML =
+                    '<div style="text-align:center;padding:20px;">' +
+                      '<div style="width:64px;height:64px;border-radius:50%;background:rgba(239,68,68,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#ef4444;font-size:28px;">!</div>' +
+                      '<h3 style="font-size:18px;font-weight:700;color:#ef4444;margin-bottom:8px;">Nao foi possivel completar</h3>' +
+                      '<p style="font-size:13px;color:#94a3b8;">' + App.escapeHtml(s.error || s.message) + '</p>' +
+                      '<div style="display:flex;gap:8px;margin-top:20px;">' +
+                        '<button id="auto-close-error" style="flex:1;border:1px solid rgba(100,116,139,0.4);border-radius:12px;padding:12px;color:#94a3b8;font-size:14px;cursor:pointer;background:none;">Fechar</button>' +
+                        '<button id="auto-done-manual" class="btn-futuristic" style="flex:2;border-radius:12px;padding:12px;font-size:14px;font-weight:700;color:#fff;border:none;cursor:pointer;">Conta Criada (manual)</button>' +
+                      '</div>' +
+                    '</div>';
+                  document.getElementById('auto-close-error').addEventListener('click', function() { overlay.remove(); });
+                  document.getElementById('auto-done-manual').addEventListener('click', function() {
+                    state.platforms.instagram = { completed: true, accountInfo: '@' + username };
+                    App.storage.save(state);
+                    overlay.remove();
+                    App.showToast('Instagram marcado como criado!', 'success');
+                    render();
+                  });
+                }
+              }
+            }
+          })
+          .catch(function() {});
+      }, 2000);
+    })
+    .catch(function() {
+      overlay.remove();
+      App.showToast('Servidor nao encontrado. Abrindo modo manual...', 'info');
+      window.open('https://www.instagram.com/accounts/emailsignup/', '_blank');
     });
   });
 
@@ -972,16 +1235,34 @@ var App = App || {};
       try { navigator.clipboard.writeText(credsText); } catch(e) {}
     }
 
-    // Mostrar modal simples com 2 opções
+    // Montar lista de dados copiados para exibir
+    var credsDisplay = '';
+    if (creds) {
+      for (var ci = 0; ci < creds.length; ci++) {
+        if (creds[ci].value) {
+          credsDisplay += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(51,65,85,0.3);">' +
+            '<span style="color:#94a3b8;font-size:12px;">' + App.escapeHtml(creds[ci].label) + '</span>' +
+            '<span style="color:#f1f5f9;font-size:12px;font-weight:600;">' + App.escapeHtml(creds[ci].value) + '</span>' +
+          '</div>';
+        }
+      }
+    }
+
+    // Mostrar modal com dados copiados + opções
     var overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;padding:1rem;';
     overlay.innerHTML =
-      '<div style="background:rgba(15,23,42,0.97);border:1px solid rgba(51,65,85,0.4);border-radius:20px;padding:2rem;width:100%;max-width:400px;text-align:center;">' +
-        '<p style="font-size:16px;font-weight:700;color:#f1f5f9;margin-bottom:16px;">Como abrir o ' + App.escapeHtml(platformName) + '?</p>' +
+      '<div style="background:rgba(15,23,42,0.97);border:1px solid rgba(51,65,85,0.4);border-radius:20px;padding:2rem;width:100%;max-width:420px;">' +
+        '<p style="font-size:16px;font-weight:700;color:#f1f5f9;margin-bottom:12px;text-align:center;">Criar conta no ' + App.escapeHtml(platformName) + '</p>' +
+        '<div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:12px;padding:12px;margin-bottom:16px;">' +
+          '<p style="font-size:11px;font-weight:700;color:#4ade80;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Dados copiados para a area de transferencia</p>' +
+          credsDisplay +
+        '</div>' +
+        '<p style="font-size:12px;color:#94a3b8;margin-bottom:12px;text-align:center;">Use a <strong style="color:#f1f5f9;">mesma senha</strong> em todas as plataformas para facilitar!</p>' +
         '<div style="display:flex;flex-direction:column;gap:10px;">' +
-          '<button id="open-normal" style="width:100%;padding:14px;border-radius:12px;font-size:15px;font-weight:700;color:#fff;border:none;cursor:pointer;background:linear-gradient(135deg,#22c55e,#16a34a);">Não tenho conta pessoal — Abrir direto</button>' +
+          '<button id="open-normal" style="width:100%;padding:14px;border-radius:12px;font-size:15px;font-weight:700;color:#fff;border:none;cursor:pointer;background:linear-gradient(135deg,#22c55e,#16a34a);">Abrir ' + App.escapeHtml(platformName) + ' direto</button>' +
           '<button id="open-incognito" style="width:100%;padding:14px;border-radius:12px;font-size:15px;font-weight:700;color:#fff;border:none;cursor:pointer;background:linear-gradient(135deg,#6D4AFF,#4F46E5);">Tenho conta pessoal — Copiar link</button>' +
-          '<p id="link-copied" style="display:none;font-size:13px;color:#4ade80;margin-top:4px;">Link copiado! Abra uma janela anônima (Ctrl+Shift+N) e cole com Ctrl+V</p>' +
+          '<p id="link-copied" style="display:none;font-size:13px;color:#4ade80;margin-top:4px;text-align:center;">Link copiado! Abra uma janela anônima (Ctrl+Shift+N) e cole com Ctrl+V</p>' +
           '<button id="open-cancel" style="width:100%;padding:10px;border-radius:12px;font-size:13px;color:#64748b;border:1px solid rgba(100,116,139,0.3);cursor:pointer;background:none;">Cancelar</button>' +
         '</div>' +
       '</div>';
@@ -991,7 +1272,7 @@ var App = App || {};
     document.getElementById('open-normal').addEventListener('click', function() {
       overlay.remove();
       window.open(url, '_blank');
-      App.showToast('Dados copiados! Cole no formulário.', 'success');
+      App.showToast('Dados copiados! Cole no formulário do ' + platformName + '.', 'success');
     });
 
     document.getElementById('open-incognito').addEventListener('click', function() {
@@ -1005,6 +1286,16 @@ var App = App || {};
     document.getElementById('open-cancel').addEventListener('click', function() {
       overlay.remove();
     });
+  });
+
+  // Abrir ProtonMail para verificar código
+  bindAction('open-protonmail', function() {
+    App.showToast('ProtonMail aberto — procure o código de verificação!', 'info');
+  });
+
+  // Abrir sites de SMS virtual para verificação por telefone
+  bindAction('open_sms_sites', function() {
+    App.showToast('Escolha um número virtual nos sites acima!', 'info');
   });
 
   // Abrir link de cadastro

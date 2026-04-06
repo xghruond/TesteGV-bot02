@@ -28,6 +28,24 @@ App.renderGuide = function(state) {
         App.icons.externalLink + ' Abrir Manualmente</button>'
     : '';
 
+  var protonMailButton = step.action === 'open_protonmail'
+    ? '<a href="https://mail.proton.me" target="_blank" rel="noopener noreferrer" class="mb-6 flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-base font-bold text-white" style="background:linear-gradient(135deg,#6D4AFF,#4F46E5);">' +
+        App.icons.externalLink + ' Abrir ProtonMail para pegar o código</a>'
+    : '';
+
+  var smsButton = step.action === 'open_sms_sites'
+    ? '<div class="mb-6 flex flex-col gap-2">' +
+        '<a href="https://mobilesms.io" target="_blank" rel="noopener noreferrer" class="flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold text-white" style="background:linear-gradient(135deg,#f59e0b,#d97706);">' +
+          App.icons.externalLink + ' mobilesms.io — Números US frescos</a>' +
+        '<a href="https://anonymsms.com" target="_blank" rel="noopener noreferrer" class="flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold text-white" style="background:linear-gradient(135deg,#f59e0b,#d97706);">' +
+          App.icons.externalLink + ' anonymsms.com — Números novos diariamente</a>' +
+        '<a href="https://esimplus.me/temporary-numbers" target="_blank" rel="noopener noreferrer" class="flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold text-white" style="background:linear-gradient(135deg,#f59e0b,#d97706);">' +
+          App.icons.externalLink + ' esimplus.me — Menos conhecido</a>' +
+        '<a href="https://receiveasms.com" target="_blank" rel="noopener noreferrer" class="flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold text-white" style="background:linear-gradient(135deg,#f59e0b,#d97706);">' +
+          App.icons.externalLink + ' receiveasms.com — Vários países</a>' +
+      '</div>'
+    : '';
+
   var placeholders = {
     protonmail: 'Ex: seunome@proton.me',
     instagram: 'Ex: @seunome',
@@ -82,6 +100,8 @@ App.renderGuide = function(state) {
         '<div class="mb-6 flex gap-1">' + stepsProgress + '</div>' +
         '<h3 class="mb-4 text-xl font-bold text-dark-50">' + step.title + '</h3>' +
         registerButton +
+        protonMailButton +
+        smsButton +
         '<div class="mb-4 text-base leading-relaxed text-dark-300">' + step.description + '</div>' +
         (step.tip
           ? '<div class="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">' +
