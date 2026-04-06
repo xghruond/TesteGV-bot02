@@ -1,45 +1,62 @@
 """
-Servidor Green BOT — serve arquivos estáticos (5500) + API de automação (3001)
-Uso: python server.py
+Servidor Green BOT — porta unica, arquivos estaticos + API
+Uso: python server.py [porta]
 """
 import http.server
 import socketserver
 import json
 import threading
 import sys
+import os
+import mimetypes
+import functools
 from urllib.parse import urlparse
 
-# Portas (podem ser passadas como argumento)
-STATIC_PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 5500
-API_PORT = int(sys.argv[2]) if len(sys.argv) > 2 else 3001
+print = functools.partial(print, flush=True)
 
-# Importar os bots
+PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Importar bots
+sys.path.insert(0, ROOT_DIR)
 import auto_protonmail
 import auto_instagram
 
-# ============================================================
-# API Server (porta 3001) — endpoints de automação
-# ============================================================
 
-class APIHandler(http.server.BaseHTTPRequestHandler):
+class Handler(http.server.BaseHTTPRequestHandler):
+
     def log_message(self, format, *args):
-        pass  # Silenciar logs
+        pass
 
-    def _cors_headers(self):
+    def _cors(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
 
-    def _json_response(self, data, code=200):
+    def _json(self, data, code=200):
         self.send_response(code)
         self.send_header('Content-Type', 'application/json')
-        self._cors_headers()
+        self._cors()
         self.end_headers()
         self.wfile.write(json.dumps(data).encode())
 
+    def _serve_file(self, filepath):
+        """Servir arquivo estatico"""
+        if not os.path.isfile(filepath):
+            self.send_error(404, 'File not found')
+            return
+        mime, _ = mimetypes.guess_type(filepath)
+        if not mime:
+            mime = 'application/octet-stream'
+        self.send_response(200)
+        self.send_header('Content-Type', mime)
+        self.end_headers()
+        with open(filepath, 'rb') as f:
+            self.wfile.write(f.read())
+
     def do_OPTIONS(self):
         self.send_response(204)
-        self._cors_headers()
+        self._cors()
         self.end_headers()
 
     def do_GET(self):
@@ -47,66 +64,64 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
         path = parsed.path
         params = dict(x.split('=') for x in parsed.query.split('&') if '=' in x) if parsed.query else {}
 
-        if path == '/status':
+        # === API ===
+        if path == '/api/health':
+            return self._json({'ok': True})
+
+        if path == '/api/status':
             platform = params.get('platform', 'protonmail')
             if platform == 'instagram':
-                self._json_response(auto_instagram.status)
-            else:
-                self._json_response(auto_protonmail.status)
-        elif path == '/health':
-            self._json_response({'ok': True})
-        else:
-            self._json_response({'error': 'Not found'}, 404)
+                return self._json(auto_instagram.status)
+            return self._json(auto_protonmail.status)
+
+        # === Arquivos estaticos ===
+        if path == '/':
+            path = '/index.html'
+
+        filepath = os.path.join(ROOT_DIR, path.lstrip('/').replace('/', os.sep))
+        filepath = os.path.normpath(filepath)
+
+        # Seguranca: nao servir fora do ROOT_DIR
+        if not filepath.startswith(ROOT_DIR):
+            self.send_error(403, 'Forbidden')
+            return
+
+        self._serve_file(filepath)
 
     def do_POST(self):
         path = urlparse(self.path).path
+        print('[API] POST ' + path)
 
-        if path == '/create-protonmail':
-            # Ler body
-            length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(length).decode() if length > 0 else '{}'
-            try:
-                data = json.loads(body)
-            except:
-                data = {}
+        length = int(self.headers.get('Content-Length', 0))
+        body = self.rfile.read(length).decode() if length > 0 else '{}'
+        try:
+            data = json.loads(body)
+        except:
+            data = {}
 
+        if path == '/api/create-protonmail':
             username = data.get('username', '')
             password = data.get('password', '')
             display_name = data.get('displayName', '')
 
             if not username or not password:
-                self._json_response({'error': 'username e password obrigatórios'}, 400)
-                return
+                return self._json({'error': 'username e password obrigatorios'}, 400)
 
-            # Resetar status
-            auto_protonmail.status['step'] = 0
-            auto_protonmail.status['message'] = 'Iniciando...'
-            auto_protonmail.status['done'] = False
-            auto_protonmail.status['success'] = False
-            auto_protonmail.status['error'] = None
-            auto_protonmail.status['email'] = username + '@proton.me'
-            auto_protonmail.status['password'] = password
+            auto_protonmail.status.update({
+                'step': 0, 'message': 'Iniciando...', 'done': False,
+                'success': False, 'error': None,
+                'email': username + '@proton.me', 'password': password
+            })
 
-            # Executar em thread separada
-            thread = threading.Thread(
+            threading.Thread(
                 target=auto_protonmail.create_account,
                 args=(username, password, display_name),
                 daemon=True
-            )
-            thread.start()
+            ).start()
 
-            self._json_response({
-                'started': True,
-                'message': 'Automação iniciada! Acompanhe em /status'
-            })
-        elif path == '/create-instagram':
-            length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(length).decode() if length > 0 else '{}'
-            try:
-                data = json.loads(body)
-            except:
-                data = {}
+            return self._json({'started': True, 'message': 'Automacao ProtonMail iniciada!'})
 
+        elif path == '/api/create-instagram':
             email = data.get('email', '')
             password = data.get('password', '')
             full_name = data.get('fullName', '')
@@ -116,77 +131,42 @@ class APIHandler(http.server.BaseHTTPRequestHandler):
             birth_year = data.get('birthYear', '2000')
 
             if not email or not password:
-                self._json_response({'error': 'email e password obrigatórios'}, 400)
-                return
+                return self._json({'error': 'email e password obrigatorios'}, 400)
 
-            # Resetar status
-            auto_instagram.status['step'] = 0
-            auto_instagram.status['message'] = 'Iniciando...'
-            auto_instagram.status['done'] = False
-            auto_instagram.status['success'] = False
-            auto_instagram.status['error'] = None
+            auto_instagram.status.update({
+                'step': 0, 'message': 'Iniciando...', 'done': False,
+                'success': False, 'error': None
+            })
 
-            thread = threading.Thread(
+            threading.Thread(
                 target=auto_instagram.create_account,
                 args=(email, password, full_name, username, birth_day, birth_month, birth_year),
                 daemon=True
-            )
-            thread.start()
+            ).start()
 
-            self._json_response({
-                'started': True,
-                'message': 'Automação Instagram iniciada!'
-            })
+            return self._json({'started': True, 'message': 'Automacao Instagram iniciada!'})
+
         else:
-            self._json_response({'error': 'Not found'}, 404)
+            return self._json({'error': 'Endpoint nao encontrado'}, 404)
 
 
-# ============================================================
-# Static File Server (porta 5500)
-# ============================================================
-
-class StaticHandler(http.server.SimpleHTTPRequestHandler):
-    def log_message(self, format, *args):
-        # Log simplificado
-        pass
-
-
-class ReusableTCPServer(socketserver.TCPServer):
+class ReusableServer(socketserver.TCPServer):
     allow_reuse_address = True
-    allow_reuse_port = True
-
-
-def start_static_server():
-    with ReusableTCPServer(('', STATIC_PORT), StaticHandler) as httpd:
-        httpd.serve_forever()
-
-
-def start_api_server():
-    with ReusableTCPServer(('', API_PORT), APIHandler) as httpd:
-        httpd.serve_forever()
 
 
 if __name__ == '__main__':
     print('=' * 50)
     print('  Green BOT Server')
-    print('  Static: http://localhost:' + str(STATIC_PORT))
-    print('  API:    http://localhost:' + str(API_PORT))
+    print('  http://localhost:' + str(PORT))
     print('=' * 50)
-    print('')
-
-    # Iniciar static server em thread
-    static_thread = threading.Thread(target=start_static_server, daemon=True)
-    static_thread.start()
-    print('[OK] Servidor de arquivos rodando na porta ' + str(STATIC_PORT))
-
-    # API server na thread principal
-    print('[OK] Servidor de automação rodando na porta ' + str(API_PORT))
-    print('')
-    print('Abra http://localhost:5500 no navegador')
-    print('Pressione Ctrl+C para parar')
-    print('')
 
     try:
-        start_api_server()
+        with ReusableServer(('', PORT), Handler) as httpd:
+            print('[OK] Rodando na porta ' + str(PORT))
+            print('Abra http://localhost:' + str(PORT))
+            print('')
+            httpd.serve_forever()
     except KeyboardInterrupt:
-        print('\nServidor parado.')
+        print('\nParado.')
+    except OSError as e:
+        print('ERRO: Porta em uso. Tente: python server.py ' + str(PORT + 10))

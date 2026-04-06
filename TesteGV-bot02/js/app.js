@@ -944,7 +944,7 @@ var App = App || {};
     });
 
     // Iniciar automação no servidor
-    fetch('http://localhost:8081/create-protonmail', {
+    fetch('/api/create-protonmail', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: username, password: password, displayName: displayName })
@@ -960,7 +960,7 @@ var App = App || {};
       // Polling de status
       polling = setInterval(function() {
         if (cancelled) return;
-        fetch('http://localhost:8081/status')
+        fetch('/api/status')
           .then(function(r) { return r.json(); })
           .then(function(s) {
             // Atualizar modal
@@ -1133,7 +1133,7 @@ var App = App || {};
       overlay.remove();
     });
 
-    fetch('http://localhost:8081/create-instagram', {
+    fetch('/api/create-instagram', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1151,7 +1151,7 @@ var App = App || {};
 
       polling = setInterval(function() {
         if (cancelled) return;
-        fetch('http://localhost:8081/status?platform=instagram')
+        fetch('/api/status?platform=instagram')
           .then(function(r) { return r.json(); })
           .then(function(s) {
             var stepsEl = document.getElementById('auto-steps');
