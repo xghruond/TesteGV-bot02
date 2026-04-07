@@ -8,7 +8,9 @@ Import: from auto_protonmail import create_account
 import sys
 import time
 import random
+import re
 import functools
+import requests
 from playwright.sync_api import sync_playwright
 
 # Forcar flush
@@ -269,14 +271,119 @@ def create_account(username, password, display_name):
                     conta_criada = True
                     break
 
-                # === Human Verification — aguardar usuario resolver ===
+                # === Human Verification via Mail.tm (email temporario) ===
                 if not hv_resolved:
                     try:
                         hv = page.locator('text=Human Verification')
                         if hv.first.is_visible(timeout=500):
-                            print('  -> Human Verification detectada! Aguardando usuario...')
-                            update_status(7, 'Verificacao necessaria! Use email ou SMS no navegador. O bot continua apos resolver.')
-                            hv_resolved = True  # Marca para nao repetir a mensagem
+                            print('  -> Human Verification detectada! Usando Mail.tm...')
+                            update_status(7, 'Gerando email temporario (Mail.tm)...')
+
+                            try:
+                                # Criar email temporario via Mail.tm API
+                                domains = requests.get('https://api.mail.tm/domains', timeout=10).json()
+                                domain = domains['hydra:member'][0]['domain']
+                                temp_addr = 'gvbot' + str(random.randint(1000,9999)) + '@' + domain
+                                temp_pw = 'GvTemp2026!'
+
+                                requests.post('https://api.mail.tm/accounts', json={
+                                    'address': temp_addr, 'password': temp_pw
+                                }, timeout=10)
+
+                                token_resp = requests.post('https://api.mail.tm/token', json={
+                                    'address': temp_addr, 'password': temp_pw
+                                }, timeout=10).json()
+                                tm_token = token_resp.get('token', '')
+
+                                if tm_token:
+                                    print('  -> Email criado: ' + temp_addr)
+                                    update_status(7, 'Email: ' + temp_addr)
+
+                                    # Clicar aba E-mail
+                                    try:
+                                        etab = page.locator('button:has-text("E-mail"), [role="tab"]:has-text("E-mail")')
+                                        if etab.first.is_visible(timeout=2000):
+                                            etab.first.click()
+                                            time.sleep(2)
+                                    except:
+                                        pass
+
+                                    # Preencher email
+                                    einput = page.locator('input[type="email"], input[placeholder*="email" i]').first
+                                    if einput.is_visible(timeout=3000):
+                                        einput.click()
+                                        time.sleep(0.5)
+                                        page.keyboard.press('Control+a')
+                                        page.keyboard.press('Backspace')
+                                        time.sleep(0.3)
+                                        human_type(page, temp_addr)
+                                        time.sleep(1)
+
+                                        # Clicar enviar
+                                        sbtn = page.locator('button:has-text("Obter"), button:has-text("verificacao"), button:has-text("Get"), button:has-text("Send")')
+                                        if sbtn.first.is_visible(timeout=3000):
+                                            sbtn.first.click()
+                                            print('  -> Codigo solicitado!')
+                                            update_status(7, 'Buscando codigo em ' + temp_addr + '...')
+                                            time.sleep(10)
+
+                                            # Buscar codigo via API Mail.tm
+                                            code_found = False
+                                            for attempt in range(25):
+                                                update_status(7, 'Buscando codigo... tentativa ' + str(attempt + 1) + '/25')
+                                                try:
+                                                    msgs = requests.get('https://api.mail.tm/messages', headers={
+                                                        'Authorization': 'Bearer ' + tm_token
+                                                    }, timeout=10).json()
+
+                                                    for msg in msgs.get('hydra:member', []):
+                                                        subj = (msg.get('subject', '') or '').lower()
+                                                        if any(k in subj for k in ['proton', 'verif', 'code', 'confirm']):
+                                                            # Pegar corpo do email
+                                                            msg_id = msg.get('id', '')
+                                                            detail = requests.get('https://api.mail.tm/messages/' + msg_id, headers={
+                                                                'Authorization': 'Bearer ' + tm_token
+                                                            }, timeout=10).json()
+                                                            body = detail.get('text', '') or detail.get('html', [''])[0] if isinstance(detail.get('html'), list) else detail.get('text', '')
+                                                            codes = re.findall(r'\b(\d{6})\b', str(body))
+                                                            if codes:
+                                                                code = codes[0]
+                                                                print('  -> CODIGO: ' + code)
+                                                                update_status(7, 'Codigo encontrado: ' + code)
+
+                                                                # Preencher codigo
+                                                                ci = page.locator('input[id*="code" i], input[placeholder*="code" i], input[placeholder*="codigo" i]').first
+                                                                if ci.is_visible(timeout=5000):
+                                                                    ci.click()
+                                                                    time.sleep(0.5)
+                                                                    human_type(page, code)
+                                                                    time.sleep(1)
+                                                                    vb = page.locator('button:has-text("Verif"), button:has-text("Confirm"), button[type="submit"]').first
+                                                                    if vb.is_visible(timeout=3000):
+                                                                        vb.click()
+                                                                        print('  -> Verificado!')
+                                                                        time.sleep(5)
+                                                                code_found = True
+                                                                break
+                                                    if code_found:
+                                                        break
+                                                except Exception as e:
+                                                    print('  -> Tentativa ' + str(attempt+1) + ': ' + str(e))
+                                                time.sleep(4)
+
+                                            if code_found:
+                                                print('  -> Verificacao resolvida automaticamente!')
+                                            else:
+                                                print('  -> Codigo nao chegou. Resolva manualmente.')
+                                                update_status(7, 'Resolva a verificacao manualmente no navegador.')
+                                else:
+                                    print('  -> Erro no token Mail.tm')
+                                    update_status(7, 'Resolva a verificacao manualmente no navegador.')
+                            except Exception as e:
+                                print('  -> Erro Mail.tm: ' + str(e))
+                                update_status(7, 'Resolva a verificacao manualmente no navegador.')
+
+                            hv_resolved = True
                     except:
                         pass
 
