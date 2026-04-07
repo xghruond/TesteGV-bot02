@@ -251,164 +251,10 @@ def create_account(username, password, display_name):
                 pass
             time.sleep(1)
 
-        # === Human Verification — email automatico via gv.verificacao ===
-        VERIF_EMAIL = 'gv.verificacao@proton.me'
-        VERIF_PASSWORD = 'GvVerif@2026!'
+        # === Aguardar verificacao — detecta Human Verification dentro do loop ===
+        hv_resolved = False
 
-        print('  -> Verificando se pede Human Verification...')
-        try:
-            hv = page.locator('text=Human Verification')
-            if hv.first.is_visible(timeout=5000):
-                print('  -> Human Verification detectada!')
-                update_status(7, 'Verificacao detectada! Resolvendo automaticamente...')
-
-                # Clicar na aba E-mail
-                try:
-                    email_tab = page.locator('button:has-text("E-mail"), [role="tab"]:has-text("E-mail"), [role="tab"]:has-text("Email")')
-                    if email_tab.first.is_visible(timeout=3000):
-                        email_tab.first.click()
-                        time.sleep(2)
-                        print('  -> Aba E-mail selecionada!')
-                except:
-                    pass
-
-                # Preencher email de verificacao
-                try:
-                    email_input = page.locator('input[type="email"], input[placeholder*="email" i], input[id*="email"]').first
-                    if email_input.is_visible(timeout=5000):
-                        email_input.click()
-                        time.sleep(0.5)
-                        page.keyboard.press('Control+a')
-                        page.keyboard.press('Backspace')
-                        time.sleep(0.3)
-                        human_type(page, VERIF_EMAIL)
-                        time.sleep(1)
-                        print('  -> Email preenchido: ' + VERIF_EMAIL)
-
-                        # Clicar "Obter codigo de verificacao"
-                        send_btn = page.locator('button:has-text("Obter"), button:has-text("verificacao"), button:has-text("Get"), button:has-text("Send code")')
-                        if send_btn.first.is_visible(timeout=3000):
-                            send_btn.first.click()
-                            print('  -> Codigo solicitado!')
-                            update_status(7, 'Codigo enviado para ' + VERIF_EMAIL + '! Buscando...')
-                            time.sleep(8)
-
-                            # Abrir nova aba e fazer login no ProtonMail para buscar codigo
-                            print('  -> Abrindo ProtonMail para buscar codigo...')
-                            mail_page = context.new_page()
-                            mail_page.goto('https://mail.proton.me/login', timeout=30000)
-                            time.sleep(5)
-
-                            # Login
-                            try:
-                                mail_page.locator('#username').fill(VERIF_EMAIL.split('@')[0])
-                                time.sleep(1)
-                                mail_page.locator('#password').fill(VERIF_PASSWORD)
-                                time.sleep(1)
-                                mail_page.locator('button[type="submit"]').first.click()
-                                print('  -> Login enviado!')
-                                time.sleep(10)
-                            except Exception as e:
-                                print('  -> Erro login: ' + str(e))
-
-                            # Buscar email com codigo (tentar ate 15x)
-                            code_found = False
-                            for attempt in range(15):
-                                update_status(7, 'Buscando codigo no email... tentativa ' + str(attempt + 1) + '/15')
-                                try:
-                                    # Procurar email do Proton na inbox
-                                    mail_page.reload()
-                                    time.sleep(5)
-
-                                    # Clicar no email mais recente que contenha "verification" ou "code"
-                                    email_items = mail_page.locator('[data-testid="message-item"], [data-shortcut-target="message-container"] div[role="button"]')
-                                    count = email_items.count()
-                                    print('  -> Emails encontrados: ' + str(count))
-
-                                    for ei in range(min(count, 5)):
-                                        try:
-                                            item = email_items.nth(ei)
-                                            item_text = item.text_content() or ''
-                                            if any(kw in item_text.lower() for kw in ['verif', 'code', 'confirm', 'proton']):
-                                                item.click()
-                                                time.sleep(3)
-
-                                                # Extrair codigo de 6 digitos do corpo do email
-                                                import re
-                                                body_text = mail_page.locator('[data-testid="message-content"], .message-content, article').first.text_content() or ''
-                                                codes = re.findall(r'\b(\d{6})\b', body_text)
-                                                if codes:
-                                                    code = codes[0]
-                                                    print('  -> CODIGO ENCONTRADO: ' + code)
-                                                    update_status(7, 'Codigo encontrado: ' + code)
-
-                                                    # Voltar pra aba principal e preencher codigo
-                                                    page.bring_to_front()
-                                                    time.sleep(1)
-
-                                                    code_input = page.locator('input[id*="code" i], input[placeholder*="code" i], input[placeholder*="codigo" i]').first
-                                                    if code_input.is_visible(timeout=5000):
-                                                        code_input.click()
-                                                        time.sleep(0.5)
-                                                        human_type(page, code)
-                                                        time.sleep(1)
-
-                                                        # Clicar verificar
-                                                        verify_btn = page.locator('button:has-text("Verif"), button:has-text("Confirm"), button[type="submit"]').first
-                                                        if verify_btn.is_visible(timeout=3000):
-                                                            verify_btn.click()
-                                                            print('  -> Codigo enviado!')
-                                                            time.sleep(5)
-
-                                                    code_found = True
-                                                    break
-                                        except:
-                                            continue
-
-                                    if code_found:
-                                        break
-                                except Exception as e:
-                                    print('  -> Tentativa ' + str(attempt + 1) + ': ' + str(e))
-
-                                time.sleep(5)
-
-                            # Fechar aba do mail
-                            try:
-                                mail_page.close()
-                            except:
-                                pass
-
-                            if code_found:
-                                print('  -> Verificacao concluida automaticamente!')
-                                time.sleep(5)
-                            else:
-                                print('  -> Codigo nao encontrado. Resolva manualmente no navegador.')
-                                update_status(7, 'Codigo nao encontrado. Resolva manualmente no navegador.')
-                                # Aguardar usuario resolver
-                                for _ in range(300):
-                                    time.sleep(2)
-                                    try:
-                                        if not hv.first.is_visible(timeout=1000):
-                                            print('  -> Verificacao concluida!')
-                                            time.sleep(3)
-                                            break
-                                    except:
-                                        break
-                except Exception as e:
-                    print('  -> Erro na verificacao: ' + str(e))
-                    update_status(7, 'Erro. Resolva manualmente no navegador.')
-                    for _ in range(300):
-                        time.sleep(2)
-                        try:
-                            if not hv.first.is_visible(timeout=1000):
-                                break
-                        except:
-                            break
-        except:
-            print('  -> Sem Human Verification, continuando...')
-
-        # === Aguardar CAPTCHA/verificacao ===
-        update_status(7, 'Aguardando verificacao... Resolva no navegador se necessario!')
+        update_status(7, 'Aguardando verificacao...')
         print('\n[7/7] Aguardando verificacao...')
 
         conta_criada = False
@@ -416,12 +262,25 @@ def create_account(username, password, display_name):
             time.sleep(2)
             try:
                 url = page.url
+
+                # === Sucesso: chegou no inbox/welcome ===
                 if any(x in url for x in ['mail.proton', 'welcome', 'inbox', 'setup', 'get-started']):
                     print('  -> Conta criada! URL: ' + url)
                     conta_criada = True
                     break
 
-                # Display name
+                # === Human Verification — aguardar usuario resolver ===
+                if not hv_resolved:
+                    try:
+                        hv = page.locator('text=Human Verification')
+                        if hv.first.is_visible(timeout=500):
+                            print('  -> Human Verification detectada! Aguardando usuario...')
+                            update_status(7, 'Verificacao necessaria! Use email ou SMS no navegador. O bot continua apos resolver.')
+                            hv_resolved = True  # Marca para nao repetir a mensagem
+                    except:
+                        pass
+
+                # === Display name ===
                 try:
                     dn_exists = page.evaluate('!!document.querySelector("#displayName") && document.querySelector("#displayName").offsetHeight > 0')
                     if dn_exists:
@@ -436,7 +295,7 @@ def create_account(username, password, display_name):
                 except:
                     pass
 
-                # Skip / Nao obrigado
+                # === Skip / Nao obrigado ===
                 try:
                     for txt in ['Skip', 'Pular', 'Maybe later', 'Talvez', 'obrigado']:
                         skip = page.locator('button:has-text("' + txt + '"), a:has-text("' + txt + '"), span:has-text("' + txt + '")')
@@ -448,7 +307,7 @@ def create_account(username, password, display_name):
                 except:
                     pass
 
-                # Sidebar = logado
+                # === Sidebar = logado ===
                 try:
                     if page.locator('[data-testid="sidebar"]').is_visible(timeout=300):
                         conta_criada = True
