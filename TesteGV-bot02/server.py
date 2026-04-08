@@ -154,7 +154,20 @@ class ReusableServer(socketserver.TCPServer):
     allow_reuse_address = True
 
 
+def reset_all_status():
+    """Resetar status de todos os bots ao iniciar o servidor"""
+    auto_protonmail.status.update({
+        'step': 0, 'total': 7, 'message': 'Aguardando...', 'done': False,
+        'success': False, 'error': None, 'email': '', 'password': ''
+    })
+    auto_instagram.status.update({
+        'step': 0, 'total': 8, 'message': 'Aguardando...', 'done': False,
+        'success': False, 'error': None
+    })
+
+
 if __name__ == '__main__':
+    reset_all_status()
     print('=' * 50)
     print('  Green BOT Server')
     print('  http://localhost:' + str(PORT))

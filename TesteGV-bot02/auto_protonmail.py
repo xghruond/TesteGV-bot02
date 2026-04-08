@@ -271,26 +271,26 @@ def create_account(username, password, display_name):
                     conta_criada = True
                     break
 
-                # === Human Verification via Mail.tm (email temporario) ===
+                # === Human Verification via Mail.gw (email temporario) ===
                 if not hv_resolved:
                     try:
                         hv = page.locator('text=Human Verification')
                         if hv.first.is_visible(timeout=500):
-                            print('  -> Human Verification detectada! Usando Mail.tm...')
-                            update_status(7, 'Gerando email temporario (Mail.tm)...')
+                            print('  -> Human Verification detectada! Usando Mail.gw...')
+                            update_status(7, 'Gerando email temporario (Mail.gw)...')
 
                             try:
-                                # Criar email temporario via Mail.tm API
-                                domains = requests.get('https://api.mail.tm/domains', timeout=10).json()
+                                # Criar email temporario via Mail.gw API
+                                domains = requests.get('https://api.mail.gw/domains', timeout=10).json()
                                 domain = domains['hydra:member'][0]['domain']
                                 temp_addr = 'gvbot' + str(random.randint(1000,9999)) + '@' + domain
                                 temp_pw = 'GvTemp2026!'
 
-                                requests.post('https://api.mail.tm/accounts', json={
+                                requests.post('https://api.mail.gw/accounts', json={
                                     'address': temp_addr, 'password': temp_pw
                                 }, timeout=10)
 
-                                token_resp = requests.post('https://api.mail.tm/token', json={
+                                token_resp = requests.post('https://api.mail.gw/token', json={
                                     'address': temp_addr, 'password': temp_pw
                                 }, timeout=10).json()
                                 tm_token = token_resp.get('token', '')
@@ -327,12 +327,12 @@ def create_account(username, password, display_name):
                                             update_status(7, 'Buscando codigo em ' + temp_addr + '...')
                                             time.sleep(10)
 
-                                            # Buscar codigo via API Mail.tm
+                                            # Buscar codigo via API Mail.gw
                                             code_found = False
                                             for attempt in range(25):
                                                 update_status(7, 'Buscando codigo... tentativa ' + str(attempt + 1) + '/25')
                                                 try:
-                                                    msgs = requests.get('https://api.mail.tm/messages', headers={
+                                                    msgs = requests.get('https://api.mail.gw/messages', headers={
                                                         'Authorization': 'Bearer ' + tm_token
                                                     }, timeout=10).json()
 
@@ -341,7 +341,7 @@ def create_account(username, password, display_name):
                                                         if any(k in subj for k in ['proton', 'verif', 'code', 'confirm']):
                                                             # Pegar corpo do email
                                                             msg_id = msg.get('id', '')
-                                                            detail = requests.get('https://api.mail.tm/messages/' + msg_id, headers={
+                                                            detail = requests.get('https://api.mail.gw/messages/' + msg_id, headers={
                                                                 'Authorization': 'Bearer ' + tm_token
                                                             }, timeout=10).json()
                                                             body = detail.get('text', '') or detail.get('html', [''])[0] if isinstance(detail.get('html'), list) else detail.get('text', '')
@@ -377,10 +377,10 @@ def create_account(username, password, display_name):
                                                 print('  -> Codigo nao chegou. Resolva manualmente.')
                                                 update_status(7, 'Resolva a verificacao manualmente no navegador.')
                                 else:
-                                    print('  -> Erro no token Mail.tm')
+                                    print('  -> Erro no token Mail.gw')
                                     update_status(7, 'Resolva a verificacao manualmente no navegador.')
                             except Exception as e:
-                                print('  -> Erro Mail.tm: ' + str(e))
+                                print('  -> Erro Mail.gw: ' + str(e))
                                 update_status(7, 'Resolva a verificacao manualmente no navegador.')
 
                             hv_resolved = True
