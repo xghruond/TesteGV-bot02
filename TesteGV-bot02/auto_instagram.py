@@ -9,6 +9,7 @@ Import: from auto_instagram import create_account
 import sys
 import time
 import random
+import re
 import functools
 from playwright.sync_api import sync_playwright
 
@@ -397,7 +398,6 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                 time.sleep(15)
 
                                 # Buscar codigo (tentar 15x)
-                                import re
                                 code_found = False
                                 for attempt in range(15):
                                     update_status(8, 'Buscando codigo... tentativa ' + str(attempt + 1) + '/15')
