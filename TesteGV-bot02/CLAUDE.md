@@ -24,7 +24,7 @@ SPA que guia novos funcionarios de multinacional na criacao de contas Gmail, Ins
 - **Caminhos git**: usar relativos a `C:\` (ex: `git add TesteGV-bot02/js/app.js`)
 - **Commits**: em portugues, prefixos feat/fix/chore
 
-## Estrutura (5.911 linhas)
+## Estrutura (6.834 linhas)
 ```
 TesteGV-bot02/
 ├── index.html              (94 linhas)  — SPA shell + splash screen
@@ -32,16 +32,17 @@ TesteGV-bot02/
 ├── ARCHITECTURE.md         — Documentacao tecnica detalhada
 ├── MEMORY.md               — Contexto de negocio e decisoes
 ├── .gitignore
-├── server.py               (185 linhas) — Servidor Python (static + API)
-├── auto_protonmail.py      (331 linhas) — Bot Playwright ProtonMail (semi-auto)
-├── auto_instagram.py       (595 linhas) — Bot Playwright Instagram
+├── server.py               (213 linhas) — Servidor Python (static + API bots)
+├── auto_protonmail.py      (728 linhas) — Bot ProtonMail + login Tutanota para verificacao
+├── auto_instagram.py       (734 linhas) — Bot Instagram + busca codigo no ProtonMail
+├── auto_tutanota.py        (353 linhas) — Bot Tutanota standalone
 ├── css/
 │   └── styles.css          (1017 linhas) — Animacoes, print, dark theme
 ├── js/
 │   ├── data.js             (736 linhas)  — Plataformas, icones, helpers
-│   ├── storage.js          (76 linhas)   — localStorage + version check
+│   ├── storage.js          (76 linhas)   — localStorage + version check (VERSION 6)
 │   ├── particles.js        (200 linhas)  — Canvas de particulas
-│   ├── app.js              (1825 linhas) — Controlador principal
+│   ├── app.js              (1831 linhas) — Controlador principal
 │   └── components/
 │       ├── header.js       (65 linhas)   — Stepper de progresso
 │       ├── form.js         (87 linhas)   — Formulario de dados

@@ -122,34 +122,20 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             if cb_count >= 3:
                 print('  -> Data de nascimento (comboboxes) detectada!')
                 update_status(2, 'Preenchendo data de nascimento...')
-                for idx in range(cb_count):
-                    cb = comboboxes.nth(idx)
-                    text = (cb.text_content() or '').lower().strip()
-                    if 'dia' in text or 'day' in text:
-                        cb.click(force=True)
-                        time.sleep(1)
-                        try:
-                            page.locator('[role="option"]:has-text("' + birth_day + '")').first.click()
-                        except:
-                            pass
-                        time.sleep(0.5)
-                    elif any(m in text for m in ['mês', 'mes', 'month', 'janeiro', 'fevereiro', 'março']):
-                        cb.click(force=True)
-                        time.sleep(1)
-                        mes_nome = meses_pt[int(birth_month)] if int(birth_month) <= 12 else 'Janeiro'
-                        try:
-                            page.locator('[role="option"]:has-text("' + mes_nome + '")').first.click()
-                        except:
-                            pass
-                        time.sleep(0.5)
-                    elif 'ano' in text or 'year' in text:
-                        cb.click(force=True)
-                        time.sleep(1)
-                        try:
-                            page.locator('[role="option"]:has-text("' + birth_year + '")').first.click()
-                        except:
-                            pass
-                        time.sleep(0.5)
+                mes_nome = meses_pt[int(birth_month)] if int(birth_month) <= 12 else 'Janeiro'
+
+                # Ordem posicional: Dia(0), Mes(1), Ano(2)
+                for cb_idx, val in [(0, birth_day), (1, mes_nome), (2, birth_year)]:
+                    try:
+                        comboboxes.nth(cb_idx).click(force=True)
+                        time.sleep(1.5)
+                        opt = page.locator('[role="option"]:has-text("' + val + '")')
+                        if opt.first.is_visible(timeout=3000):
+                            opt.first.click()
+                            print('  -> Preenchido: ' + val)
+                    except:
+                        page.keyboard.press('Escape')
+                    time.sleep(0.5)
                 print('  -> Nascimento preenchido')
                 time.sleep(1)
                 for nsel in ['button:has-text("Avan")', 'div[role="button"]:has-text("Avan")', 'button:has-text("Next")']:
@@ -374,49 +360,80 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                 print('  -> Layout novo (comboboxes) detectado!')
                 update_status(7, 'Preenchendo data de nascimento...')
 
-                # Identificar qual combobox e qual (Dia/Mes/Ano) pelo texto
+                # Debug: mostrar texto de cada combobox
+                birth_cbs = []
                 for idx in range(cb_count):
                     cb = comboboxes.nth(idx)
-                    text = cb.text_content() or ''
-                    text_lower = text.lower().strip()
+                    text = (cb.text_content() or '').strip()[:30]
+                    print('  -> CB[' + str(idx) + ']: "' + text + '"')
+                    birth_cbs.append(text.lower())
 
-                    if 'dia' in text_lower or 'day' in text_lower:
-                        # Clicar e selecionar dia
+                # Identificar por texto OU posicao
+                # Instagram ordem: Dia (0), Mes (1), Ano (2), [Idioma (3)]
+                # Filtrar comboboxes de nascimento (excluir idioma)
+                def select_option(cb_idx, value_text):
+                    """Clica no combobox e seleciona opcao pelo texto."""
+                    try:
+                        cb = comboboxes.nth(cb_idx)
                         cb.click(force=True)
-                        time.sleep(1)
-                        try:
-                            opt = page.locator('[role="option"]:has-text("' + birth_day + '"), [role="listbox"] >> text=' + birth_day)
-                            if opt.first.is_visible(timeout=3000):
-                                opt.first.click()
-                                print('  -> Dia: ' + birth_day)
-                        except:
-                            pass
-                        time.sleep(random.uniform(0.5, 1))
+                        time.sleep(1.5)
+                        # Tentar selecionar opcao
+                        found = False
+                        for sel in ['[role="option"]', 'li', 'div[role="menuitem"]', 'span']:
+                            opts = page.locator(sel + ':has-text("' + value_text + '")')
+                            if opts.count() > 0:
+                                for oi in range(opts.count()):
+                                    opt = opts.nth(oi)
+                                    if opt.is_visible(timeout=1000):
+                                        opt_text = (opt.text_content() or '').strip()
+                                        if opt_text == value_text or value_text in opt_text:
+                                            opt.click()
+                                            found = True
+                                            break
+                                if found:
+                                    break
+                        if not found:
+                            # Fallback: keyboard — digitar valor e Enter
+                            page.keyboard.type(value_text)
+                            time.sleep(0.5)
+                            page.keyboard.press('Enter')
+                        return found
+                    except Exception as e:
+                        print('  -> Erro select_option: ' + str(e))
+                        # Fechar dropdown se aberto
+                        page.keyboard.press('Escape')
+                        return False
 
-                    elif 'mês' in text_lower or 'mes' in text_lower or 'month' in text_lower or text_lower in ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']:
-                        cb.click(force=True)
-                        time.sleep(1)
-                        mes_nome = meses_pt[int(birth_month)] if int(birth_month) <= 12 else 'Janeiro'
-                        try:
-                            opt = page.locator('[role="option"]:has-text("' + mes_nome + '"), [role="listbox"] >> text=' + mes_nome)
-                            if opt.first.is_visible(timeout=3000):
-                                opt.first.click()
-                                print('  -> Mes: ' + mes_nome)
-                        except:
-                            pass
-                        time.sleep(random.uniform(0.5, 1))
+                # Detectar qual combobox e qual campo
+                dia_idx = mes_idx = ano_idx = -1
+                for idx, text in enumerate(birth_cbs):
+                    if 'dia' in text or 'day' in text:
+                        dia_idx = idx
+                    elif any(m in text for m in ['mês', 'mes', 'month', 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']):
+                        mes_idx = idx
+                    elif 'ano' in text or 'year' in text:
+                        ano_idx = idx
 
-                    elif 'ano' in text_lower or 'year' in text_lower:
-                        cb.click(force=True)
-                        time.sleep(1)
-                        try:
-                            opt = page.locator('[role="option"]:has-text("' + birth_year + '"), [role="listbox"] >> text=' + birth_year)
-                            if opt.first.is_visible(timeout=3000):
-                                opt.first.click()
-                                print('  -> Ano: ' + birth_year)
-                        except:
-                            pass
-                        time.sleep(random.uniform(0.5, 1))
+                # Fallback posicional se nao detectou por texto
+                if dia_idx == -1 or mes_idx == -1 or ano_idx == -1:
+                    print('  -> Usando ordem posicional (Dia=0, Mes=1, Ano=2)')
+                    dia_idx, mes_idx, ano_idx = 0, 1, 2
+
+                # Preencher Dia
+                mes_nome = meses_pt[int(birth_month)] if int(birth_month) <= 12 else 'Janeiro'
+                if select_option(dia_idx, birth_day):
+                    print('  -> Dia: ' + birth_day)
+                time.sleep(random.uniform(0.5, 1))
+
+                # Preencher Mes
+                if select_option(mes_idx, mes_nome):
+                    print('  -> Mes: ' + mes_nome)
+                time.sleep(random.uniform(0.5, 1))
+
+                # Preencher Ano
+                if select_option(ano_idx, birth_year):
+                    print('  -> Ano: ' + birth_year)
+                time.sleep(random.uniform(0.5, 1))
 
                 print('  -> Nascimento: ' + birth_day + '/' + birth_month + '/' + birth_year)
 
@@ -489,20 +506,33 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                 # Detectar código de email → fazer login no ProtonMail e buscar
                 try:
                     code_visible = False
-                    for ct in ['código de confirmação', 'confirmation code', 'codigo de confirmacao', 'Insira o código']:
+
+                    # Verificar por texto na pagina
+                    code_keywords = ['confirma', 'confirmation', 'Insira o c', 'Enter the code',
+                                     'codigo de 6', 'code we sent', 'enviamos para']
+                    for ct in code_keywords:
                         try:
-                            if page.locator('text=' + ct).first.is_visible(timeout=300):
+                            if page.locator('text=' + ct).first.is_visible(timeout=200):
                                 code_visible = True
+                                print('  -> Tela de codigo detectada: "' + ct + '"')
                                 break
                         except:
                             continue
 
-                    code_input = page.locator('input[name="email_confirmation_code"], input[aria-label*="código" i], input[aria-label*="code" i], input[placeholder*="code" i], input[placeholder*="código" i], input[name="code"], input[placeholder*="confirmação" i]')
+                    # Verificar por input de codigo
+                    code_input = page.locator('input[name="email_confirmation_code"], input[aria-label*="digo" i], input[aria-label*="code" i], input[placeholder*="code" i], input[placeholder*="digo" i], input[name="code"], input[placeholder*="confirma" i]')
                     if not code_visible:
                         try:
-                            code_visible = code_input.first.is_visible(timeout=300)
+                            code_visible = code_input.first.is_visible(timeout=200)
+                            if code_visible:
+                                print('  -> Input de codigo detectado')
                         except:
                             pass
+
+                    # Verificar pela URL (challenge)
+                    if not code_visible and '/challenge' in url:
+                        code_visible = True
+                        print('  -> URL challenge detectada')
 
                     if code_visible:
                         if not getattr(create_account, '_code_searched', False):
