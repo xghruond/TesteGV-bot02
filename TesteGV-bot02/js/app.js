@@ -1080,8 +1080,7 @@ var App = App || {};
 
   // Criar conta Instagram automaticamente
   bindAction('auto-create-instagram', function() {
-    var email = (state.platforms.protonmail && state.platforms.protonmail.accountInfo)
-              || state.employee.emailDesejado + '@proton.me';
+    var email = 'teste.greenvillage@tutamail.com';
     var password = state.suggestedPassword || App.generatePassword(14);
     var fullName = state.employee.nomeCompleto || '';
     var username = state.employee.emailDesejado || '';

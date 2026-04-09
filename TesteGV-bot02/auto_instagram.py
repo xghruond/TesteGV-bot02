@@ -577,21 +577,33 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                 if has_email:
                                     print('  -> Email do Instagram detectado no Tutanota!')
 
-                                    # Clicar no email
+                                    # Clicar no email do Instagram na lista
                                     try:
-                                        for kw in ['Instagram', 'instagram', 'confirm', 'verif']:
-                                            el = mail_page.locator('text=' + kw).first
-                                            if el.is_visible(timeout=1000):
-                                                el.click()
-                                                time.sleep(3)
-                                                break
+                                        # Buscar item na lista que contem "Instagram" ou "confirm"
+                                        mail_page.evaluate("""() => {
+                                            // Pegar todos os elementos clicaveis na lista de emails
+                                            const rows = document.querySelectorAll('[class*="row"], [class*="list"], li, tr, div');
+                                            for (const row of rows) {
+                                                if (row.offsetHeight > 20 && row.offsetHeight < 200) {
+                                                    const text = (row.textContent || '').toLowerCase();
+                                                    if ((text.includes('instagram') || text.includes('confirm')) && !text.includes('tuta team') && !text.includes('proton')) {
+                                                        row.click();
+                                                        return true;
+                                                    }
+                                                }
+                                            }
+                                            return false;
+                                        }""")
+                                        time.sleep(4)
                                     except:
                                         pass
 
-                                    # Ler pagina apos clicar
+                                    # Ler pagina inteira — o email aberto deve conter o codigo
                                     time.sleep(2)
                                     full_text = mail_page.evaluate("() => document.body.textContent || ''")
+                                    print('  -> Texto pagina (200 chars): ' + full_text[:200].replace('\n', ' '))
                                     codes = re.findall(r'\b(\d{6})\b', full_text)
+                                    print('  -> Codigos encontrados: ' + str(codes[:5]))
 
                                     if codes:
                                         code = codes[0]
