@@ -1,482 +1,394 @@
-# Arquitetura do Sistema de Onboarding
+# Arquitetura — Green BOT Sistema de Onboarding
 
 ## 1. Visão Geral
 
-Sistema web SPA (Single Page Application) que guia novos funcionários na criação de contas profissionais em 4 plataformas: **ProtonMail**, **Instagram**, **Facebook** e **TikTok**.
+SPA que guia novos funcionários de multinacional na criação de contas profissionais em 4 plataformas: **ProtonMail**, **Instagram**, **Facebook** e **TikTok**. Inclui bots Playwright para automação semi-automática de ProtonMail e Instagram.
 
-### Stack Tecnológica
+### Stack
 
 | Camada | Tecnologia | Motivo |
 |--------|-----------|--------|
-| Markup | HTML5 | Semântico, acessível |
-| Estilização | Tailwind CSS 3 (CDN) | Utilitário, responsivo, sem build |
-| Tipografia | Google Fonts (Inter) | Moderna, legível |
-| Lógica | JavaScript vanilla (ES5) | Zero dependências, funciona em qualquer navegador |
-| Persistência | localStorage | Sem backend, permite retomar progresso |
-| Build | Nenhum | Abrir `index.html` direto no navegador |
+| Frontend | HTML5 + Tailwind CSS 3 (CDN) + JS vanilla (ES5) | Zero build, deploy por cópia |
+| Persistência | localStorage | Sem backend, retomar sessão |
+| Servidor | Python (`http.server`) | Serve arquivos + API para bots |
+| Automação | Playwright (Python) | Preenche formulários das plataformas |
+| Deploy | GitHub Pages (frontend apenas) | Gratuito, automático |
 
 ### Decisões Técnicas
 
-- **Sem framework** → Zero build step, deploy por cópia de arquivos
-- **Namespace global `App`** → Organização sem ES modules (compatível com `file://`)
-- **IIFE no app.js** → Estado privado, sem poluição do escopo global
-- **String concatenation para HTML** → Simples, sem engine de template
-- **localStorage** → Persistência sem backend, retomada de sessão
+- **Sem framework** — zero build step, compatível com `file://`
+- **Namespace global `App`** — organização sem ES modules
+- **IIFE no app.js** — estado privado, sem poluição global
+- **String concat para HTML** — simples, sem template engine
+- **Dois modos de operação** — com servidor (automação) ou sem (manual)
 
 ---
 
-## 2. Estrutura de Arquivos
+## 2. Estrutura de Arquivos (5.911 linhas)
 
 ```
 TesteGV-bot02/
-├── index.html                          # SPA shell + splash screen             96 linhas
-├── CLAUDE.md                           # Instruções para Claude Code
-├── ARCHITECTURE.md                     # Este documento
-├── MEMORY.md                           # Contexto de negócio
+├── index.html              (94)    — SPA shell + splash screen
+├── server.py               (185)   — Servidor Python (static + API bots)
+├── auto_protonmail.py      (331)   — Bot Playwright ProtonMail (semi-auto)
+├── auto_instagram.py       (595)   — Bot Playwright Instagram
 ├── css/
-│   └── styles.css                      # Animações, print, dark theme        1017 linhas
+│   └── styles.css          (1017)  — Animações, print, dark theme, parallax
 ├── js/
-│   ├── data.js                         # Plataformas, ícones, helpers         725 linhas
-│   ├── storage.js                      # localStorage + version check          76 linhas
-│   ├── particles.js                    # Canvas de partículas                 200 linhas
-│   ├── app.js                          # Controlador principal               1547 linhas
+│   ├── data.js             (736)   — Plataformas, ícones SVG, helpers
+│   ├── storage.js          (76)    — localStorage + version check + histórico
+│   ├── particles.js        (200)   — Canvas de partículas (welcome screen)
+│   ├── app.js              (1825)  — Controlador principal (estado, rotas, eventos, automação)
 │   └── components/
-│       ├── header.js                   # Stepper de progresso                  65 linhas
-│       ├── form.js                     # Formulário de dados                   88 linhas
-│       ├── platform-card.js            # Cards de plataformas                 178 linhas
-│       ├── guide-viewer.js             # Guia passo a passo                   105 linhas
-│       ├── wizard.js                   # Assistente automático                150 linhas
-│       ├── checklist.js                # FAB + drawer de progresso             69 linhas
-│       └── summary.js                  # Resumo final + export                138 linhas
-└── assets/
-    ├── logo-gv.png                     # Logo oficial HD (1536x1024)
-    └── icons/                          # Ícones SVG
+│       ├── header.js       (65)    — Stepper de progresso
+│       ├── form.js         (87)    — Formulário de dados + chips de email
+│       ├── platform-card.js(176)   — Cards de plataformas com cores
+│       ├── guide-viewer.js (131)   — Guia passo-a-passo + ferramenta de senha
+│       ├── wizard.js       (172)   — Assistente automático (modo wizard)
+│       ├── checklist.js    (69)    — FAB + drawer de progresso
+│       └── summary.js      (152)   — Resumo final + export TXT/PDF
+├── assets/
+│   └── logo-gv.png                 — Logo oficial HD (1536x1024)
+├── CLAUDE.md                       — Instruções para Claude Code
+├── ARCHITECTURE.md                 — Este documento
+├── MEMORY.md                       — Contexto de negócio e decisões
+└── .claude/skills/                 — Skills customizadas (/audit, /deploy, etc.)
 ```
-
-**Total: ~4.517 linhas de código**
 
 ---
 
-## 3. Namespace Global (`App`)
+## 3. Arquitetura do Sistema
 
-Todos os arquivos estendem o objeto global `App` com `var App = App || {};`.
+### Modo Manual (GitHub Pages / file://)
+
+```
+┌─────────────┐
+│  index.html │ ← Usuário abre no navegador
+│  + JS/CSS   │
+│             │ ← Guia passo a passo
+│ localStorage│ ← Persiste estado
+└─────────────┘
+```
+
+### Modo Automação (com server.py)
+
+```
+┌─────────────┐    POST /api/create-protonmail     ┌──────────────────┐
+│             │ ──────────────────────────────────→ │   server.py      │
+│  Interface  │                                     │   porta 8080     │
+│  (browser)  │    GET /api/status                  │                  │
+│             │ ←─────────────────────────────────  │  ┌────────────┐  │
+│             │    { step, message, done, success }  │  │ Thread:    │  │
+│  Modal de   │                                     │  │ Playwright │  │
+│  progresso  │    polling 2s                        │  │ (Chrome)   │  │
+└─────────────┘                                     │  └────────────┘  │
+                                                    └──────────────────┘
+```
+
+### API do Servidor
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | `/api/health` | Health check |
+| GET | `/api/status?platform=protonmail` | Status do bot ProtonMail |
+| GET | `/api/status?platform=instagram` | Status do bot Instagram |
+| POST | `/api/create-protonmail` | Iniciar automação ProtonMail |
+| POST | `/api/create-instagram` | Iniciar automação Instagram |
+| GET | `/*` | Arquivos estáticos |
+
+---
+
+## 4. Namespace Global (`App`)
+
+Todos os arquivos estendem `var App = App || {};`.
 
 | Propriedade | Arquivo | Tipo | Descrição |
 |------------|---------|------|-----------|
-| `App.icons` | `data.js` | `Object<string, string>` | 21 ícones SVG inline |
-| `App.platforms` | `data.js` | `Object<string, Platform>` | 4 plataformas com passos |
-| `App.formFields` | `data.js` | `Array<Field>` | 7 definições de campos |
-| `App.departmentLabels` | `data.js` | `Object<string, string>` | Tradução de departamentos |
-| `App.storage` | `storage.js` | `Object` | Métodos: `save()`, `load()`, `clear()` |
-| `App.renderHeader` | `header.js` | `Function(state) → HTML` | Cabeçalho com progresso |
-| `App.renderForm` | `form.js` | `Function(state) → HTML` | Formulário de dados |
-| `App.renderPlatformCards` | `platform-card.js` | `Function(state) → HTML` | Grid de plataformas |
-| `App.renderGuide` | `guide-viewer.js` | `Function(state) → HTML` | Guia passo a passo |
-| `App.renderChecklist` | `checklist.js` | `Function(state) → HTML` | Drawer de progresso |
-| `App.renderChecklistFab` | `checklist.js` | `Function(state) → HTML` | Botão flutuante |
-| `App.renderSummary` | `summary.js` | `Function(state) → HTML` | Resumo final |
+| `App.icons` | data.js | Object | ~21 ícones SVG inline |
+| `App.platforms` | data.js | Object | 4 plataformas com steps |
+| `App.formFields` | data.js | Array | 7 campos do formulário |
+| `App.departmentLabels` | data.js | Object | Tradução de departamentos |
+| `App.generateEmailVariations` | data.js | Function | Gera ~15 sugestões de email |
+| `App.generatePassword` | data.js | Function | Gera senha segura aleatória |
+| `App.escapeHtml` | data.js | Function | Sanitiza strings para HTML |
+| `App.storage` | storage.js | Object | save/load/clear + histórico |
+| `App.initParticles` | particles.js | Function | Canvas de partículas |
+| `App.renderHeader` | header.js | Function → HTML | Stepper de progresso |
+| `App.renderForm` | form.js | Function → HTML | Formulário + chips email |
+| `App.renderPlatformCards` | platform-card.js | Function → HTML | Grid de plataformas |
+| `App.renderGuide` | guide-viewer.js | Function → HTML | Guia passo a passo |
+| `App.renderWizard` | wizard.js | Function → HTML | Assistente automático |
+| `App.renderChecklist` | checklist.js | Function → HTML | Drawer de progresso |
+| `App.renderChecklistFab` | checklist.js | Function → HTML | Botão flutuante |
+| `App.renderSummary` | summary.js | Function → HTML | Resumo final |
+| `App.showToast` | app.js | Function | Notificação toast |
 
 ---
 
-## 4. Gerenciamento de Estado
+## 5. Gerenciamento de Estado
 
-### Shape do Estado
+### Shape
 
 ```javascript
 {
-  currentScreen: 'welcome' | 'form' | 'platforms' | 'guide' | 'summary',
-  currentGuide: null | 'protonmail' | 'instagram' | 'facebook' | 'tiktok',
+  currentScreen: 'welcome'|'form'|'platforms'|'guide'|'wizard'|'summary'|'history',
+  currentGuide: null|'protonmail'|'instagram'|'facebook'|'tiktok',
   currentStep: 0..N,
+  wizardMode: boolean,
+  suggestedPassword: string,
   employee: {
     nomeCompleto: string,
     emailDesejado: string,
     telefone: string,
-    dataNascimento: string,      // YYYY-MM-DD
+    dataNascimento: string,     // YYYY-MM-DD
     cargo: string,
     departamento: string,
-    dataAdmissao: string         // YYYY-MM-DD
+    dataAdmissao: string        // YYYY-MM-DD
   },
   platforms: {
-    protonmail:     { completed: boolean, accountInfo: string },
-    instagram: { completed: boolean, accountInfo: string },
-    facebook:  { completed: boolean, accountInfo: string },
-    tiktok:    { completed: boolean, accountInfo: string }
+    protonmail: { completed: boolean, accountInfo: string },
+    instagram:  { completed: boolean, accountInfo: string },
+    facebook:   { completed: boolean, accountInfo: string },
+    tiktok:     { completed: boolean, accountInfo: string }
   },
-  startedAt: string | null,      // ISO timestamp
-  completedAt: string | null     // ISO timestamp
+  startedAt: string|null,       // ISO timestamp
+  completedAt: string|null
 }
 ```
 
-### Ciclo de Persistência
+### Ciclo
 
 ```
-Ação do usuário
-    ↓
-Handler atualiza `state`
-    ↓
-App.storage.save(state)  →  localStorage.setItem('gv-onboarding-state', JSON.stringify(state))
-    ↓
-render() atualiza a tela
-    ↓
-bindEvents() reanexa handlers
+Ação do usuário → handler atualiza state → App.storage.save(state)
+    → render() atualiza DOM → bindEvents() reanexa handlers
 
---- ao reabrir o navegador ---
-
-App.storage.load()  →  localStorage.getItem('gv-onboarding-state')
-    ↓
-mergeDeep(defaultState, savedState)
-    ↓
-render() restaura a tela salva
+Ao reabrir → App.storage.load() → mergeDeep(defaultState, saved) → render()
 ```
 
-### Deep Merge
+### Versionamento
 
-A função `mergeDeep()` no `app.js` combina o estado salvo com os valores padrão. Isso garante compatibilidade quando novos campos são adicionados ao `defaultState` — campos antigos do localStorage são preservados e novos campos recebem valor padrão.
+`App.storage.VERSION = 4` — ao mudar o schema, incrementar limpa o estado antigo automaticamente.
 
 ---
 
-## 5. Sistema de Navegação
+## 6. Telas e Navegação
 
-### Telas
+| # | Screen ID | Componente | Descrição |
+|---|-----------|------------|-----------|
+| 1 | `welcome` | inline (app.js) | Splash com logo, parallax, partículas |
+| 2 | `form` | form.js | 7 campos + chips de sugestão de email |
+| 3 | `platforms` | platform-card.js | Grid 2x2 com status por plataforma |
+| 4 | `guide` | guide-viewer.js | Passo a passo manual |
+| 5 | `wizard` | wizard.js | Assistente automático com automação |
+| 6 | `summary` | summary.js | Relatório final (TXT/PDF/copiar) |
+| 7 | `history` | inline (app.js) | Lista de onboardings anteriores |
 
-| # | Screen ID | Nome | Descrição |
-|---|-----------|------|-----------|
-| 1 | `welcome` | Boas-vindas | Tela inicial com botão de começar |
-| 2 | `form` | Dados | Formulário de informações do funcionário |
-| 3 | `platforms` | Plataformas | Grid com 4 cards de plataformas |
-| 4 | `guide` | Guia | Passo a passo para uma plataforma |
-| 5 | `summary` | Resumo | Relatório final imprimível |
-
-### Fluxo de Navegação
+### Fluxo Principal
 
 ```
-┌──────────┐     ┌──────────┐     ┌──────────────┐     ┌───────────────┐     ┌──────────┐
-│ Welcome  │────→│  Form    │────→│  Platforms   │────→│  Guide (x4)   │────→│ Summary  │
-│          │     │          │     │              │←────│               │     │          │
-└──────────┘     └──────────┘     └──────────────┘     └───────────────┘     └──────────┘
-     ↑                                                                            │
-     └────────────────────────── "Novo Colaborador" ──────────────────────────────┘
+┌──────────┐    ┌──────┐    ┌────────────┐    ┌─────────────────┐    ┌─────────┐
+│ Welcome  │───→│ Form │───→│ Platforms  │───→│ Guide / Wizard  │───→│ Summary │
+│          │    │      │    │            │←───│  (por plataforma)│    │         │
+└──────────┘    └──────┘    └────────────┘    └─────────────────┘    └─────────┘
+     ↑                                                                     │
+     └────────────── "Novo Colaborador" / Salvar no Histórico ────────────┘
 ```
 
-### Função `navigateTo(screen, options)`
+### Dois Modos por Plataforma
+
+- **Guide (manual)** — passos com instruções textuais, usuário faz tudo
+- **Wizard (automático)** — interface simplificada + bot Playwright preenche formulário
+
+---
+
+## 7. Sistema de Automação (Bots Playwright)
+
+### auto_protonmail.py — Semi-automático (6 steps)
+
+```
+Step 1: Abrir Chrome (sem incógnito, locale pt-BR)
+Step 2: Selecionar plano Free (múltiplos seletores + fallback JS)
+Step 3: Preencher username (human_type + React setter fallback)
+Step 4: Preencher senha + confirmação
+Step 5: Clicar submit
+Step 6: PAUSA — aguarda humano resolver CAPTCHA (até 20 min)
+         → Detecta displayName, skip buttons, sidebar = sucesso
+```
+
+**Características:**
+- Digitação humanizada (0.08-0.22s por caractere)
+- Delays aleatórios entre ações
+- Sem dependências externas (removido Mail.gw/requests)
+- Fallback: se servidor off, interface abre modo manual
+
+### auto_instagram.py — Semi-automático (8 steps)
+
+```
+Step 1: Abrir Chrome
+Step 2: Preencher email
+Step 3: Preencher nome completo
+Step 4: Preencher username
+Step 5: Preencher senha
+Step 6: Preencher data de nascimento
+Step 7: Clicar submit
+Step 8: Aguardar verificação (CAPTCHA/email)
+```
+
+### Protocolo de Status (polling)
 
 ```javascript
-function navigateTo(screen, options) {
-  state.currentScreen = screen;
-  if (options.guide) state.currentGuide = options.guide;
-  if (options.step !== undefined) state.currentStep = options.step;
-  App.storage.save(state);
-  render();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+// Interface faz polling a cada 2s
+GET /api/status?platform=protonmail
+
+// Resposta:
+{
+  "step": 3,
+  "total": 6,
+  "message": "Preenchendo username: joao.silva",
+  "done": false,
+  "success": false,
+  "error": null,
+  "email": "joao.silva@proton.me",
+  "password": "***"
 }
 ```
 
-Parâmetros opcionais:
-- `options.guide` — ID da plataforma (`'protonmail'`, `'instagram'`, etc.)
-- `options.step` — Índice do passo no guia (0-based)
+A interface renderiza um modal com steps visuais (checkmarks verdes para completos, ponto animado para atual). Após 5 falhas de polling, mostra erro de conexão.
 
 ---
 
-## 6. Pipeline de Renderização
+## 8. Sistema de Eventos (Event Delegation)
 
-```
-render()
-  │
-  ├─ state.currentScreen === 'welcome' ?
-  │     header.innerHTML = ''
-  │   else
-  │     header.innerHTML = App.renderHeader(state)
-  │
-  ├─ switch (state.currentScreen)
-  │     'welcome'   → renderWelcome()              [inline no app.js]
-  │     'form'      → App.renderForm(state)        [form.js]
-  │     'platforms'  → App.renderPlatformCards(state) [platform-card.js]
-  │     'guide'     → App.renderGuide(state)       [guide-viewer.js]
-  │     'summary'   → App.renderSummary(state)     [summary.js]
-  │
-  ├─ screen === 'platforms' || 'guide' ?
-  │     checklist.innerHTML = App.renderChecklistFab(state)
-  │                         + App.renderChecklist(state)
-  │
-  ├─ Adiciona classe '.screen-enter' (animação fadeIn)
-  │
-  └─ bindEvents()
-       ├─ data-action="start"          → iniciar onboarding
-       ├─ data-action="continue"       → retomar sessão salva
-       ├─ data-action="back-platforms"  → voltar para plataformas
-       ├─ data-action="guide-next"     → próximo passo
-       ├─ data-action="guide-prev"     → passo anterior
-       ├─ data-action="open-register"  → window.open(url)
-       ├─ data-action="view-summary"   → ver resumo final
-       ├─ data-action="print"          → window.print()
-       ├─ data-action="reset"          → resetar aplicação
-       ├─ data-action="toggle-checklist" → abrir/fechar drawer
-       ├─ #employee-form submit        → salvar dados do formulário
-       ├─ [name="telefone"] input      → máscara (XX) XXXXX-XXXX
-       ├─ [data-platform] click        → navegar para guia
-       └─ #complete-platform-form submit → marcar como concluído
+Um único listener no `document` com `data-action` + `e.target.closest()`:
+
+```javascript
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('[data-action]');
+  if (!el) return;
+  var action = el.getAttribute('data-action');
+  if (actions[action]) actions[action](e, el);
+});
 ```
 
-### Por que re-bindEvents() a cada render?
+### Actions Registradas (principais)
 
-Cada `render()` substitui o `innerHTML` dos containers, destruindo os elementos DOM anteriores e seus event listeners. Por isso, `bindEvents()` é chamado após cada render para reanexar todos os handlers aos novos elementos.
+| Action | Handler | Descrição |
+|--------|---------|-----------|
+| `start` | Navega form | Iniciar onboarding |
+| `continue` | Restaura state | Retomar sessão salva |
+| `submit-form` | Salva employee | Salvar formulário |
+| `open-guide` | Navega guide | Abrir guia da plataforma |
+| `open-wizard` | Navega wizard | Abrir wizard da plataforma |
+| `guide-next/prev` | Muda step | Navegar passos |
+| `complete-platform` | Marca done | Completar plataforma |
+| `auto-create-protonmail` | POST API | Iniciar bot ProtonMail |
+| `auto-create-instagram` | POST API | Iniciar bot Instagram |
+| `view-summary` | Navega summary | Ver resumo final |
+| `export-txt/pdf/copy` | Gera export | Exportar dados |
+| `view-history` | Navega history | Ver onboardings anteriores |
+| `reset` | Limpa state | Novo colaborador |
+| `toggle-password` | Mostra/oculta | Toggle visibilidade senha |
+| `select-email-variation` | Preenche campo | Escolher sugestão de email |
+| `regenerate-email` | Recalcula chips | Gerar novas sugestões |
 
 ---
 
-## 7. Componentes
+## 9. Componentes Visuais
 
-### Header (`header.js`)
+### Splash Screen (welcome)
+- Logo HD com `backdrop-filter: blur(20px)`
+- Partículas canvas (55 partículas, conexões a 150px)
+- Parallax floresta 3 camadas com profundidade por tela
+- Botão "Continuar de onde parei" se há sessão salva
 
-| | |
-|---|---|
-| **Entrada** | `state.currentScreen`, `state.employee.nomeCompleto` |
-| **Saída** | HTML: logo, nome do funcionário, barra de progresso (4 segmentos), botão reset |
-| **Dependências** | `App.icons.refresh` |
-| **Visibilidade** | Todas as telas exceto `welcome` |
+### Formulário (form)
+- 7 campos com validação visual em tempo real (borda verde/vermelha no blur)
+- Chips de sugestão de email (gerados a partir do nome)
+- Máscara de telefone `(XX) XXXXX-XXXX`
+- Botão "Gerar Dados de Teste" para desenvolvimento
+- Auto-save no blur de cada campo
 
-### Form (`form.js`)
+### Platform Cards
+- Grid responsivo com cores por plataforma
+- Badge de status (Pendente / Concluído)
+- Barra de progresso geral
+- Stagger animation ao entrar na tela
 
-| | |
-|---|---|
-| **Entrada** | `state.employee`, `App.formFields` |
-| **Saída** | HTML: formulário com 7 campos (text, tel, date, select), botão submit |
-| **Dependências** | `App.icons`, `App.formFields` |
-| **Campos** | nomeCompleto, emailDesejado, telefone, dataNascimento, cargo, departamento, dataAdmissao |
+### Guide Viewer
+- Navegação step-by-step com indicador visual
+- Ferramenta de geração de senha segura
+- Botão "Abrir Página de Cadastro" (window.open)
+- Campo para registrar email/username criado
 
-### Platform Cards (`platform-card.js`)
+### Wizard
+- Modo simplificado com foco na ação atual
+- Integração com bots (botão "Criar Automaticamente")
+- Modal de progresso com steps em tempo real
+- Fallback manual se servidor indisponível
 
-| | |
-|---|---|
-| **Entrada** | `state.platforms`, `App.platforms` |
-| **Saída** | HTML: grid 2x2 com cards coloridos, badges de status, barra de progresso geral |
-| **Dependências** | `App.platforms`, `App.icons` |
-| **Interação** | Clique no card navega para `guide` da plataforma |
-
-### Guide Viewer (`guide-viewer.js`)
-
-| | |
-|---|---|
-| **Entrada** | `state.currentGuide`, `state.currentStep`, `state.platforms` |
-| **Saída** | HTML: passo atual com título, descrição, dicas, botão de cadastro, navegação prev/next |
-| **Dependências** | `App.platforms`, `App.icons` |
-| **Ações** | Abrir URL cadastro, avançar/voltar passos, marcar como concluído |
-
-### Checklist (`checklist.js`)
-
-| | |
-|---|---|
-| **Entrada** | `state.platforms`, `state.employee.nomeCompleto` |
-| **Saída** | HTML: FAB (botão flutuante) + drawer lateral com progresso |
-| **Dependências** | `App.platforms`, `App.icons` |
-| **Visibilidade** | Telas `platforms` e `guide` apenas |
-
-### Summary (`summary.js`)
-
-| | |
-|---|---|
-| **Entrada** | `state` completo (employee + platforms + timestamps) |
-| **Saída** | HTML: dados do funcionário, tabela de contas, botões imprimir/resetar |
-| **Dependências** | `App.platforms`, `App.departmentLabels`, `App.icons` |
-| **Print** | Cabeçalho print-only aparece via CSS `@media print` |
+### Summary
+- Grid responsivo com dados do funcionário
+- Tabela de contas criadas por plataforma
+- Export: TXT, PDF, copiar para clipboard
+- Salva no histórico antes de resetar
 
 ---
 
-## 8. Cadeia de Dependências
-
-### Ordem de Carregamento (index.html)
+## 10. Ordem de Carregamento
 
 ```
-1. Tailwind CSS CDN          ← framework de estilização
-2. Google Fonts (Inter)       ← tipografia
-3. css/styles.css             ← estilos customizados
-4. js/data.js                 ← App.icons, App.platforms, App.formFields
-5. js/storage.js              ← App.storage
-6. js/components/header.js    ← App.renderHeader
-7. js/components/form.js      ← App.renderForm
-8. js/components/platform-card.js ← App.renderPlatformCards
-9. js/components/guide-viewer.js  ← App.renderGuide
-10. js/components/checklist.js    ← App.renderChecklist, App.renderChecklistFab
-11. js/components/summary.js      ← App.renderSummary
-12. js/app.js                     ← inicialização, render(), bindEvents()
+1. Tailwind CSS 3 (CDN)
+2. Google Fonts (Inter)
+3. css/styles.css
+4. js/data.js          ← App.icons, App.platforms, App.formFields, helpers
+5. js/storage.js       ← App.storage
+6. js/particles.js     ← App.initParticles
+7-12. js/components/*  ← App.render* (qualquer ordem entre si)
+13. js/app.js          ← init, render(), bindEvents() — DEVE ser último
 ```
 
-### Grafo de Dependências
-
-```
-data.js ─────────────────────────────────────────┐
-  │ (App.icons, App.platforms, App.formFields)    │
-  │                                               │
-  ├──→ storage.js (App.storage)                   │
-  │       │                                       │
-  ├──→ header.js ──────┐                          │
-  ├──→ form.js ────────┤                          │
-  ├──→ platform-card.js┤                          │
-  ├──→ guide-viewer.js ┼──→ app.js ◄─────────────┘
-  ├──→ checklist.js ───┤      │
-  └──→ summary.js ─────┘      │
-                               ↓
-                          render() → tela ativa
-```
-
-**Regras:**
-- `data.js` DEVE carregar primeiro (define dados base)
-- `storage.js` DEVE carregar antes de `app.js`
-- Componentes podem carregar em qualquer ordem (entre si)
-- `app.js` DEVE carregar por último (chama `render()` na inicialização)
+Cache-busting via `?v=93` em todos os scripts no `index.html`.
 
 ---
 
-## 9. Fluxo do Usuário
-
-### Jornada Completa
-
-```
-1. BOAS-VINDAS
-   Usuário abre index.html
-   ↓ Clica "Iniciar Onboarding"
-   (Se há sessão salva, pode clicar "Continuar de onde parei")
-
-2. FORMULÁRIO
-   Preenche: nome, email desejado, telefone, nascimento, cargo, departamento, admissão
-   Telefone auto-formata para (XX) XXXXX-XXXX
-   ↓ Clica "Continuar"
-
-3. PAINEL DE PLATAFORMAS
-   Vê 4 cards: ProtonMail, Instagram, Facebook, TikTok
-   Todos marcados como "Pendente"
-   ↓ Clica em "ProtonMail"
-
-4. GUIA PASSO A PASSO (ProtonMail - 6 passos)
-   Passo 1: Clica "Abrir Página de Cadastro" → abre accounts.google.com em nova aba
-   Passos 2-5: Segue instruções com dicas
-   Passo 6: Digita o email criado → Clica "Marcar como Concluído"
-   ↓ Volta automaticamente para o painel
-
-5. REPETIR para Instagram (5 passos), Facebook (4 passos), TikTok (5 passos)
-
-6. RESUMO FINAL
-   Quando as 4 plataformas estão concluídas, aparece "Ver Resumo Final"
-   Mostra dados do funcionário + tabela de contas criadas
-   ↓ Clica "Imprimir Relatório" (abre diálogo de impressão)
-   ↓ Ou "Novo Colaborador" (reseta para o próximo funcionário)
-```
-
-### Fluxo de Retomada
-
-```
-Usuário fecha o navegador no meio do processo
-    ↓
-Reabre index.html
-    ↓
-app.js detecta estado salvo no localStorage
-    ↓
-Tela de boas-vindas mostra botão "Continuar de onde parei"
-    ↓
-Estado restaurado, usuário retoma do ponto exato
-```
-
----
-
-## 10. Padrões de Design
-
-### IIFE (Immediately Invoked Function Expression)
-**Onde:** `app.js` — todo o código está envolto em `(function() { ... })();`
-**Por quê:** Mantém `state`, `defaultState` e funções internas privadas, expondo apenas o que está no `App`.
-
-### Namespace Pattern
-**Onde:** Todos os arquivos — `var App = App || {};`
-**Por quê:** Organiza código em módulos sem ES modules, funciona com protocolo `file://`.
-
-### MVC-like
-- **Model:** `state` no `app.js` + `App.platforms`/`App.formFields` no `data.js`
-- **View:** Funções `App.render*()` nos componentes
-- **Controller:** `bindEvents()` e handlers no `app.js`
-
-### Unobtrusive JavaScript
-**Onde:** Atributos `data-action` e `data-platform` no HTML gerado
-**Por quê:** Separa marcação de comportamento, fácil de entender a intenção olhando o HTML.
-
-### Deep Merge para Evolução de Schema
-**Onde:** `mergeDeep()` no `app.js`
-**Por quê:** Ao adicionar novos campos ao `defaultState`, sessões salvas antigas continuam funcionando — campos novos recebem valor padrão, campos existentes são preservados.
-
-### Imutabilidade via JSON Clone
-**Onde:** `JSON.parse(JSON.stringify(defaultState))` no `app.js`
-**Por quê:** Garante que cada instância do estado é independente, sem referências compartilhadas.
-
----
-
-## 11. Dependências Externas
-
-### CDN
-
-| Recurso | URL | Propósito |
-|---------|-----|-----------|
-| Tailwind CSS 3 | `cdn.tailwindcss.com` | Framework de estilização utilitário |
-| Google Fonts | `fonts.googleapis.com` | Fonte Inter (400-800) |
-
-### APIs do Navegador
-
-| API | Uso |
-|-----|-----|
-| `localStorage` | Persistência de estado entre sessões |
-| `FormData` | Extração de dados do formulário |
-| `window.open()` | Abrir páginas de cadastro em nova aba |
-| `window.print()` | Impressão do relatório final |
-| `window.scrollTo()` | Scroll suave ao navegar entre telas |
-| `confirm()` | Confirmação antes de resetar |
-| `JSON.stringify/parse` | Serialização do estado |
-| `Date` | Timestamps e formatação pt-BR |
-
-### URLs de Cadastro das Plataformas
-
-| Plataforma | URL |
-|------------|-----|
-| ProtonMail | `https://account.proton.me/signup` |
-| Instagram | `https://www.instagram.com/accounts/emailsignup/` |
-| Facebook | `https://www.facebook.com/r.php` |
-| TikTok | `https://www.tiktok.com/signup` |
-
----
-
-## 12. Extensibilidade
+## 11. Extensibilidade
 
 ### Adicionar Nova Plataforma
 
-1. **`js/data.js`** — Adicionar objeto em `App.platforms`:
-   ```javascript
-   App.platforms.linkedin = {
-     id: 'linkedin',
-     name: 'LinkedIn',
-     description: 'Rede profissional',
-     registerUrl: 'https://www.linkedin.com/signup',
-     color: { bg: 'bg-sky-50', border: 'border-sky-200', ... },
-     icon: '<svg>...</svg>',
-     steps: [ { title: '...', description: '...', tip: '...' }, ... ]
-   };
-   ```
+1. `data.js` — adicionar em `App.platforms` (id, name, icon, color, steps, registerUrl)
+2. `app.js` — adicionar em `defaultState.platforms` (`{ completed: false, accountInfo: '' }`)
+3. (Opcional) criar `auto_novaplataforma.py` + rota no `server.py`
+4. Componentes renderizam automaticamente
 
-2. **`js/app.js`** — Adicionar entrada no `defaultState.platforms`:
-   ```javascript
-   platforms: {
-     protonmail: { completed: false, accountInfo: '' },
-     // ...
-     linkedin: { completed: false, accountInfo: '' }
-   }
-   ```
+### Adicionar Novo Bot de Automação
 
-Os componentes renderizam automaticamente qualquer plataforma presente em `App.platforms`.
+1. Criar `auto_plataforma.py` com `status` dict global + `create_account()`
+2. `server.py` — importar, adicionar rota POST + status no GET
+3. `app.js` — adicionar handler `auto-create-plataforma` com modal + polling
 
 ### Adicionar Nova Tela
 
-1. Criar `js/components/nova-tela.js` com `App.renderNovaTela = function(state) { ... }`
-2. Adicionar `<script>` no `index.html` (antes de `app.js`)
-3. Adicionar case no `switch` do `render()` em `app.js`
-4. Adicionar handlers em `bindEvents()` se necessário
-5. Chamar `navigateTo('nova-tela')` de onde for preciso
+1. Criar `js/components/nova-tela.js` com `App.renderNovaTela(state)`
+2. Adicionar `<script>` no `index.html` (antes de app.js, incrementar `?v=`)
+3. Adicionar case no `render()` em `app.js`
+4. Adicionar handlers em `bindEvents()`
 
-### Adicionar Campo no Formulário
+---
 
-1. Adicionar definição em `App.formFields` no `data.js`
-2. Adicionar propriedade correspondente em `defaultState.employee` no `app.js`
-3. O formulário renderiza automaticamente o novo campo
+## 12. Deploy
+
+### GitHub Pages (frontend only)
+```bash
+git push origin master  # Deploy automático
+# https://xghruond.github.io/TesteGV-bot02/
+```
+Funciona sem servidor — modo manual para todas as plataformas.
+
+### Com automação (local)
+```bash
+cd c:\TesteGV-bot02
+pip install playwright requests
+playwright install chromium
+python server.py        # http://localhost:8080
+```
+Requer Chrome instalado em `C:/Program Files/Google/Chrome/Application/chrome.exe`.

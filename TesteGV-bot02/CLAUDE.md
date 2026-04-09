@@ -24,7 +24,7 @@ SPA que guia novos funcionarios de multinacional na criacao de contas Gmail, Ins
 - **Caminhos git**: usar relativos a `C:\` (ex: `git add TesteGV-bot02/js/app.js`)
 - **Commits**: em portugues, prefixos feat/fix/chore
 
-## Estrutura (5.964 linhas)
+## Estrutura (5.911 linhas)
 ```
 TesteGV-bot02/
 ├── index.html              (94 linhas)  — SPA shell + splash screen
@@ -33,26 +33,25 @@ TesteGV-bot02/
 ├── MEMORY.md               — Contexto de negocio e decisoes
 ├── .gitignore
 ├── server.py               (185 linhas) — Servidor Python (static + API)
-├── auto_protonmail.py      (446 linhas) — Bot Playwright ProtonMail
-├── auto_instagram.py       (548 linhas) — Bot Playwright Instagram
+├── auto_protonmail.py      (331 linhas) — Bot Playwright ProtonMail (semi-auto)
+├── auto_instagram.py       (595 linhas) — Bot Playwright Instagram
 ├── css/
 │   └── styles.css          (1017 linhas) — Animacoes, print, dark theme
 ├── js/
 │   ├── data.js             (736 linhas)  — Plataformas, icones, helpers
 │   ├── storage.js          (76 linhas)   — localStorage + version check
 │   ├── particles.js        (200 linhas)  — Canvas de particulas
-│   ├── app.js              (1810 linhas) — Controlador principal
+│   ├── app.js              (1825 linhas) — Controlador principal
 │   └── components/
 │       ├── header.js       (65 linhas)   — Stepper de progresso
 │       ├── form.js         (87 linhas)   — Formulario de dados
 │       ├── platform-card.js(176 linhas)  — Cards de plataformas
-│       ├── guide-viewer.js (131 linhas)  — Guia passo-a-passo + SMS virtual
+│       ├── guide-viewer.js (131 linhas)  — Guia passo-a-passo
 │       ├── wizard.js       (172 linhas)  — Assistente automatico
 │       ├── checklist.js    (69 linhas)   — FAB + drawer de progresso
 │       └── summary.js      (152 linhas)  — Resumo final + export
 └── assets/
-    ├── logo-gv.png         — Logo oficial HD (1536x1024)
-    └── icons/              — Icones SVG
+    └── logo-gv.png         — Logo oficial HD (1536x1024)
 ```
 
 ## Telas (6)
