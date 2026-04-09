@@ -13,6 +13,10 @@ import re
 import functools
 from playwright.sync_api import sync_playwright
 
+# Credenciais Tutanota (usada para verificacao de email)
+TUTA_EMAIL = 'teste.greenvillage@tutamail.com'
+TUTA_PASS = 'Waxdwaxdw134679852'
+
 print = functools.partial(print, flush=True)
 
 # Status global (lido pelo server.py)
@@ -74,6 +78,10 @@ def react_fill(page, selector, value):
 
 def create_account(email, password, full_name, username, birth_day='1', birth_month='1', birth_year='2000'):
     """Cria conta Instagram. Retorna status dict."""
+    # Limpar estado residual de chamadas anteriores
+    create_account._code_done = False
+    create_account._mail_page = None
+    create_account._mail_attempts = 0
 
     with sync_playwright() as p:
         # === PASSO 1: Abrir Chrome ===
@@ -120,38 +128,68 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             cb_count = comboboxes.count()
 
             if cb_count >= 3:
-                print('  -> Comboboxes de nascimento encontrados: ' + str(cb_count))
+                print('  -> Comboboxes encontrados: ' + str(cb_count))
                 update_status(2, 'Preenchendo data de nascimento...')
                 mes_nome = meses_pt[int(birth_month)] if int(birth_month) <= 12 else 'Janeiro'
 
-                # Ordem posicional: Dia(0), Mes(1), Ano(2) — ignorar demais (idioma etc)
-                for cb_idx, val in [(0, birth_day), (1, mes_nome), (2, birth_year)]:
+                # Debug: mostrar texto de cada combobox
+                birth_cbs = []
+                for idx in range(cb_count):
+                    text = (comboboxes.nth(idx).text_content() or '').strip()[:20]
+                    print('  -> CB[' + str(idx) + ']: "' + text + '"')
+                    birth_cbs.append(text.lower())
+
+                # Filtrar comboboxes de nascimento (excluir idioma/outros)
+                # Idioma geralmente tem texto longo ou "Portugues", "English", etc
+                dia_idx = mes_idx = ano_idx = -1
+                for idx, text in enumerate(birth_cbs):
+                    if 'dia' in text or 'day' in text or text.isdigit():
+                        if dia_idx == -1:
+                            dia_idx = idx
+                    elif any(m in text for m in ['mês', 'mes', 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro', 'month']):
+                        mes_idx = idx
+                    elif 'ano' in text or 'year' in text or (len(text) == 4 and text.isdigit()):
+                        ano_idx = idx
+
+                # Fallback posicional se nao detectou
+                if dia_idx == -1 or mes_idx == -1 or ano_idx == -1:
+                    print('  -> Usando posicao: primeiro 3 comboboxes')
+                    dia_idx, mes_idx, ano_idx = 0, 1, 2
+
+                print('  -> Indices: Dia=' + str(dia_idx) + ' Mes=' + str(mes_idx) + ' Ano=' + str(ano_idx))
+
+                def click_combobox_option(cb_idx, val):
+                    """Clica combobox e seleciona opcao."""
                     try:
                         comboboxes.nth(cb_idx).click(force=True)
                         time.sleep(1.5)
-                        # Buscar opcao exata
                         opts = page.locator('[role="option"]')
-                        found = False
                         for oi in range(opts.count()):
                             opt = opts.nth(oi)
-                            if opt.is_visible(timeout=500):
+                            if opt.is_visible(timeout=300):
                                 opt_text = (opt.text_content() or '').strip()
                                 if opt_text == val:
                                     opt.click()
-                                    found = True
-                                    print('  -> Preenchido: ' + val)
-                                    break
-                        if not found:
-                            # Fallback: has-text
-                            opt = page.locator('[role="option"]:has-text("' + val + '")').first
-                            if opt.is_visible(timeout=1000):
-                                opt.click()
-                                print('  -> Preenchido (fallback): ' + val)
-                            else:
-                                page.keyboard.press('Escape')
+                                    print('  -> OK: ' + val)
+                                    return True
+                        # Fallback
+                        opt = page.locator('[role="option"]:has-text("' + val + '")').first
+                        if opt.is_visible(timeout=1000):
+                            opt.click()
+                            print('  -> OK (fallback): ' + val)
+                            return True
+                        page.keyboard.press('Escape')
+                        return False
                     except:
                         page.keyboard.press('Escape')
-                    time.sleep(random.uniform(0.5, 1))
+                        return False
+
+                click_combobox_option(dia_idx, birth_day)
+                time.sleep(random.uniform(0.5, 1))
+                click_combobox_option(mes_idx, mes_nome)
+                time.sleep(random.uniform(0.5, 1))
+                click_combobox_option(ano_idx, birth_year)
+                time.sleep(random.uniform(0.5, 1))
                 print('  -> Nascimento: ' + birth_day + '/' + birth_month + '/' + birth_year)
             else:
                 print('  -> Sem comboboxes de nascimento (' + str(cb_count) + ')')
@@ -424,48 +462,86 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                         print('  -> URL challenge detectada')
 
                     if code_visible and not getattr(create_account, '_code_done', False):
-                        # Abrir ProtonMail se ainda nao abriu
+                        # Abrir Tutanota se ainda nao abriu
                         if not getattr(create_account, '_mail_page', None):
-                            print('  -> Codigo de email detectado! Abrindo ProtonMail...')
-                            update_status(8, 'Abrindo ProtonMail para buscar codigo...')
+                            print('  -> Codigo de email detectado! Abrindo Tutanota...')
+                            update_status(8, 'Abrindo Tutanota para buscar codigo...')
                             try:
                                 mail_page = context.new_page()
-                                mail_page.goto('https://mail.proton.me/login', timeout=30000)
+                                mail_page.goto('https://app.tuta.com/login', timeout=30000)
                                 time.sleep(5)
 
-                                proton_user = email.split('@')[0]
-                                print('  -> ProtonMail login: ' + proton_user)
+                                tuta_email = TUTA_EMAIL
+                                tuta_pass = TUTA_PASS
+                                print('  -> Tutanota login: ' + tuta_email)
 
+                                # Preencher email
                                 try:
-                                    mail_page.locator('#username').click()
-                                    time.sleep(0.5)
-                                    human_type(mail_page, proton_user)
+                                    email_label = mail_page.locator('text=Endere').first
+                                    if email_label.is_visible(timeout=3000):
+                                        box = email_label.bounding_box()
+                                        if box:
+                                            mail_page.mouse.click(box['x'] + 100, box['y'] + 10)
+                                            time.sleep(0.5)
                                 except:
                                     mail_page.keyboard.press('Tab')
                                     time.sleep(0.5)
-                                    human_type(mail_page, proton_user)
+
+                                mail_page.keyboard.press('Control+a')
+                                mail_page.keyboard.press('Backspace')
+                                time.sleep(0.3)
+                                human_type(mail_page, tuta_email)
                                 time.sleep(1)
 
-                                try:
-                                    mail_page.locator('#password').click()
-                                    time.sleep(0.5)
-                                    human_type(mail_page, password)
-                                except:
-                                    mail_page.keyboard.press('Tab')
-                                    time.sleep(0.5)
-                                    human_type(mail_page, password)
+                                # Preencher senha
+                                mail_page.keyboard.press('Tab')
+                                time.sleep(0.5)
+                                human_type(mail_page, tuta_pass)
                                 time.sleep(1)
 
-                                try:
-                                    mail_page.locator('button[type="submit"]').first.click()
-                                except:
-                                    mail_page.keyboard.press('Enter')
-                                print('  -> Login ProtonMail enviado!')
+                                # Clicar Entrar
+                                for txt in ['Entrar', 'Log in', 'Login']:
+                                    try:
+                                        btn = mail_page.locator('button:has-text("' + txt + '")').first
+                                        if btn.is_visible(timeout=2000):
+                                            btn.click()
+                                            break
+                                    except:
+                                        continue
+                                print('  -> Login Tutanota enviado!')
                                 time.sleep(15)
+
+                                # Esperar inbox carregar
+                                for w in range(15):
+                                    mail_url = mail_page.url
+                                    if '/mail' in mail_url or '/inbox' in mail_url:
+                                        print('  -> Tutanota inbox carregado!')
+                                        break
+                                    try:
+                                        has_inbox = mail_page.evaluate("""() => {
+                                            const body = document.body.textContent || '';
+                                            return body.includes('Entrada') || body.includes('Inbox');
+                                        }""")
+                                        if has_inbox:
+                                            print('  -> Tutanota inbox detectado!')
+                                            break
+                                    except:
+                                        pass
+                                    # Fechar dialogs
+                                    for dtxt in ['OK', 'Fechar', 'Close']:
+                                        try:
+                                            db = mail_page.locator('button:has-text("' + dtxt + '")').first
+                                            if db.is_visible(timeout=500):
+                                                db.click()
+                                                time.sleep(1)
+                                        except:
+                                            pass
+                                    time.sleep(2)
+
                                 create_account._mail_page = mail_page
                                 create_account._mail_attempts = 0
                             except Exception as e:
-                                print('  -> Erro ao abrir ProtonMail: ' + str(e))
+                                print('  -> Erro ao abrir Tutanota: ' + str(e))
                                 create_account._mail_page = None
 
                         # Buscar codigo na inbox (uma tentativa por loop)
@@ -474,51 +550,56 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                             create_account._mail_attempts = getattr(create_account, '_mail_attempts', 0) + 1
                             attempt = create_account._mail_attempts
                             update_status(8, 'Buscando codigo... tentativa ' + str(attempt))
-                            print('  -> Buscando codigo no ProtonMail... tentativa ' + str(attempt))
 
                             try:
                                 mail_page.bring_to_front()
                                 time.sleep(1)
 
-                                if attempt > 1:
-                                    mail_page.reload()
-                                    time.sleep(6)
+                                print('  -> Buscando codigo no Tutanota... tentativa ' + str(attempt))
 
-                                # Buscar emails na inbox
-                                body_text = mail_page.evaluate("""() => {
-                                    const body = document.body.textContent || '';
-                                    return body;
-                                }""")
+                                # Clicar em Entrada/Inbox para atualizar
+                                if attempt > 1 and attempt % 3 == 0:
+                                    try:
+                                        inbox_btn = mail_page.locator('text=Entrada, text=Inbox').first
+                                        if inbox_btn.is_visible(timeout=1000):
+                                            inbox_btn.click()
+                                            time.sleep(3)
+                                    except:
+                                        mail_page.reload()
+                                        time.sleep(6)
 
-                                # Procurar codigo de 6 digitos na pagina toda
-                                if 'instagram' in body_text.lower() or 'confirm' in body_text.lower():
-                                    # Clicar no email do Instagram
-                                    items = mail_page.locator('[data-testid="message-item"], [data-shortcut-target] div[role="button"], div[data-testid="message-item-row"]')
-                                    for ei in range(min(items.count(), 10)):
-                                        try:
-                                            item = items.nth(ei)
-                                            if item.is_visible(timeout=500):
-                                                txt = (item.text_content() or '').lower()
-                                                if 'instagram' in txt or 'confirm' in txt or 'verif' in txt:
-                                                    item.click()
-                                                    time.sleep(3)
-                                                    break
-                                        except:
-                                            continue
+                                # Pegar texto da pagina
+                                full_text = mail_page.evaluate("() => document.body.textContent || ''")
+                                full_lower = full_text.lower()
 
-                                    # Pegar texto completo da pagina apos clicar
+                                has_email = 'instagram' in full_lower or 'confirm' in full_lower or 'verif' in full_lower
+
+                                if has_email:
+                                    print('  -> Email do Instagram detectado no Tutanota!')
+
+                                    # Clicar no email
+                                    try:
+                                        for kw in ['Instagram', 'instagram', 'confirm', 'verif']:
+                                            el = mail_page.locator('text=' + kw).first
+                                            if el.is_visible(timeout=1000):
+                                                el.click()
+                                                time.sleep(3)
+                                                break
+                                    except:
+                                        pass
+
+                                    # Ler pagina apos clicar
                                     time.sleep(2)
                                     full_text = mail_page.evaluate("() => document.body.textContent || ''")
                                     codes = re.findall(r'\b(\d{6})\b', full_text)
+
                                     if codes:
                                         code = codes[0]
                                         print('  -> CODIGO INSTAGRAM: ' + code)
                                         update_status(8, 'Codigo: ' + code)
 
-                                        # Voltar pro Instagram e preencher
                                         page.bring_to_front()
                                         time.sleep(1)
-
                                         ci = code_input.first
                                         if ci.is_visible(timeout=3000):
                                             ci.click()
@@ -528,7 +609,6 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                             time.sleep(0.3)
                                             human_type(page, code)
                                             time.sleep(1)
-
                                             for btn_text in ['Continuar', 'Next', 'Confirm']:
                                                 try:
                                                     btn = page.locator('button:has-text("' + btn_text + '"), div[role="button"]:has-text("' + btn_text + '")').first
@@ -545,8 +625,11 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                         except:
                                             pass
                                         time.sleep(5)
+                                    else:
+                                        print('  -> Email encontrado mas sem codigo de 6 digitos')
+                                        page.bring_to_front()
                                 else:
-                                    print('  -> Email do Instagram nao chegou ainda...')
+                                    print('  -> Inbox sem email do Instagram...')
                                     page.bring_to_front()
                             except Exception as e:
                                 print('  -> Erro busca codigo: ' + str(e))
@@ -630,7 +713,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             print('\nTimeout.')
 
         print('Navegador aberto por 5 min...')
-        time.sleep(300)
+        time.sleep(10)
         browser.close()
 
     return status

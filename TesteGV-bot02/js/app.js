@@ -993,6 +993,12 @@ var App = App || {};
                   document.getElementById('auto-close-success').addEventListener('click', function() {
                     overlay.remove();
                     App.showToast('ProtonMail criado com sucesso!', 'success');
+                    // Avançar para próxima plataforma pendente
+                    var next = App.getNextPendingPlatform(state, 0);
+                    if (next && state.wizardMode) {
+                      state.wizardPlatformIndex = next.index;
+                      App.storage.save(state);
+                    }
                     render();
                   });
                 }
@@ -1074,7 +1080,8 @@ var App = App || {};
 
   // Criar conta Instagram automaticamente
   bindAction('auto-create-instagram', function() {
-    var email = state.employee.emailDesejado + '@proton.me';
+    var email = (state.platforms.protonmail && state.platforms.protonmail.accountInfo)
+              || state.employee.emailDesejado + '@proton.me';
     var password = state.suggestedPassword || App.generatePassword(14);
     var fullName = state.employee.nomeCompleto || '';
     var username = state.employee.emailDesejado || '';

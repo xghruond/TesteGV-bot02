@@ -340,7 +340,7 @@ def create_account(username, password):
             print('\nTimeout (20 min).')
 
         print('Navegador aberto por 5 min...')
-        time.sleep(300)
+        time.sleep(10)
         browser.close()
 
     return status

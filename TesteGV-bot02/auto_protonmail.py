@@ -403,7 +403,7 @@ def create_account(username, password, display_name):
         except Exception as e:
             print('  -> ERRO username: ' + str(e))
             update_status(3, 'Erro: ' + str(e), done=True, error=str(e))
-            time.sleep(300)
+            time.sleep(10)
             browser.close()
             return status
 
@@ -714,7 +714,7 @@ def create_account(username, password, display_name):
             print('\nTimeout (20 min).')
 
         print('Navegador aberto por 5 min...')
-        time.sleep(300)
+        time.sleep(10)
         browser.close()
 
     return status
