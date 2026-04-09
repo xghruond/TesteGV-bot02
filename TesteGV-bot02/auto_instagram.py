@@ -109,6 +109,50 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         except:
             pass
 
+        # === PASSO 2.5: Data de nascimento (Instagram pode pedir ANTES do formulario) ===
+        print('  -> Verificando se pede data de nascimento...')
+        try:
+            selects = page.locator('select:visible')
+            select_count = selects.count()
+            if select_count >= 3:
+                print('  -> Data de nascimento detectada! Preenchendo...')
+                update_status(2, 'Preenchendo data de nascimento...')
+
+                # Ordem: Mes (0), Dia (1), Ano (2) — ou Dia (0), Mes (1), Ano (2)
+                # Tentar preencher por valor primeiro, depois por indice
+                for idx, val in [(0, birth_month), (1, birth_day), (2, birth_year)]:
+                    try:
+                        selects.nth(idx).select_option(value=val)
+                    except:
+                        try:
+                            selects.nth(idx).select_option(index=int(val) if idx < 2 else max(1, int(val) - 1919))
+                        except:
+                            pass
+                    time.sleep(0.5)
+
+                print('  -> Nascimento: ' + birth_day + '/' + birth_month + '/' + birth_year)
+                time.sleep(1)
+
+                # Clicar em Avançar/Next
+                next_btns = [
+                    'button:has-text("Avan")', 'button:has-text("Next")',
+                    'div[role="button"]:has-text("Avan")', 'div[role="button"]:has-text("Next")',
+                ]
+                for nsel in next_btns:
+                    try:
+                        nb = page.locator(nsel).first
+                        if nb.is_visible(timeout=2000):
+                            nb.click()
+                            print('  -> Avancou!')
+                            break
+                    except:
+                        continue
+                time.sleep(5)
+            else:
+                print('  -> Data nao pedida neste ponto')
+        except:
+            pass
+
         # === PASSO 3: Preencher email ===
         update_status(3, 'Preenchendo email: ' + email)
         print('[3/8] Preenchendo email: ' + email)
@@ -428,6 +472,9 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                                         if ci.is_visible(timeout=3000):
                                                             ci.click()
                                                             time.sleep(0.5)
+                                                            page.keyboard.press('Control+a')
+                                                            page.keyboard.press('Backspace')
+                                                            time.sleep(0.3)
                                                             human_type(page, code)
                                                             time.sleep(1)
                                                             # Clicar Continuar/Next/Confirm

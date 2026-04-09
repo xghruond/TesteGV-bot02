@@ -351,11 +351,14 @@ def create_account(username, password, display_name):
                                                                 print('  -> CODIGO: ' + code)
                                                                 update_status(7, 'Codigo encontrado: ' + code)
 
-                                                                # Preencher codigo
-                                                                ci = page.locator('input[id*="code" i], input[placeholder*="code" i], input[placeholder*="codigo" i]').first
+                                                                # Preencher codigo (limpar campo antes)
+                                                                ci = page.locator('input[id*="code" i], input[placeholder*="code" i], input[placeholder*="codigo" i], input[placeholder*="verifica" i]').first
                                                                 if ci.is_visible(timeout=5000):
                                                                     ci.click()
                                                                     time.sleep(0.5)
+                                                                    page.keyboard.press('Control+a')
+                                                                    page.keyboard.press('Backspace')
+                                                                    time.sleep(0.3)
                                                                     human_type(page, code)
                                                                     time.sleep(1)
                                                                     vb = page.locator('button:has-text("Verif"), button:has-text("Confirm"), button[type="submit"]').first
