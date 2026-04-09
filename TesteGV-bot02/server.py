@@ -157,7 +157,7 @@ class ReusableServer(socketserver.TCPServer):
 def reset_all_status():
     """Resetar status de todos os bots ao iniciar o servidor"""
     auto_protonmail.status.update({
-        'step': 0, 'total': 7, 'message': 'Aguardando...', 'done': False,
+        'step': 0, 'total': 6, 'message': 'Aguardando...', 'done': False,
         'success': False, 'error': None, 'email': '', 'password': ''
     })
     auto_instagram.status.update({

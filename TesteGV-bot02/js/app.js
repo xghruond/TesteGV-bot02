@@ -897,14 +897,13 @@ var App = App || {};
       'Selecionando plano Free...',
       'Preenchendo username: ' + App.escapeHtml(username),
       'Preenchendo senha...',
-      'Confirmando senha...',
-      'Criando conta...',
-      'Aguardando verificacao...'
+      'Enviando formulário...',
+      'Aguardando verificação...'
     ];
 
     function buildStepsHTML(currentStep, message) {
       var html = '';
-      for (var i = 1; i <= 7; i++) {
+      for (var i = 1; i <= 6; i++) {
         var icon = i < currentStep ? '<span style="color:#4ade80;">&#10003;</span>'
                  : i === currentStep ? '<span class="animate-pulse" style="color:#f59e0b;">&#9679;</span>'
                  : '<span style="color:#475569;">&#9675;</span>';
@@ -912,9 +911,9 @@ var App = App || {};
         html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">' +
           icon + ' <span style="color:' + color + ';font-size:13px;">' + stepLabels[i] + '</span></div>';
       }
-      if (currentStep === 7 && message && message.indexOf('CAPTCHA') > -1) {
+      if (currentStep === 6 && message && (message.indexOf('CAPTCHA') > -1 || message.indexOf('verificacao') > -1 || message.indexOf('resolva') > -1)) {
         html += '<div style="margin-top:12px;padding:12px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;">' +
-          '<p style="color:#fbbf24;font-size:13px;font-weight:600;text-align:center;">Resolva o CAPTCHA no navegador que abriu!</p></div>';
+          '<p style="color:#fbbf24;font-size:13px;font-weight:600;text-align:center;">⚠ Resolva o CAPTCHA/verificação no navegador que abriu!</p></div>';
       }
       return html;
     }
@@ -936,6 +935,7 @@ var App = App || {};
 
     var polling = null;
     var cancelled = false;
+    var pollErrors = 0;
 
     document.getElementById('auto-cancel').addEventListener('click', function() {
       cancelled = true;
@@ -1016,7 +1016,14 @@ var App = App || {};
               }
             }
           })
-          .catch(function() {});
+          .catch(function() {
+            pollErrors++;
+            if (pollErrors >= 5) {
+              clearInterval(polling);
+              var stepsEl = document.getElementById('auto-steps');
+              if (stepsEl) stepsEl.innerHTML += '<div style="margin-top:8px;color:#ef4444;font-size:12px;">Conexão com servidor perdida. Feche e tente novamente.</div>';
+            }
+          });
       }, 2000);
     })
     .catch(function(err) {
@@ -1126,6 +1133,7 @@ var App = App || {};
 
     var polling = null;
     var cancelled = false;
+    var pollErrors = 0;
 
     document.getElementById('auto-cancel').addEventListener('click', function() {
       cancelled = true;
@@ -1183,7 +1191,7 @@ var App = App || {};
                   modal.innerHTML =
                     '<div style="text-align:center;padding:20px;">' +
                       '<div style="width:64px;height:64px;border-radius:50%;background:rgba(239,68,68,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#ef4444;font-size:28px;">!</div>' +
-                      '<h3 style="font-size:18px;font-weight:700;color:#ef4444;margin-bottom:8px;">Nao foi possivel completar</h3>' +
+                      '<h3 style="font-size:18px;font-weight:700;color:#ef4444;margin-bottom:8px;">Não foi possível completar</h3>' +
                       '<p style="font-size:13px;color:#94a3b8;">' + App.escapeHtml(s.error || s.message) + '</p>' +
                       '<div style="display:flex;gap:8px;margin-top:20px;">' +
                         '<button id="auto-close-error" style="flex:1;border:1px solid rgba(100,116,139,0.4);border-radius:12px;padding:12px;color:#94a3b8;font-size:14px;cursor:pointer;background:none;">Fechar</button>' +
@@ -1202,12 +1210,19 @@ var App = App || {};
               }
             }
           })
-          .catch(function() {});
+          .catch(function() {
+            pollErrors++;
+            if (pollErrors >= 5) {
+              clearInterval(polling);
+              var stepsEl = document.getElementById('auto-steps');
+              if (stepsEl) stepsEl.innerHTML += '<div style="margin-top:8px;color:#ef4444;font-size:12px;">Conexão com servidor perdida. Feche e tente novamente.</div>';
+            }
+          });
       }, 2000);
     })
     .catch(function() {
       overlay.remove();
-      App.showToast('Servidor nao encontrado. Abrindo modo manual...', 'info');
+      App.showToast('Servidor não encontrado. Abrindo modo manual...', 'info');
       window.open('https://www.instagram.com/accounts/emailsignup/', '_blank');
     });
   });
