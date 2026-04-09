@@ -109,57 +109,56 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         except:
             pass
 
-        # === PASSO 2.5: Data de nascimento (pode aparecer ANTES do formulario) ===
-        print('  -> Verificando se pede data de nascimento...')
+        # === PASSO 2.5: Data de nascimento ===
+        # Instagram agora mostra nascimento NA MESMA TELA que email/nome/senha
+        # Preencher aqui ANTES dos outros campos (esta no topo da tela)
+        print('  -> Preenchendo data de nascimento...')
         try:
             meses_pt = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
             comboboxes = page.locator('[role="combobox"]:visible')
-            selects = page.locator('select:visible')
             cb_count = comboboxes.count()
-            sel_count = selects.count()
 
             if cb_count >= 3:
-                print('  -> Data de nascimento (comboboxes) detectada!')
+                print('  -> Comboboxes de nascimento encontrados: ' + str(cb_count))
                 update_status(2, 'Preenchendo data de nascimento...')
                 mes_nome = meses_pt[int(birth_month)] if int(birth_month) <= 12 else 'Janeiro'
 
-                # Ordem posicional: Dia(0), Mes(1), Ano(2)
+                # Ordem posicional: Dia(0), Mes(1), Ano(2) — ignorar demais (idioma etc)
                 for cb_idx, val in [(0, birth_day), (1, mes_nome), (2, birth_year)]:
                     try:
                         comboboxes.nth(cb_idx).click(force=True)
                         time.sleep(1.5)
-                        opt = page.locator('[role="option"]:has-text("' + val + '")')
-                        if opt.first.is_visible(timeout=3000):
-                            opt.first.click()
-                            print('  -> Preenchido: ' + val)
+                        # Buscar opcao exata
+                        opts = page.locator('[role="option"]')
+                        found = False
+                        for oi in range(opts.count()):
+                            opt = opts.nth(oi)
+                            if opt.is_visible(timeout=500):
+                                opt_text = (opt.text_content() or '').strip()
+                                if opt_text == val:
+                                    opt.click()
+                                    found = True
+                                    print('  -> Preenchido: ' + val)
+                                    break
+                        if not found:
+                            # Fallback: has-text
+                            opt = page.locator('[role="option"]:has-text("' + val + '")').first
+                            if opt.is_visible(timeout=1000):
+                                opt.click()
+                                print('  -> Preenchido (fallback): ' + val)
+                            else:
+                                page.keyboard.press('Escape')
                     except:
                         page.keyboard.press('Escape')
-                    time.sleep(0.5)
-                print('  -> Nascimento preenchido')
-                time.sleep(1)
-                for nsel in ['button:has-text("Avan")', 'div[role="button"]:has-text("Avan")', 'button:has-text("Next")']:
-                    try:
-                        nb = page.locator(nsel).first
-                        if nb.is_visible(timeout=2000):
-                            nb.click()
-                            break
-                    except:
-                        continue
-                time.sleep(5)
-            elif sel_count >= 3:
-                print('  -> Data de nascimento (selects) detectada!')
-                for idx, val in [(0, birth_month), (1, birth_day), (2, birth_year)]:
-                    try:
-                        selects.nth(idx).select_option(value=val)
-                    except:
-                        pass
-                    time.sleep(0.5)
-                time.sleep(5)
+                    time.sleep(random.uniform(0.5, 1))
+                print('  -> Nascimento: ' + birth_day + '/' + birth_month + '/' + birth_year)
             else:
-                print('  -> Data nao pedida neste ponto')
-        except:
-            pass
+                print('  -> Sem comboboxes de nascimento (' + str(cb_count) + ')')
+        except Exception as e:
+            print('  -> Erro nascimento: ' + str(e))
+
+        time.sleep(random.uniform(1, 2))
 
         # === PASSO 3: Preencher email ===
         update_status(3, 'Preenchendo email: ' + email)
@@ -202,15 +201,21 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         try:
             name_selectors = [
                 'input[name="fullName"]',
-                'input[aria-label*="Full Name" i]',
-                'input[aria-label*="Nome completo" i]',
-                'input[aria-label*="nome" i]',
+                'input[aria-label="Nome completo" i]',
+                'input[aria-label="Full Name" i]',
+                'input[placeholder="Nome completo" i]',
+                'input[placeholder="Full name" i]',
+                'input[aria-label="Nome" i]',
             ]
             filled = False
             for sel in name_selectors:
                 try:
                     el = page.locator(sel).first
                     if el.is_visible(timeout=2000):
+                        # Verificar que nao e o campo de username
+                        aria = el.get_attribute('aria-label') or ''
+                        if 'usu' in aria.lower() or 'user' in aria.lower():
+                            continue
                         filled = react_fill(page, sel, full_name)
                         if filled:
                             print('  -> Nome preenchido! (' + sel + ')')
@@ -219,13 +224,22 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                     continue
 
             if not filled:
-                # Fallback: 2o input visível
-                inputs = page.locator('input[type="text"]:visible')
-                if inputs.count() >= 2:
-                    inputs.nth(1).click()
-                    time.sleep(0.5)
-                    human_type(page, full_name)
-                    print('  -> Nome preenchido (fallback 2o input)!')
+                # Fallback: procurar input com placeholder "Nome completo"
+                inputs = page.locator('input:visible')
+                for idx in range(inputs.count()):
+                    inp = inputs.nth(idx)
+                    ph = (inp.get_attribute('placeholder') or '').lower()
+                    aria = (inp.get_attribute('aria-label') or '').lower()
+                    if 'nome completo' in ph or 'full name' in ph or ('nome' in aria and 'usu' not in aria):
+                        inp.click()
+                        time.sleep(0.5)
+                        page.keyboard.press('Control+a')
+                        page.keyboard.press('Backspace')
+                        time.sleep(0.3)
+                        human_type(page, full_name)
+                        filled = True
+                        print('  -> Nome preenchido (fallback scan)!')
+                        break
         except Exception as e:
             print('  -> ERRO nome: ' + str(e))
 
@@ -326,146 +340,21 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
 
         time.sleep(5)
 
-        # === PASSO 7.5: Data de nascimento ===
-        # Instagram usa div[role="combobox"] para Dia/Mes/Ano (nao selects nativos)
-        print('  -> Verificando data de nascimento...')
+        # === PASSO 7.5: Data de nascimento pos-submit (se aparecer tela separada) ===
+        print('  -> Verificando se nascimento aparece pos-submit...')
         try:
-            comboboxes = page.locator('[role="combobox"]:visible')
-            cb_count = comboboxes.count()
-
-            # Esperar comboboxes carregarem
-            for wait in range(10):
-                cb_count = comboboxes.count()
-                if cb_count >= 3:
-                    break
-                # Tambem verificar selects nativos (layout antigo)
-                selects = page.locator('select:visible')
-                if selects.count() >= 3:
-                    break
-                if cb_count == 0 and selects.count() == 0 and wait > 3:
-                    break
-                time.sleep(2)
-
+            # Verificar se tem tela separada de nascimento (layout antigo)
             selects = page.locator('select:visible')
-            select_count = selects.count()
-            cb_count = comboboxes.count()
-            print('  -> Comboboxes: ' + str(cb_count) + ', Selects: ' + str(select_count))
-
-            # Meses em portugues para mapear
-            meses_pt = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-
-            if cb_count >= 3:
-                # === Layout novo: div[role="combobox"] ===
-                print('  -> Layout novo (comboboxes) detectado!')
-                update_status(7, 'Preenchendo data de nascimento...')
-
-                # Debug: mostrar texto de cada combobox
-                birth_cbs = []
-                for idx in range(cb_count):
-                    cb = comboboxes.nth(idx)
-                    text = (cb.text_content() or '').strip()[:30]
-                    print('  -> CB[' + str(idx) + ']: "' + text + '"')
-                    birth_cbs.append(text.lower())
-
-                # Identificar por texto OU posicao
-                # Instagram ordem: Dia (0), Mes (1), Ano (2), [Idioma (3)]
-                # Filtrar comboboxes de nascimento (excluir idioma)
-                def select_option(cb_idx, value_text):
-                    """Clica no combobox e seleciona opcao pelo texto."""
-                    try:
-                        cb = comboboxes.nth(cb_idx)
-                        cb.click(force=True)
-                        time.sleep(1.5)
-                        # Tentar selecionar opcao
-                        found = False
-                        for sel in ['[role="option"]', 'li', 'div[role="menuitem"]', 'span']:
-                            opts = page.locator(sel + ':has-text("' + value_text + '")')
-                            if opts.count() > 0:
-                                for oi in range(opts.count()):
-                                    opt = opts.nth(oi)
-                                    if opt.is_visible(timeout=1000):
-                                        opt_text = (opt.text_content() or '').strip()
-                                        if opt_text == value_text or value_text in opt_text:
-                                            opt.click()
-                                            found = True
-                                            break
-                                if found:
-                                    break
-                        if not found:
-                            # Fallback: keyboard — digitar valor e Enter
-                            page.keyboard.type(value_text)
-                            time.sleep(0.5)
-                            page.keyboard.press('Enter')
-                        return found
-                    except Exception as e:
-                        print('  -> Erro select_option: ' + str(e))
-                        # Fechar dropdown se aberto
-                        page.keyboard.press('Escape')
-                        return False
-
-                # Detectar qual combobox e qual campo
-                dia_idx = mes_idx = ano_idx = -1
-                for idx, text in enumerate(birth_cbs):
-                    if 'dia' in text or 'day' in text:
-                        dia_idx = idx
-                    elif any(m in text for m in ['mês', 'mes', 'month', 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']):
-                        mes_idx = idx
-                    elif 'ano' in text or 'year' in text:
-                        ano_idx = idx
-
-                # Fallback posicional se nao detectou por texto
-                if dia_idx == -1 or mes_idx == -1 or ano_idx == -1:
-                    print('  -> Usando ordem posicional (Dia=0, Mes=1, Ano=2)')
-                    dia_idx, mes_idx, ano_idx = 0, 1, 2
-
-                # Preencher Dia
-                mes_nome = meses_pt[int(birth_month)] if int(birth_month) <= 12 else 'Janeiro'
-                if select_option(dia_idx, birth_day):
-                    print('  -> Dia: ' + birth_day)
-                time.sleep(random.uniform(0.5, 1))
-
-                # Preencher Mes
-                if select_option(mes_idx, mes_nome):
-                    print('  -> Mes: ' + mes_nome)
-                time.sleep(random.uniform(0.5, 1))
-
-                # Preencher Ano
-                if select_option(ano_idx, birth_year):
-                    print('  -> Ano: ' + birth_year)
-                time.sleep(random.uniform(0.5, 1))
-
-                print('  -> Nascimento: ' + birth_day + '/' + birth_month + '/' + birth_year)
-
-                # Clicar Avançar/Next
-                for nsel in ['button:has-text("Avan")', 'button:has-text("Next")',
-                             'div[role="button"]:has-text("Avan")', 'div[role="button"]:has-text("Next")',
-                             'div[role="button"]:has-text("Cadastre")', 'button:has-text("Cadastre")']:
-                    try:
-                        nb = page.locator(nsel).first
-                        if nb.is_visible(timeout=2000):
-                            nb.click()
-                            print('  -> Avancou! (' + nsel + ')')
-                            break
-                    except:
-                        continue
-                time.sleep(5)
-
-            elif select_count >= 3:
-                # === Layout antigo: select nativo ===
-                print('  -> Layout antigo (selects) detectado!')
-                update_status(7, 'Preenchendo data de nascimento...')
+            if selects.count() >= 3:
+                meses_pt = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+                print('  -> Tela separada de nascimento (selects)!')
                 for idx, val in [(0, birth_month), (1, birth_day), (2, birth_year)]:
                     try:
                         selects.nth(idx).select_option(value=val)
                     except:
-                        try:
-                            selects.nth(idx).select_option(index=int(val) if idx < 2 else max(1, int(val) - 1919))
-                        except:
-                            pass
+                        pass
                     time.sleep(0.5)
-                print('  -> Nascimento: ' + birth_day + '/' + birth_month + '/' + birth_year)
-
                 for nsel in ['button:has-text("Avan")', 'div[role="button"]:has-text("Avan")', 'button:has-text("Next")']:
                     try:
                         nb = page.locator(nsel).first
@@ -476,9 +365,9 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                         continue
                 time.sleep(5)
             else:
-                print('  -> Sem campos de nascimento detectados')
-        except Exception as e:
-            print('  -> Erro nascimento: ' + str(e))
+                print('  -> Nascimento ja preenchido na tela principal')
+        except:
+            pass
 
         # === PASSO 8: Aguardar verificação ===
         update_status(8, 'Aguardando verificacao... Resolva no navegador se necessario!')
@@ -534,23 +423,19 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                         code_visible = True
                         print('  -> URL challenge detectada')
 
-                    if code_visible:
-                        if not getattr(create_account, '_code_searched', False):
-                            create_account._code_searched = True
-                            print('  -> Codigo de email detectado! Buscando no ProtonMail...')
-                            update_status(8, 'Buscando codigo no ProtonMail...')
-
-                            # Abrir nova aba e fazer login no ProtonMail
+                    if code_visible and not getattr(create_account, '_code_done', False):
+                        # Abrir ProtonMail se ainda nao abriu
+                        if not getattr(create_account, '_mail_page', None):
+                            print('  -> Codigo de email detectado! Abrindo ProtonMail...')
+                            update_status(8, 'Abrindo ProtonMail para buscar codigo...')
                             try:
                                 mail_page = context.new_page()
                                 mail_page.goto('https://mail.proton.me/login', timeout=30000)
                                 time.sleep(5)
 
-                                # Login com as credenciais do email que foi criado
                                 proton_user = email.split('@')[0]
                                 print('  -> ProtonMail login: ' + proton_user)
 
-                                # Username
                                 try:
                                     mail_page.locator('#username').click()
                                     time.sleep(0.5)
@@ -561,7 +446,6 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                     human_type(mail_page, proton_user)
                                 time.sleep(1)
 
-                                # Password
                                 try:
                                     mail_page.locator('#password').click()
                                     time.sleep(0.5)
@@ -572,80 +456,110 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                     human_type(mail_page, password)
                                 time.sleep(1)
 
-                                # Submit
                                 try:
                                     mail_page.locator('button[type="submit"]').first.click()
                                 except:
                                     mail_page.keyboard.press('Enter')
                                 print('  -> Login ProtonMail enviado!')
                                 time.sleep(15)
+                                create_account._mail_page = mail_page
+                                create_account._mail_attempts = 0
+                            except Exception as e:
+                                print('  -> Erro ao abrir ProtonMail: ' + str(e))
+                                create_account._mail_page = None
 
-                                # Buscar codigo (tentar 15x)
-                                code_found = False
-                                for attempt in range(15):
-                                    update_status(8, 'Buscando codigo... tentativa ' + str(attempt + 1) + '/15')
-                                    try:
-                                        mail_page.reload()
-                                        time.sleep(6)
+                        # Buscar codigo na inbox (uma tentativa por loop)
+                        mail_page = getattr(create_account, '_mail_page', None)
+                        if mail_page:
+                            create_account._mail_attempts = getattr(create_account, '_mail_attempts', 0) + 1
+                            attempt = create_account._mail_attempts
+                            update_status(8, 'Buscando codigo... tentativa ' + str(attempt))
+                            print('  -> Buscando codigo no ProtonMail... tentativa ' + str(attempt))
 
-                                        # Clicar no email mais recente do Instagram
-                                        items = mail_page.locator('[data-testid="message-item"], [data-shortcut-target="message-container"] div[role="button"]')
-                                        for ei in range(min(items.count(), 5)):
-                                            try:
-                                                item = items.nth(ei)
-                                                txt = item.text_content() or ''
-                                                if any(k in txt.lower() for k in ['instagram', 'confirm', 'verif', 'code']):
+                            try:
+                                mail_page.bring_to_front()
+                                time.sleep(1)
+
+                                if attempt > 1:
+                                    mail_page.reload()
+                                    time.sleep(6)
+
+                                # Buscar emails na inbox
+                                body_text = mail_page.evaluate("""() => {
+                                    const body = document.body.textContent || '';
+                                    return body;
+                                }""")
+
+                                # Procurar codigo de 6 digitos na pagina toda
+                                if 'instagram' in body_text.lower() or 'confirm' in body_text.lower():
+                                    # Clicar no email do Instagram
+                                    items = mail_page.locator('[data-testid="message-item"], [data-shortcut-target] div[role="button"], div[data-testid="message-item-row"]')
+                                    for ei in range(min(items.count(), 10)):
+                                        try:
+                                            item = items.nth(ei)
+                                            if item.is_visible(timeout=500):
+                                                txt = (item.text_content() or '').lower()
+                                                if 'instagram' in txt or 'confirm' in txt or 'verif' in txt:
                                                     item.click()
                                                     time.sleep(3)
-                                                    body = mail_page.locator('[data-testid="message-content"], .message-content, article').first.text_content() or ''
-                                                    codes = re.findall(r'\b(\d{6})\b', body)
-                                                    if codes:
-                                                        code = codes[0]
-                                                        print('  -> CODIGO INSTAGRAM: ' + code)
-                                                        update_status(8, 'Codigo encontrado: ' + code)
+                                                    break
+                                        except:
+                                            continue
 
-                                                        # Voltar pra aba do Instagram e preencher
-                                                        page.bring_to_front()
-                                                        time.sleep(1)
-                                                        ci = code_input.first
-                                                        if ci.is_visible(timeout=3000):
-                                                            ci.click()
-                                                            time.sleep(0.5)
-                                                            page.keyboard.press('Control+a')
-                                                            page.keyboard.press('Backspace')
-                                                            time.sleep(0.3)
-                                                            human_type(page, code)
-                                                            time.sleep(1)
-                                                            # Clicar Continuar/Next/Confirm
-                                                            confirm_btn = page.locator('button:has-text("Continuar"), button:has-text("Next"), button:has-text("Confirm"), div[role="button"]:has-text("Continuar"), div[role="button"]:has-text("Next")')
-                                                            if confirm_btn.first.is_visible(timeout=3000):
-                                                                confirm_btn.first.click()
-                                                                print('  -> Codigo enviado!')
-                                                                time.sleep(5)
-                                                        code_found = True
+                                    # Pegar texto completo da pagina apos clicar
+                                    time.sleep(2)
+                                    full_text = mail_page.evaluate("() => document.body.textContent || ''")
+                                    codes = re.findall(r'\b(\d{6})\b', full_text)
+                                    if codes:
+                                        code = codes[0]
+                                        print('  -> CODIGO INSTAGRAM: ' + code)
+                                        update_status(8, 'Codigo: ' + code)
+
+                                        # Voltar pro Instagram e preencher
+                                        page.bring_to_front()
+                                        time.sleep(1)
+
+                                        ci = code_input.first
+                                        if ci.is_visible(timeout=3000):
+                                            ci.click()
+                                            time.sleep(0.5)
+                                            page.keyboard.press('Control+a')
+                                            page.keyboard.press('Backspace')
+                                            time.sleep(0.3)
+                                            human_type(page, code)
+                                            time.sleep(1)
+
+                                            for btn_text in ['Continuar', 'Next', 'Confirm']:
+                                                try:
+                                                    btn = page.locator('button:has-text("' + btn_text + '"), div[role="button"]:has-text("' + btn_text + '")').first
+                                                    if btn.is_visible(timeout=2000):
+                                                        btn.click()
+                                                        print('  -> Codigo enviado!')
                                                         break
-                                            except:
-                                                continue
-                                        if code_found:
-                                            break
-                                    except:
-                                        pass
-                                    time.sleep(5)
+                                                except:
+                                                    continue
 
-                                # Fechar aba do ProtonMail
+                                        create_account._code_done = True
+                                        try:
+                                            mail_page.close()
+                                        except:
+                                            pass
+                                        time.sleep(5)
+                                else:
+                                    print('  -> Email do Instagram nao chegou ainda...')
+                                    page.bring_to_front()
+                            except Exception as e:
+                                print('  -> Erro busca codigo: ' + str(e))
+                                page.bring_to_front()
+
+                            if attempt >= 30:
+                                print('  -> Codigo nao encontrado apos 30 tentativas')
+                                update_status(8, 'Codigo nao encontrado. Verifique manualmente.')
+                                create_account._code_done = True
                                 try:
                                     mail_page.close()
                                 except:
                                     pass
-
-                                if code_found:
-                                    print('  -> Verificacao de email resolvida!')
-                                else:
-                                    print('  -> Codigo nao encontrado no ProtonMail')
-                                    update_status(8, 'Codigo nao encontrado. Verifique o ProtonMail manualmente.')
-                            except Exception as e:
-                                print('  -> Erro ao buscar codigo: ' + str(e))
-                                update_status(8, 'Erro ao buscar codigo. Verifique manualmente.')
                 except:
                     pass
 
