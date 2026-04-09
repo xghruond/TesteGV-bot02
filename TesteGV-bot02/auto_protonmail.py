@@ -351,21 +351,38 @@ def create_account(username, password, display_name):
                                                                 print('  -> CODIGO: ' + code)
                                                                 update_status(7, 'Codigo encontrado: ' + code)
 
-                                                                # Preencher codigo (limpar campo antes)
-                                                                ci = page.locator('input[id*="code" i], input[placeholder*="code" i], input[placeholder*="codigo" i], input[placeholder*="verifica" i]').first
-                                                                if ci.is_visible(timeout=5000):
-                                                                    ci.click()
-                                                                    time.sleep(0.5)
-                                                                    page.keyboard.press('Control+a')
-                                                                    page.keyboard.press('Backspace')
-                                                                    time.sleep(0.3)
-                                                                    human_type(page, code)
-                                                                    time.sleep(1)
-                                                                    vb = page.locator('button:has-text("Verif"), button:has-text("Confirm"), button[type="submit"]').first
-                                                                    if vb.is_visible(timeout=3000):
-                                                                        vb.click()
-                                                                        print('  -> Verificado!')
-                                                                        time.sleep(5)
+                                                                # Preencher codigo via JS (busca qualquer input visivel com 6 digitos ou vazio)
+                                                                filled = page.evaluate('''(code) => {
+                                                                    const inputs = document.querySelectorAll('input');
+                                                                    for (const inp of inputs) {
+                                                                        if (inp.offsetHeight > 0 && inp.type !== 'hidden' && inp.type !== 'password' && inp.type !== 'email') {
+                                                                            // Pegar input que tem placeholder de codigo ou valor 123456 ou esta vazio
+                                                                            const val = inp.value || '';
+                                                                            const ph = (inp.placeholder || '').toLowerCase();
+                                                                            if (val === '123456' || val === '' || ph.includes('code') || ph.includes('codigo') || ph.includes('verifica')) {
+                                                                                inp.focus();
+                                                                                const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                                                                                setter.call(inp, code);
+                                                                                inp.dispatchEvent(new Event('input', { bubbles: true }));
+                                                                                inp.dispatchEvent(new Event('change', { bubbles: true }));
+                                                                                return true;
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                    return false;
+                                                                }''', code)
+                                                                time.sleep(1)
+                                                                if filled:
+                                                                    print('  -> Codigo preenchido: ' + code)
+                                                                else:
+                                                                    print('  -> FALHA ao preencher codigo no campo')
+
+                                                                # Clicar Verificar
+                                                                vb = page.locator('button:has-text("Verif"), button:has-text("Confirm"), button[type="submit"]').first
+                                                                if vb.is_visible(timeout=3000):
+                                                                    vb.click()
+                                                                    print('  -> Clicou Verificar!')
+                                                                    time.sleep(5)
                                                                 code_found = True
                                                                 break
                                                     if code_found:
