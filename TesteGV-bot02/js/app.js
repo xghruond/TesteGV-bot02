@@ -911,9 +911,15 @@ var App = App || {};
         html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">' +
           icon + ' <span style="color:' + color + ';font-size:13px;">' + stepLabels[i] + '</span></div>';
       }
-      if (currentStep === 6 && message && (message.indexOf('CAPTCHA') > -1 || message.indexOf('verificacao') > -1 || message.indexOf('resolva') > -1)) {
-        html += '<div style="margin-top:12px;padding:12px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;">' +
-          '<p style="color:#fbbf24;font-size:13px;font-weight:600;text-align:center;">⚠ Resolva o CAPTCHA/verificação no navegador que abriu!</p></div>';
+      if (currentStep === 6 && message) {
+        var msgLower = message.toLowerCase();
+        if (msgLower.indexOf('captcha visual') > -1 || msgLower.indexOf('resolva') > -1) {
+          html += '<div style="margin-top:12px;padding:12px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;">' +
+            '<p style="color:#fbbf24;font-size:13px;font-weight:600;text-align:center;">⚠ CAPTCHA visual detectado — resolva no navegador!</p></div>';
+        } else if (msgLower.indexOf('codigo') > -1 || msgLower.indexOf('email') > -1 || msgLower.indexOf('buscando') > -1) {
+          html += '<div style="margin-top:12px;padding:12px;background:rgba(109,74,255,0.1);border:1px solid rgba(109,74,255,0.3);border-radius:10px;">' +
+            '<p style="color:#a78bfa;font-size:13px;font-weight:600;text-align:center;">' + App.escapeHtml(message) + '</p></div>';
+        }
       }
       return html;
     }
@@ -1065,6 +1071,155 @@ var App = App || {};
       });
     });
   });
+
+  /* Tutanota handler removido — usado internamente pelo bot ProtonMail
+    if (!username) {
+      App.showToast('Preencha o e-mail desejado primeiro.', 'error');
+      return;
+    }
+
+    var overlay = document.createElement('div');
+    overlay.id = 'automation-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;padding:1rem;';
+
+    var stepLabels = [
+      'Aguardando...',
+      'Abrindo navegador...',
+      'Selecionando plano Free...',
+      'Preenchendo dados...',
+      'Preenchendo senha...',
+      'CAPTCHA — resolva no navegador!'
+    ];
+
+    function buildStepsHTML(currentStep, message) {
+      var html = '';
+      for (var i = 1; i <= 5; i++) {
+        var icon = i < currentStep ? '<span style="color:#4ade80;">&#10003;</span>'
+                 : i === currentStep ? '<span class="animate-pulse" style="color:#f59e0b;">&#9679;</span>'
+                 : '<span style="color:#475569;">&#9675;</span>';
+        var color = i < currentStep ? '#4ade80' : i === currentStep ? '#f1f5f9' : '#475569';
+        html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">' +
+          icon + ' <span style="color:' + color + ';font-size:13px;">' + stepLabels[i] + '</span></div>';
+      }
+      if (currentStep === 5 && message) {
+        var msgLower = message.toLowerCase();
+        if (msgLower.indexOf('captcha') > -1) {
+          html += '<div style="margin-top:12px;padding:12px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;">' +
+            '<p style="color:#fbbf24;font-size:13px;font-weight:600;text-align:center;">Resolva o CAPTCHA de imagem no navegador!</p></div>';
+        }
+      }
+      return html;
+    }
+
+    overlay.innerHTML =
+      '<div id="auto-modal" style="background:rgba(15,23,42,0.97);border:1px solid rgba(132,0,16,0.3);border-radius:20px;padding:1.75rem;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,0.6);">' +
+        '<div style="text-align:center;margin-bottom:16px;">' +
+          '<div style="width:56px;height:56px;border-radius:16px;background:rgba(132,0,16,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#f87171;font-size:28px;">' + App.icons.sparkles + '</div>' +
+          '<h3 style="font-size:18px;font-weight:700;color:#f1f5f9;">Criando conta Tutanota...</h3>' +
+          '<p style="font-size:13px;color:#94a3b8;margin-top:4px;">' + App.escapeHtml(username) + '@tuta.com</p>' +
+        '</div>' +
+        '<div id="auto-steps" style="margin-bottom:16px;">' + buildStepsHTML(0, '') + '</div>' +
+        '<div id="auto-actions" style="display:flex;gap:8px;">' +
+          '<button id="auto-cancel" style="flex:1;border:1px solid rgba(100,116,139,0.4);border-radius:12px;padding:12px;color:#94a3b8;font-size:14px;font-weight:600;cursor:pointer;background:none;">Cancelar</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    var polling = null;
+    var cancelled = false;
+    var pollErrors = 0;
+
+    document.getElementById('auto-cancel').addEventListener('click', function() {
+      cancelled = true;
+      if (polling) clearInterval(polling);
+      overlay.remove();
+    });
+
+    fetch('/api/create-tutanota', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username, password: password })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (!data.started) {
+        App.showToast('Erro: ' + (data.error || 'desconhecido'), 'error');
+        overlay.remove();
+        return;
+      }
+
+      polling = setInterval(function() {
+        if (cancelled) return;
+        fetch('/api/status?platform=tutanota')
+          .then(function(r) { return r.json(); })
+          .then(function(s) {
+            var stepsEl = document.getElementById('auto-steps');
+            if (stepsEl) stepsEl.innerHTML = buildStepsHTML(s.step, s.message);
+
+            if (s.done) {
+              clearInterval(polling);
+              if (s.success) {
+                state.platforms.tutanota = { completed: true, accountInfo: username + '@tuta.com' };
+                App.storage.save(state);
+                var modal = document.getElementById('auto-modal');
+                if (modal) {
+                  modal.innerHTML =
+                    '<div style="text-align:center;padding:20px;">' +
+                      '<div style="width:64px;height:64px;border-radius:50%;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#4ade80;font-size:32px;">&#10003;</div>' +
+                      '<h3 style="font-size:20px;font-weight:700;color:#4ade80;margin-bottom:8px;">Conta Tutanota criada!</h3>' +
+                      '<p style="font-size:14px;color:#f1f5f9;font-family:monospace;">' + App.escapeHtml(username) + '@tuta.com</p>' +
+                      '<p style="font-size:12px;color:#94a3b8;margin-top:4px;">Senha: ' + App.escapeHtml(password) + '</p>' +
+                      '<button id="auto-close-success" class="btn-futuristic" style="margin-top:20px;width:100%;border-radius:12px;padding:14px;font-size:15px;font-weight:700;color:#fff;border:none;cursor:pointer;">Continuar</button>' +
+                    '</div>';
+                  document.getElementById('auto-close-success').addEventListener('click', function() {
+                    overlay.remove();
+                    App.showToast('Tutanota criado com sucesso!', 'success');
+                    render();
+                  });
+                }
+              } else {
+                var modal = document.getElementById('auto-modal');
+                if (modal) {
+                  modal.innerHTML =
+                    '<div style="text-align:center;padding:20px;">' +
+                      '<div style="width:64px;height:64px;border-radius:50%;background:rgba(239,68,68,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#ef4444;font-size:28px;">!</div>' +
+                      '<h3 style="font-size:18px;font-weight:700;color:#ef4444;margin-bottom:8px;">Não foi possível completar</h3>' +
+                      '<p style="font-size:13px;color:#94a3b8;">' + App.escapeHtml(s.error || s.message) + '</p>' +
+                      '<div style="display:flex;gap:8px;margin-top:20px;">' +
+                        '<button id="auto-close-error" style="flex:1;border:1px solid rgba(100,116,139,0.4);border-radius:12px;padding:12px;color:#94a3b8;font-size:14px;cursor:pointer;background:none;">Fechar</button>' +
+                        '<button id="auto-done-manual" class="btn-futuristic" style="flex:2;border-radius:12px;padding:12px;font-size:14px;font-weight:700;color:#fff;border:none;cursor:pointer;">Conta Criada (manual)</button>' +
+                      '</div>' +
+                    '</div>';
+                  document.getElementById('auto-close-error').addEventListener('click', function() { overlay.remove(); });
+                  document.getElementById('auto-done-manual').addEventListener('click', function() {
+                    state.platforms.tutanota = { completed: true, accountInfo: username + '@tuta.com' };
+                    App.storage.save(state);
+                    overlay.remove();
+                    App.showToast('Tutanota marcado como criado!', 'success');
+                    render();
+                  });
+                }
+              }
+            }
+          })
+          .catch(function() {
+            pollErrors++;
+            if (pollErrors >= 5) {
+              clearInterval(polling);
+              var stepsEl = document.getElementById('auto-steps');
+              if (stepsEl) stepsEl.innerHTML += '<div style="margin-top:8px;color:#ef4444;font-size:12px;">Conexão com servidor perdida.</div>';
+            }
+          });
+      }, 2000);
+    })
+    .catch(function() {
+      overlay.remove();
+      App.showToast('Servidor não encontrado. Abrindo modo manual...', 'info');
+      window.open('https://app.tuta.com/signup', '_blank');
+    });
+  });
+  Tutanota handler removido */
 
   // Criar conta Instagram automaticamente
   bindAction('auto-create-instagram', function() {

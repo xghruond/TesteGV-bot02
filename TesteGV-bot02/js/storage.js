@@ -2,7 +2,7 @@ var App = App || {};
 
 App.storage = {
   KEY: 'gv-onboarding-state',
-  VERSION: 4,
+  VERSION: 6,
 
   _checkVersion: function() {
     var v = localStorage.getItem('gv-storage-version');

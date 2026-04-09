@@ -21,6 +21,7 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ROOT_DIR)
 import auto_protonmail
 import auto_instagram
+import auto_tutanota
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -72,6 +73,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             platform = params.get('platform', 'protonmail')
             if platform == 'instagram':
                 return self._json(auto_instagram.status)
+            if platform == 'tutanota':
+                return self._json(auto_tutanota.status)
             return self._json(auto_protonmail.status)
 
         # === Arquivos estaticos ===
@@ -146,6 +149,27 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
             return self._json({'started': True, 'message': 'Automacao Instagram iniciada!'})
 
+        elif path == '/api/create-tutanota':
+            username = data.get('username', '')
+            password = data.get('password', '')
+
+            if not username or not password:
+                return self._json({'error': 'username e password obrigatorios'}, 400)
+
+            auto_tutanota.status.update({
+                'step': 0, 'message': 'Iniciando...', 'done': False,
+                'success': False, 'error': None,
+                'email': username + '@tuta.com', 'password': password
+            })
+
+            threading.Thread(
+                target=auto_tutanota.create_account,
+                args=(username, password),
+                daemon=True
+            ).start()
+
+            return self._json({'started': True, 'message': 'Automacao Tutanota iniciada!'})
+
         else:
             return self._json({'error': 'Endpoint nao encontrado'}, 404)
 
@@ -163,6 +187,10 @@ def reset_all_status():
     auto_instagram.status.update({
         'step': 0, 'total': 8, 'message': 'Aguardando...', 'done': False,
         'success': False, 'error': None
+    })
+    auto_tutanota.status.update({
+        'step': 0, 'total': 5, 'message': 'Aguardando...', 'done': False,
+        'success': False, 'error': None, 'email': '', 'password': ''
     })
 
 
