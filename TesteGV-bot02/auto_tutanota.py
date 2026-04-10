@@ -110,19 +110,20 @@ def create_fresh_tutanota(browser):
     print('  -> [Tuta] Criando conta nova: ' + email)
 
     try:
-        tuta_ctx = browser.new_context(no_viewport=True, locale='pt-BR', timezone_id='America/Sao_Paulo')
-        tuta_page = tuta_ctx.new_page()
+        # browser.new_page() usa contexto default — new_context customizado
+        # causa problemas no Tutanota (formulario nao carrega)
+        tuta_page = browser.new_page()
         tuta_page.set_default_timeout(30000)
 
         result = _create_tutanota_on_page(tuta_page, username, password)
 
         if result:
             print('  -> [Tuta] Conta criada: ' + email)
-            return email, password, tuta_page, tuta_ctx
+            return email, password, tuta_page, None
         else:
             print('  -> [Tuta] Falha ao criar conta')
             try:
-                tuta_ctx.close()
+                tuta_page.close()
             except:
                 pass
             return None
@@ -139,115 +140,126 @@ def _create_tutanota_on_page(page, username, password):
     page.wait_for_load_state('domcontentloaded')
     time.sleep(random.uniform(8, 12))
 
-    # === STEP 2: Selecionar plano Free via JS (bypassa SVG) ===
-    print('  -> [Tuta] Selecionando plano Free...')
-    page.evaluate("""() => {
-        const els = document.querySelectorAll('div[role="button"], button, [tabindex]');
-        for (const el of els) {
-            if (el.offsetHeight > 0 && el.textContent.includes('Free')) {
-                el.click();
-                return true;
-            }
-        }
-        return false;
-    }""")
-    time.sleep(random.uniform(2, 4))
+    # === STEP 2: Selecionar plano Free e ir ao formulario ===
+    print('  -> [Tuta] Verificando se formulario ja esta visivel...')
 
-    # Clicar Continuar via JS
-    print('  -> [Tuta] Clicando Continuar...')
-    page.evaluate("""() => {
-        const btns = document.querySelectorAll('button');
-        for (const b of btns) {
-            const t = (b.textContent || '').toLowerCase();
-            if (b.offsetHeight > 0 && (t.includes('continuar') || t.includes('continue') || t.includes('next'))) {
-                b.click();
-                return true;
-            }
-        }
-        return false;
-    }""")
-    time.sleep(random.uniform(4, 6))
+    # Verificar se ja tem inputs visiveis (pode estar direto no formulario)
+    has_inputs = page.locator('input[type="text"]').count() > 0
 
-    # === STEP 3: Preencher formulario via Tab navigation ===
+    if not has_inputs:
+        # Precisa selecionar Free e clicar Continuar
+        print('  -> [Tuta] Selecionando plano Free...')
+        page.evaluate("""() => {
+            const boxes = document.querySelectorAll('div[role="button"]');
+            for (const box of boxes) {
+                const text = box.textContent || '';
+                if (box.offsetHeight > 0 && text.includes('Free') && text.includes('0')) {
+                    box.click();
+                    return true;
+                }
+            }
+            return false;
+        }""")
+        time.sleep(random.uniform(3, 5))
+
+        print('  -> [Tuta] Clicando Continuar...')
+        page.evaluate("""() => {
+            const btns = document.querySelectorAll('button');
+            for (const b of btns) {
+                const t = (b.textContent || '').toLowerCase();
+                if (b.offsetHeight > 0 && (t.includes('continuar') || t.includes('continue') || t.includes('next'))) {
+                    b.click();
+                    return true;
+                }
+            }
+            return false;
+        }""")
+        time.sleep(random.uniform(4, 6))
+    else:
+        print('  -> [Tuta] Formulario ja esta visivel, pulando selecao de plano')
+
+    # === STEP 3: Preencher formulario via click direto nos inputs ===
     print('  -> [Tuta] Preenchendo formulario...')
 
-    # Tab ate encontrar campo de texto (username)
-    for attempt in range(15):
-        page.keyboard.press('Tab')
-        time.sleep(0.5)
-        info = get_active_info(page)
-        safe_print('  -> [Tuta] Tab ' + str(attempt + 1) + ': <' + info['tag'] + '> type=' + info['type'] + ' role=' + info['role'])
-        # Encontrou campo de input de texto
-        if info['tag'] == 'input' and info['type'] in ['text', '']:
+    # Esperar formulario carregar (pode ter tela intermediaria)
+    for wait in range(15):
+        inputs = page.locator('input[type="text"]')
+        if inputs.count() > 0 and inputs.first.is_visible(timeout=1000):
+            print('  -> [Tuta] Formulario carregado!')
             break
-        if info['role'] == 'textbox':
-            break
-
-    # Digitar username
-    page.keyboard.press('Control+a')
-    page.keyboard.press('Backspace')
-    time.sleep(0.3)
-    human_type(page, username)
-    print('  -> [Tuta] Username: ' + username)
-    time.sleep(random.uniform(1, 2))
-
-    # Tab para proximo campo — pode ser dropdown de dominio ou senha
-    page.keyboard.press('Tab')
-    time.sleep(0.5)
-    info = get_active_info(page)
-    safe_print('  -> [Tuta] Apos username: <' + info['tag'] + '> role=' + info['role'])
-
-    # Se e dropdown de dominio, pular (manter padrao @tutamail.com)
-    if info['role'] in ['combobox', 'listbox', 'button'] or 'select' in info['tag']:
-        print('  -> [Tuta] Dropdown de dominio detectado, pulando...')
-        page.keyboard.press('Tab')
-        time.sleep(0.5)
-
-    # === STEP 4: Senha ===
-    print('  -> [Tuta] Senha...')
-    # Navegar ate campo de password
-    info = get_active_info(page)
-    if info['type'] != 'password':
-        for _ in range(5):
-            page.keyboard.press('Tab')
-            time.sleep(0.3)
-            info = get_active_info(page)
-            if info['type'] == 'password':
-                break
-
-    human_type(page, password)
-    time.sleep(random.uniform(0.5, 1))
-
-    # Tab para confirmar senha
-    page.keyboard.press('Tab')
-    time.sleep(0.5)
-    info = get_active_info(page)
-    if info['type'] == 'password':
-        human_type(page, password)
-        print('  -> [Tuta] Senha confirmada')
-    else:
-        # Tentar encontrar segundo campo de senha
-        for _ in range(3):
-            page.keyboard.press('Tab')
-            time.sleep(0.3)
-            info = get_active_info(page)
-            if info['type'] == 'password':
-                human_type(page, password)
-                print('  -> [Tuta] Senha confirmada')
-                break
-
-    time.sleep(random.uniform(1, 2))
-
-    # === Checkboxes via JS (mais confiavel que Tab+Space) ===
-    print('  -> [Tuta] Marcando checkboxes...')
-    page.evaluate("""() => {
-        const switches = document.querySelectorAll('[role="switch"], label.tutaui-switch, input[type="checkbox"]');
-        switches.forEach(sw => {
-            if (sw.offsetHeight > 0) {
-                try { sw.click(); } catch(e) {}
+        # Pode ter botao "Uso pessoal" ou similar
+        page.evaluate("""() => {
+            const btns = document.querySelectorAll('button');
+            for (const b of btns) {
+                const t = (b.textContent || '').toLowerCase();
+                if (b.offsetHeight > 0 && (t.includes('pessoal') || t.includes('personal') || t.includes('continuar') || t.includes('continue'))) {
+                    b.click(); return true;
+                }
             }
-        });
-    }""")
+            return false;
+        }""")
+        safe_print('  -> [Tuta] Aguardando formulario... (' + str(wait + 1) + ')')
+        time.sleep(2)
+
+    # Username — clicar no input[type=text] e digitar
+    try:
+        username_input = page.locator('input[type="text"]').first
+        if username_input.is_visible(timeout=5000):
+            username_input.click()
+            time.sleep(0.5)
+            page.keyboard.press('Control+a')
+            page.keyboard.press('Backspace')
+            time.sleep(0.3)
+            human_type(page, username)
+            print('  -> [Tuta] Username: ' + username)
+        else:
+            print('  -> [Tuta] ERRO: campo username nao encontrado!')
+            return False
+    except Exception as e:
+        safe_print('  -> [Tuta] ERRO username: ' + str(e))
+        return False
+
+    time.sleep(random.uniform(1, 2))
+
+    # === STEP 4: Senha — clicar nos input[type=password] ===
+    print('  -> [Tuta] Senha...')
+    try:
+        pw_fields = page.locator('input[type="password"]')
+        pw_count = pw_fields.count()
+        print('  -> [Tuta] Campos de senha: ' + str(pw_count))
+
+        if pw_count >= 1:
+            pw_fields.nth(0).click()
+            time.sleep(0.5)
+            human_type(page, password)
+            time.sleep(random.uniform(0.5, 1))
+
+        if pw_count >= 2:
+            pw_fields.nth(1).click()
+            time.sleep(0.5)
+            human_type(page, password)
+            print('  -> [Tuta] Senha confirmada')
+        time.sleep(random.uniform(1, 2))
+    except Exception as e:
+        safe_print('  -> [Tuta] ERRO senha: ' + str(e))
+
+    # === Checkboxes — clicar diretamente ===
+    print('  -> [Tuta] Marcando checkboxes...')
+    try:
+        checkboxes = page.locator('input[type="checkbox"]')
+        for idx in range(checkboxes.count()):
+            cb = checkboxes.nth(idx)
+            if cb.is_visible(timeout=1000):
+                cb.click(force=True)
+                time.sleep(0.5)
+        print('  -> [Tuta] Checkboxes OK')
+    except:
+        # Fallback JS
+        page.evaluate("""() => {
+            document.querySelectorAll('input[type="checkbox"], [role="switch"]').forEach(function(cb) {
+                if (cb.offsetHeight > 0) cb.click();
+            });
+        }""")
     time.sleep(random.uniform(1, 2))
 
     # === Clicar "Criar conta" via JS ===

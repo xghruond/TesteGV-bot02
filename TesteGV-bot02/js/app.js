@@ -977,7 +977,7 @@ var App = App || {};
               clearInterval(polling);
               if (s.success) {
                 // Sucesso!
-                state.platforms.protonmail = { completed: true, accountInfo: username + '@proton.me' };
+                state.platforms.protonmail = { completed: true, accountInfo: username + '@proton.me', password: password };
                 App.storage.save(state);
 
                 var modal = document.getElementById('auto-modal');
@@ -1080,8 +1080,14 @@ var App = App || {};
 
   // Criar conta Instagram automaticamente
   bindAction('auto-create-instagram', function() {
-    var email = '';  // Server cria email Tutanota novo automaticamente
-    var password = state.suggestedPassword || App.generatePassword(14);
+    var email = (state.platforms.protonmail && state.platforms.protonmail.accountInfo)
+              || state.employee.emailDesejado + '@proton.me';
+    var password = (state.platforms.protonmail && state.platforms.protonmail.password)
+              || state.suggestedPassword;
+    if (!password) {
+      password = prompt('Senha do ProtonMail (' + email + '):');
+      if (!password) { App.showToast('Senha obrigatoria', 'error'); return; }
+    }
     var fullName = state.employee.nomeCompleto || '';
     var username = state.employee.emailDesejado || '';
     var birthParts = (state.employee.dataNascimento || '2000-01-01').split('-');
@@ -1089,8 +1095,8 @@ var App = App || {};
     var birthMonth = String(parseInt(birthParts[1] || '1'));
     var birthDay = String(parseInt(birthParts[2] || '1'));
 
-    if (!password) {
-      App.showToast('Preencha os dados primeiro.', 'error');
+    if (!email || !password) {
+      App.showToast('Erro: email ou senha nao encontrados. Crie o ProtonMail primeiro.', 'error');
       return;
     }
 
