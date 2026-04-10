@@ -1080,19 +1080,13 @@ var App = App || {};
 
   // Criar conta Instagram automaticamente
   bindAction('auto-create-instagram', function() {
-    // Avisar para desligar VPN (Instagram funciona melhor com IP real)
-    if (!confirm('IMPORTANTE: Desconecte o VPN (Proton VPN) antes de continuar.\n\nO Instagram bloqueia cadastros de IPs de VPN.\n\nJa desconectou o VPN?')) {
+    // Avisar para usar VPN do Opera
+    if (!confirm('IMPORTANTE antes de continuar:\n\n1. Desconecte o Proton VPN\n2. Ative a VPN do Opera (clique VPN na barra de endereco)\n\nIsso evita bloqueios do Instagram.\n\nPronto?')) {
       return;
     }
 
-    var email = (state.platforms.protonmail && state.platforms.protonmail.accountInfo)
-              || state.employee.emailDesejado + '@proton.me';
-    var password = (state.platforms.protonmail && state.platforms.protonmail.password)
-              || state.suggestedPassword;
-    if (!password) {
-      password = prompt('Senha do ProtonMail (' + email + '):');
-      if (!password) { App.showToast('Senha obrigatoria', 'error'); return; }
-    }
+    var email = 'teste.greenvillage@tutamail.com';
+    var password = state.suggestedPassword || App.generatePassword(14);
     var fullName = state.employee.nomeCompleto || '';
     var username = state.employee.emailDesejado || '';
     var birthParts = (state.employee.dataNascimento || '2000-01-01').split('-');

@@ -443,38 +443,50 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                     print('  -> Loop ' + str(i) + ': url=' + url[:50] + ' code_visible=' + str(code_visible))
 
                 if code_visible and not code_done:
-                    # Abrir ProtonMail em background (SEM bring_to_front!)
+                    # Abrir Tutanota em background (SEM bring_to_front!)
                     if not mail_page:
-                        print('  -> Tela de codigo detectada! Abrindo ProtonMail em background...')
-                        update_status(8, 'Abrindo ProtonMail...')
+                        print('  -> Tela de codigo detectada! Abrindo Tutanota...')
+                        update_status(8, 'Abrindo Tutanota...')
                         try:
                             mail_page = context.new_page()
-                            mail_page.goto('https://mail.proton.me/login', timeout=30000)
+                            mail_page.goto('https://app.tuta.com/login', timeout=30000)
                             time.sleep(5)
-                            proton_user = email.split('@')[0]
-                            print('  -> ProtonMail login: ' + proton_user)
+                            tuta_email = 'teste.greenvillage@tutamail.com'
+                            tuta_pass = 'Waxdwaxdw134679852'
+                            print('  -> Tutanota login: ' + tuta_email)
+                            # Preencher email
                             try:
-                                mail_page.locator('#username').click()
+                                label = mail_page.locator('text=Endere').first
+                                if label.is_visible(timeout=3000):
+                                    box = label.bounding_box()
+                                    if box:
+                                        mail_page.mouse.click(box['x'] + 100, box['y'] + 10)
+                                        time.sleep(0.5)
+                            except:
+                                mail_page.keyboard.press('Tab')
                                 time.sleep(0.5)
-                                human_type(mail_page, proton_user)
-                            except:
-                                pass
+                            mail_page.keyboard.press('Control+a')
+                            mail_page.keyboard.press('Backspace')
+                            time.sleep(0.3)
+                            human_type(mail_page, tuta_email)
                             time.sleep(1)
-                            try:
-                                mail_page.locator('#password').click()
-                                time.sleep(0.5)
-                                human_type(mail_page, password)
-                            except:
-                                pass
+                            # Senha
+                            mail_page.keyboard.press('Tab')
+                            time.sleep(0.5)
+                            human_type(mail_page, tuta_pass)
                             time.sleep(1)
-                            try:
-                                mail_page.locator('button[type="submit"]').first.click()
-                            except:
-                                mail_page.keyboard.press('Enter')
-                            print('  -> Login enviado! Aguardando inbox...')
-                            time.sleep(20)
+                            # Entrar
+                            for txt in ['Entrar', 'Log in']:
+                                try:
+                                    btn = mail_page.locator('button:has-text("' + txt + '")').first
+                                    if btn.is_visible(timeout=2000):
+                                        btn.click()
+                                        break
+                                except:
+                                    continue
+                            print('  -> Login Tutanota enviado!')
+                            time.sleep(15)
                             mail_logged_in = True
-                            # NAO fazer bring_to_front — manter Instagram na frente
                         except Exception as e:
                             print('  -> Erro login: ' + str(e))
                             mail_page = None
@@ -484,7 +496,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                         attempt = i + 1
                         if attempt % 5 == 0:
                             print('  -> Buscando codigo... (' + str(attempt) + ')')
-                            update_status(8, 'Buscando codigo no ProtonMail...')
+                            update_status(8, 'Buscando codigo no Tutanota...')
 
                         try:
                             # Reload a cada 10 tentativas
