@@ -434,9 +434,13 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                 code_input = page.locator('input[name="email_confirmation_code"], input[aria-label*="digo" i], input[aria-label*="code" i], input[placeholder*="code" i], input[placeholder*="digo" i], input[name="code"], input[placeholder*="confirma" i]')
                 code_visible = False
                 try:
-                    code_visible = code_input.first.is_visible(timeout=300)
-                except:
+                    code_visible = code_input.first.is_visible(timeout=500)
+                except Exception as ce:
                     pass
+
+                # Log periodico para debug
+                if i > 0 and i % 10 == 0 and not code_done:
+                    print('  -> Loop ' + str(i) + ': url=' + url[:50] + ' code_visible=' + str(code_visible))
 
                 if code_visible and not code_done:
                     # Abrir ProtonMail em background (SEM bring_to_front!)
