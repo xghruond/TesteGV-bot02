@@ -183,11 +183,10 @@ App.generateEmailVariations = function(fullName) {
   add(f + yr);                                       // joao26
   add(l + '.' + f + yr);                             // silva.joao26
 
-  // ── Corporativo ──
-  add(f + '.gv');                                     // joao.gv
-  add(f + '.' + l + '.gv');                           // joao.silva.gv
-  add('gv.' + f + '.' + l);                          // gv.joao.silva
-  add(f + '.greenvillage');                           // joao.greenvillage
+  // ── Natural / Pessoal ──
+  add(f + '.' + l + '.' + yr);                       // joao.silva.26
+  add(f + l + '.me');                                 // joaosilva.me
+  if (l) add(l + '.' + f + '.' + yr);               // silva.joao.26
 
   // ── Letras dobradas / estilo redes sociais ──
   add(f + f[f.length - 1] + '.' + l);               // joaoo.silva
@@ -240,13 +239,11 @@ App.generateEmailVariations = function(fullName) {
     add(f + '.' + l + '.top');                      // joao.silva.top
   }
 
-  // ── Com prefixo/sufixo empresarial ──
-  add('gv.' + f);                                    // gv.joao
+  // ── Mais variações naturais ──
   if (l) {
-    add('gv.' + f + l);                             // gv.joaosilva
-    add(f + '.' + l + '.gvcompany');                // joao.silva.gvcompany
-    add(f + l + '.gv');                             // joaosilva.gv
-    add('team.' + f + '.' + l);                     // team.joao.silva
+    add(f + '.' + l + '.new');                      // joao.silva.new
+    add(f + '.' + l + '.x');                        // joao.silva.x
+    add('my' + f + '.' + l);                        // myjoao.silva
   }
 
   // ── Criativos ──

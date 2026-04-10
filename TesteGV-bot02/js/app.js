@@ -1080,6 +1080,11 @@ var App = App || {};
 
   // Criar conta Instagram automaticamente
   bindAction('auto-create-instagram', function() {
+    // Avisar para desligar VPN (Instagram funciona melhor com IP real)
+    if (!confirm('IMPORTANTE: Desconecte o VPN (Proton VPN) antes de continuar.\n\nO Instagram bloqueia cadastros de IPs de VPN.\n\nJa desconectou o VPN?')) {
+      return;
+    }
+
     var email = (state.platforms.protonmail && state.platforms.protonmail.accountInfo)
               || state.employee.emailDesejado + '@proton.me';
     var password = (state.platforms.protonmail && state.platforms.protonmail.password)
