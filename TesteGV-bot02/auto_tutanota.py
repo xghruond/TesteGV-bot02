@@ -1,9 +1,9 @@
 """
-Bot: Criar conta Tutanota/Tuta.com (semi-automatico)
-Preenche tudo automaticamente, humano resolve CAPTCHA de imagem.
+Bot: Criar conta Tutanota automaticamente via keyboard navigation.
+Bypassa SVG overlays usando JS evaluate + Tab navigation.
 
-CLI: python auto_tutanota.py <username> <password>
-Import: from auto_tutanota import create_account
+CLI: python auto_tutanota.py [username] [password]
+Import: from auto_tutanota import create_account, create_fresh_tutanota
 """
 import sys
 import time
@@ -35,20 +35,44 @@ def update_status(step, message, done=False, success=False, error=None):
 
 
 def human_type(page, text):
-    """Digita como humano com velocidade variavel."""
+    """Digita como humano."""
     for char in text:
         page.keyboard.type(char)
         time.sleep(random.uniform(0.08, 0.22))
     time.sleep(random.uniform(0.3, 0.8))
 
 
+def safe_print(msg):
+    """Print seguro para Windows (sem crash de encoding)."""
+    try:
+        print(msg)
+    except UnicodeEncodeError:
+        print(msg.encode('ascii', 'replace').decode())
+
+
+def get_active_info(page):
+    """Retorna info do elemento focado."""
+    try:
+        return page.evaluate("""() => {
+            const el = document.activeElement;
+            if (!el) return {tag: 'none', type: '', role: ''};
+            return {
+                tag: el.tagName.toLowerCase(),
+                type: el.type || '',
+                role: el.getAttribute('role') || '',
+                text: (el.textContent || '').substring(0, 30)
+            };
+        }""")
+    except:
+        return {'tag': 'unknown', 'type': '', 'role': ''}
+
+
 def create_account(username, password):
-    """Cria conta Tutanota. Retorna dict status."""
-    status['email'] = username + '@tuta.com'
+    """Cria conta Tutanota standalone. Retorna status dict."""
+    status['email'] = username + '@tutamail.com'
     status['password'] = password
 
     with sync_playwright() as p:
-        # === STEP 1: Abrir navegador ===
         update_status(1, 'Abrindo navegador...')
         print('[1/5] Abrindo Tutanota...')
 
@@ -57,297 +81,271 @@ def create_account(username, password):
             executable_path='C:/Program Files/Google/Chrome/Application/chrome.exe',
             args=['--start-maximized', '--window-position=0,0']
         )
-        context = browser.new_context(
-            no_viewport=True,
-            locale='pt-BR',
-            timezone_id='America/Sao_Paulo'
-        )
-        context.clear_cookies()
+        context = browser.new_context(no_viewport=True, locale='pt-BR', timezone_id='America/Sao_Paulo')
         page = context.new_page()
         page.set_default_timeout(30000)
 
-        page.goto('https://app.tuta.com/signup', timeout=60000)
-        page.wait_for_load_state('domcontentloaded')
-        print('  -> Pagina carregada')
-        time.sleep(random.uniform(6, 10))
+        result = _create_tutanota_on_page(page, username, password)
 
-        # === STEP 2: Selecionar plano Free ===
-        update_status(2, 'Selecionando plano Free...')
-        print('[2/5] Selecionando plano Free...')
-
-        free_clicked = False
-        # Tentar varios seletores para o plano Free
-        free_selectors = [
-            'button:has-text("Free")',
-            'div:has-text("Free") >> button',
-            'text=Free >> ..',
-            '[data-testid="free-plan"]',
-            'button:has-text("Selecionar")',
-            'button:has-text("Select")',
-        ]
-        for sel in free_selectors:
-            try:
-                el = page.locator(sel).first
-                if el.is_visible(timeout=3000):
-                    el.click()
-                    free_clicked = True
-                    print('  -> Plano Free: ' + sel)
-                    break
-            except:
-                continue
-
-        if not free_clicked:
-            # Fallback JS: procurar qualquer elemento com "Free" e clicar
-            page.evaluate('''() => {
-                const els = document.querySelectorAll('button, div[role="button"], a');
-                for (const el of els) {
-                    if (el.offsetHeight > 0 && el.textContent.includes('Free')) {
-                        el.click();
-                        return true;
-                    }
-                }
-                return false;
-            }''')
-            print('  -> Plano Free via JS')
-
-        time.sleep(random.uniform(3, 5))
-
-        # Aceitar termos se aparecer
-        try:
-            for txt in ['Aceitar', 'Accept', 'Concordo', 'I agree', 'OK']:
-                btn = page.locator('button:has-text("' + txt + '")').first
-                if btn.is_visible(timeout=2000):
-                    btn.click()
-                    print('  -> Aceitou: ' + txt)
-                    time.sleep(2)
-                    break
-        except:
-            pass
-
-        # === STEP 3: Preencher dados ===
-        update_status(3, 'Preenchendo dados...')
-        print('[3/5] Preenchendo username: ' + username)
-
-        time.sleep(random.uniform(2, 4))
-
-        # Preencher username — procurar campo de email/username
-        username_filled = False
-        try:
-            # Tutanota usa inputs dentro de shadow DOM ou custom elements
-            # Tentar varios seletores
-            username_selectors = [
-                'input[type="text"]',
-                'input[placeholder*="mail" i]',
-                'input[placeholder*="address" i]',
-                'input[placeholder*="usuario" i]',
-                'input[placeholder*="user" i]',
-                'input[name*="mail" i]',
-                'input[name*="user" i]',
-            ]
-            for sel in username_selectors:
-                try:
-                    inp = page.locator(sel).first
-                    if inp.is_visible(timeout=2000):
-                        inp.click()
-                        time.sleep(0.5)
-                        page.keyboard.press('Control+a')
-                        page.keyboard.press('Backspace')
-                        time.sleep(0.3)
-                        human_type(page, username)
-                        val = page.evaluate('document.querySelector("' + sel + '")?.value || ""')
-                        if val:
-                            print('  -> Username preenchido: ' + val + ' (' + sel + ')')
-                            username_filled = True
-                            break
-                except:
-                    continue
-
-            if not username_filled:
-                # Fallback: encontrar qualquer input visivel que nao seja password
-                page.evaluate('''(u) => {
-                    const inputs = document.querySelectorAll('input');
-                    for (const inp of inputs) {
-                        if (inp.offsetHeight > 0 && inp.type !== 'password' && inp.type !== 'hidden') {
-                            inp.focus();
-                            inp.click();
-                            const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-                            if (setter) {
-                                setter.call(inp, u);
-                                inp.dispatchEvent(new Event('input', { bubbles: true }));
-                                inp.dispatchEvent(new Event('change', { bubbles: true }));
-                            }
-                            return true;
-                        }
-                    }
-                    return false;
-                }''', username)
-                print('  -> Username via JS fallback')
-                username_filled = True
-        except Exception as e:
-            print('  -> ERRO username: ' + str(e))
-
-        time.sleep(random.uniform(2, 4))
-
-        # Selecionar dominio @tuta.com se houver dropdown
-        try:
-            domain_sel = page.locator('select, [role="listbox"], button:has-text("tuta"), button:has-text("tutanota")')
-            if domain_sel.first.is_visible(timeout=2000):
-                domain_sel.first.click()
-                time.sleep(1)
-                tuta = page.locator('option:has-text("tuta.com"), [role="option"]:has-text("tuta.com"), li:has-text("tuta.com")')
-                if tuta.first.is_visible(timeout=2000):
-                    tuta.first.click()
-                    print('  -> Dominio: tuta.com')
-                    time.sleep(1)
-        except:
-            pass
-
-        # === STEP 4: Senha ===
-        update_status(4, 'Preenchendo senha...')
-        print('[4/5] Senha...')
-
-        time.sleep(random.uniform(1.5, 3))
-
-        try:
-            pw_fields = page.locator('input[type="password"]')
-            pw_count = pw_fields.count()
-            print('  -> Campos de senha encontrados: ' + str(pw_count))
-
-            if pw_count >= 1:
-                # Primeiro campo de senha
-                pw_fields.nth(0).click()
-                time.sleep(0.5)
-                human_type(page, password)
-                print('  -> Senha preenchida')
-                time.sleep(random.uniform(1, 2))
-
-            if pw_count >= 2:
-                # Confirmar senha
-                pw_fields.nth(1).click()
-                time.sleep(0.5)
-                human_type(page, password)
-                print('  -> Senha confirmada')
-                time.sleep(random.uniform(1, 2))
-        except Exception as e:
-            print('  -> ERRO senha: ' + str(e))
-
-        time.sleep(random.uniform(2, 4))
-
-        # Clicar proximo/criar se houver botao antes do CAPTCHA
-        try:
-            for txt in ['Próximo', 'Next', 'Criar', 'Create', 'Continuar', 'Continue', 'Registrar', 'Register']:
-                btn = page.locator('button:has-text("' + txt + '")').first
-                if btn.is_visible(timeout=2000):
-                    btn.click()
-                    print('  -> Clicou: ' + txt)
-                    time.sleep(random.uniform(3, 5))
-                    break
-        except:
-            pass
-
-        # === STEP 5: CAPTCHA — humano resolve ===
-        update_status(5, 'CAPTCHA — resolva no navegador!')
-        print('\n[5/5] Aguardando CAPTCHA...')
-        print('  *** RESOLVA O CAPTCHA DE IMAGEM NO NAVEGADOR ***')
-
-        conta_criada = False
-        for i in range(600):  # 20 min
-            time.sleep(2)
-            try:
-                url = page.url
-
-                # Sucesso: redirecionou para inbox/login/mailbox
-                if any(x in url for x in ['/mail', '/inbox', '/login', 'mailbox']):
-                    # Verificar se realmente logou (nao e a pagina de login)
-                    try:
-                        # Se tem botao de compose/escrever, esta logado
-                        logged = page.evaluate('''() => {
-                            const url = window.location.href;
-                            if (url.includes('/mail') || url.includes('/inbox')) return true;
-                            // Verificar se tem elementos de inbox
-                            const body = document.body.textContent || '';
-                            if (body.includes('Compose') || body.includes('Escrever') || body.includes('Inbox') || body.includes('Caixa')) return true;
-                            return false;
-                        }''')
-                        if logged:
-                            print('  -> Conta criada! URL: ' + url)
-                            conta_criada = True
-                            break
-                    except:
-                        pass
-
-                # Detectar mensagem de sucesso
-                try:
-                    success_texts = ['successfully', 'sucesso', 'created', 'criada', 'welcome', 'bem-vindo']
-                    for st in success_texts:
-                        if page.locator('text=' + st).first.is_visible(timeout=300):
-                            print('  -> Mensagem de sucesso detectada: ' + st)
-                            conta_criada = True
-                            break
-                    if conta_criada:
-                        break
-                except:
-                    pass
-
-                # Detectar se CAPTCHA sumiu (conta sendo criada)
-                try:
-                    loading = page.locator('[class*="progress"], [class*="loading"], [class*="spinner"]')
-                    if loading.first.is_visible(timeout=300):
-                        update_status(5, 'Criando conta...')
-                        print('  -> Criando conta...')
-                except:
-                    pass
-
-                # Clicar botoes pos-CAPTCHA (Next, Create, etc.)
-                try:
-                    for txt in ['Criar conta', 'Create account', 'Finalizar', 'Finish', 'OK', 'Continuar', 'Continue']:
-                        btn = page.locator('button:has-text("' + txt + '")')
-                        if btn.first.is_visible(timeout=300):
-                            btn.first.click()
-                            print('  -> Clicou pos-CAPTCHA: ' + txt)
-                            time.sleep(3)
-                            break
-                except:
-                    pass
-
-                # Pular/fechar dialogs
-                try:
-                    for txt in ['Skip', 'Pular', 'Maybe later', 'Talvez', 'Close', 'Fechar', 'OK']:
-                        skip = page.locator('button:has-text("' + txt + '")')
-                        if skip.first.is_visible(timeout=300):
-                            skip.first.click()
-                            print('  -> Pulou: ' + txt)
-                            time.sleep(2)
-                            break
-                except:
-                    pass
-
-                # Lembrete periodico
-                if i > 0 and i % 15 == 0:
-                    mins = (i * 2) // 60
-                    update_status(5, 'CAPTCHA — resolva no navegador! (' + str(mins) + ' min)')
-                    print('  -> Aguardando... (' + str(mins) + ' min)')
-
-            except:
-                pass
-
-        # === RESULTADO ===
-        if conta_criada:
+        if result:
             update_status(5, 'Conta criada com sucesso!', done=True, success=True)
-            print('\n=== SUCESSO! ' + username + '@tuta.com ===')
+            print('\n=== SUCESSO! ' + username + '@tutamail.com ===')
         else:
-            update_status(5, 'Timeout (20 min).', done=True, error='timeout')
-            print('\nTimeout (20 min).')
+            update_status(5, 'Falha na criacao.', done=True, error='failed')
+            print('\nFalha.')
 
-        print('Navegador aberto por 5 min...')
         time.sleep(10)
         browser.close()
 
     return status
 
 
+def create_fresh_tutanota(browser):
+    """Cria conta Tutanota NOVA no mesmo browser.
+    Retorna (email, password, tuta_page, tuta_ctx) ou None."""
+    username = 'gvbot' + ''.join([str(random.randint(0, 9)) for _ in range(8)])
+    password = 'Gv@' + ''.join([random.choice('abcdefghijklmnopqrstuvwxyz0123456789') for _ in range(12)])
+    email = username + '@tutamail.com'
+
+    print('  -> [Tuta] Criando conta nova: ' + email)
+
+    try:
+        tuta_ctx = browser.new_context(no_viewport=True, locale='pt-BR', timezone_id='America/Sao_Paulo')
+        tuta_page = tuta_ctx.new_page()
+        tuta_page.set_default_timeout(30000)
+
+        result = _create_tutanota_on_page(tuta_page, username, password)
+
+        if result:
+            print('  -> [Tuta] Conta criada: ' + email)
+            return email, password, tuta_page, tuta_ctx
+        else:
+            print('  -> [Tuta] Falha ao criar conta')
+            try:
+                tuta_ctx.close()
+            except:
+                pass
+            return None
+    except Exception as e:
+        safe_print('  -> [Tuta] ERRO: ' + str(e))
+        return None
+
+
+def _create_tutanota_on_page(page, username, password):
+    """Logica interna de criacao de conta Tutanota via keyboard navigation.
+    Retorna True se sucesso, False se falha."""
+
+    page.goto('https://app.tuta.com/signup', timeout=60000)
+    page.wait_for_load_state('domcontentloaded')
+    time.sleep(random.uniform(8, 12))
+
+    # === STEP 2: Selecionar plano Free via JS (bypassa SVG) ===
+    print('  -> [Tuta] Selecionando plano Free...')
+    page.evaluate("""() => {
+        const els = document.querySelectorAll('div[role="button"], button, [tabindex]');
+        for (const el of els) {
+            if (el.offsetHeight > 0 && el.textContent.includes('Free')) {
+                el.click();
+                return true;
+            }
+        }
+        return false;
+    }""")
+    time.sleep(random.uniform(2, 4))
+
+    # Clicar Continuar via JS
+    print('  -> [Tuta] Clicando Continuar...')
+    page.evaluate("""() => {
+        const btns = document.querySelectorAll('button');
+        for (const b of btns) {
+            const t = (b.textContent || '').toLowerCase();
+            if (b.offsetHeight > 0 && (t.includes('continuar') || t.includes('continue') || t.includes('next'))) {
+                b.click();
+                return true;
+            }
+        }
+        return false;
+    }""")
+    time.sleep(random.uniform(4, 6))
+
+    # === STEP 3: Preencher formulario via Tab navigation ===
+    print('  -> [Tuta] Preenchendo formulario...')
+
+    # Tab ate encontrar campo de texto (username)
+    for attempt in range(15):
+        page.keyboard.press('Tab')
+        time.sleep(0.5)
+        info = get_active_info(page)
+        safe_print('  -> [Tuta] Tab ' + str(attempt + 1) + ': <' + info['tag'] + '> type=' + info['type'] + ' role=' + info['role'])
+        # Encontrou campo de input de texto
+        if info['tag'] == 'input' and info['type'] in ['text', '']:
+            break
+        if info['role'] == 'textbox':
+            break
+
+    # Digitar username
+    page.keyboard.press('Control+a')
+    page.keyboard.press('Backspace')
+    time.sleep(0.3)
+    human_type(page, username)
+    print('  -> [Tuta] Username: ' + username)
+    time.sleep(random.uniform(1, 2))
+
+    # Tab para proximo campo — pode ser dropdown de dominio ou senha
+    page.keyboard.press('Tab')
+    time.sleep(0.5)
+    info = get_active_info(page)
+    safe_print('  -> [Tuta] Apos username: <' + info['tag'] + '> role=' + info['role'])
+
+    # Se e dropdown de dominio, pular (manter padrao @tutamail.com)
+    if info['role'] in ['combobox', 'listbox', 'button'] or 'select' in info['tag']:
+        print('  -> [Tuta] Dropdown de dominio detectado, pulando...')
+        page.keyboard.press('Tab')
+        time.sleep(0.5)
+
+    # === STEP 4: Senha ===
+    print('  -> [Tuta] Senha...')
+    # Navegar ate campo de password
+    info = get_active_info(page)
+    if info['type'] != 'password':
+        for _ in range(5):
+            page.keyboard.press('Tab')
+            time.sleep(0.3)
+            info = get_active_info(page)
+            if info['type'] == 'password':
+                break
+
+    human_type(page, password)
+    time.sleep(random.uniform(0.5, 1))
+
+    # Tab para confirmar senha
+    page.keyboard.press('Tab')
+    time.sleep(0.5)
+    info = get_active_info(page)
+    if info['type'] == 'password':
+        human_type(page, password)
+        print('  -> [Tuta] Senha confirmada')
+    else:
+        # Tentar encontrar segundo campo de senha
+        for _ in range(3):
+            page.keyboard.press('Tab')
+            time.sleep(0.3)
+            info = get_active_info(page)
+            if info['type'] == 'password':
+                human_type(page, password)
+                print('  -> [Tuta] Senha confirmada')
+                break
+
+    time.sleep(random.uniform(1, 2))
+
+    # === Checkboxes via JS (mais confiavel que Tab+Space) ===
+    print('  -> [Tuta] Marcando checkboxes...')
+    page.evaluate("""() => {
+        const switches = document.querySelectorAll('[role="switch"], label.tutaui-switch, input[type="checkbox"]');
+        switches.forEach(sw => {
+            if (sw.offsetHeight > 0) {
+                try { sw.click(); } catch(e) {}
+            }
+        });
+    }""")
+    time.sleep(random.uniform(1, 2))
+
+    # === Clicar "Criar conta" via JS ===
+    print('  -> [Tuta] Criando conta...')
+    page.evaluate("""() => {
+        const btns = document.querySelectorAll('button');
+        for (const b of btns) {
+            const t = (b.textContent || '').toLowerCase();
+            if (b.offsetHeight > 0 && (t.includes('criar conta') || t.includes('create') || t.includes('registr'))) {
+                b.click();
+                return true;
+            }
+        }
+        return false;
+    }""")
+    time.sleep(random.uniform(8, 15))
+
+    # === STEP 5: Recovery code screen ===
+    print('  -> [Tuta] Verificando tela de recovery...')
+    for _ in range(20):
+        try:
+            body_text = page.evaluate("() => (document.body.textContent || '').toLowerCase()")
+            if 'chave' in body_text or 'recovery' in body_text or 'recupera' in body_text:
+                print('  -> [Tuta] Recovery screen detectada!')
+                # Marcar checkbox via JS
+                page.evaluate("""() => {
+                    const els = document.querySelectorAll('[role="switch"], input[type="checkbox"], label');
+                    els.forEach(el => {
+                        if (el.offsetHeight > 0 && !el.checked) {
+                            try { el.click(); } catch(e) {}
+                        }
+                    });
+                }""")
+                time.sleep(1)
+                # Clicar OK/Continuar via JS
+                page.evaluate("""() => {
+                    const btns = document.querySelectorAll('button');
+                    for (const b of btns) {
+                        const t = (b.textContent || '').toLowerCase();
+                        if (b.offsetHeight > 0 && (t.includes('vamos') || t.includes('ok') || t.includes('continuar') || t.includes('continue') || t.includes('let') || t.includes('done'))) {
+                            b.click();
+                            return true;
+                        }
+                    }
+                    return false;
+                }""")
+                time.sleep(5)
+                break
+
+            # Verificar se ja esta no inbox
+            url = page.url
+            if '/mail' in url or '/inbox' in url:
+                print('  -> [Tuta] Inbox direto!')
+                break
+        except:
+            pass
+
+        # Fechar dialogs
+        page.evaluate("""() => {
+            const btns = document.querySelectorAll('button');
+            for (const b of btns) {
+                const t = (b.textContent || '').toLowerCase();
+                if (b.offsetHeight > 0 && (t.includes('ok') || t.includes('fechar') || t.includes('close') || t.includes('entendido'))) {
+                    b.click();
+                    return;
+                }
+            }
+        }""")
+        time.sleep(2)
+
+    # === Verificar sucesso ===
+    for _ in range(15):
+        try:
+            url = page.url
+            if '/mail' in url or '/inbox' in url:
+                return True
+            body = page.evaluate("() => (document.body.textContent || '').toLowerCase()")
+            if 'entrada' in body or 'inbox' in body or 'novo e-mail' in body:
+                return True
+        except:
+            pass
+        # Fechar mais dialogs
+        page.evaluate("""() => {
+            const btns = document.querySelectorAll('button');
+            for (const b of btns) {
+                const t = (b.textContent || '').toLowerCase();
+                if (b.offsetHeight > 0 && (t.includes('ok') || t.includes('fechar') || t.includes('close') || t.includes('pular') || t.includes('skip'))) {
+                    b.click(); return;
+                }
+            }
+        }""")
+        time.sleep(2)
+
+    return False
+
+
 # CLI
 if __name__ == '__main__':
-    username = sys.argv[1] if len(sys.argv) > 1 else 'test.user'
-    password = sys.argv[2] if len(sys.argv) > 2 else 'Test@12345678'
+    username = sys.argv[1] if len(sys.argv) > 1 else 'gvbot' + str(random.randint(10000000, 99999999))
+    password = sys.argv[2] if len(sys.argv) > 2 else 'Gv@test12345678'
     create_account(username, password)

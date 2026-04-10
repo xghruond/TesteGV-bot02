@@ -132,22 +132,70 @@ class Handler(http.server.BaseHTTPRequestHandler):
             birth_day = data.get('birthDay', '15')
             birth_month = data.get('birthMonth', '6')
             birth_year = data.get('birthYear', '2000')
+            create_fresh_email = data.get('createFreshEmail', True)
 
-            if not email or not password:
-                return self._json({'error': 'email e password obrigatorios'}, 400)
+            if not password:
+                return self._json({'error': 'password obrigatorio'}, 400)
 
             auto_instagram.status.update({
                 'step': 0, 'message': 'Iniciando...', 'done': False,
                 'success': False, 'error': None
             })
 
-            threading.Thread(
-                target=auto_instagram.create_account,
-                args=(email, password, full_name, username, birth_day, birth_month, birth_year),
-                daemon=True
-            ).start()
+            def instagram_with_fresh_email():
+                """Cria Tutanota novo e depois Instagram."""
+                tuta_email = email
+                tuta_pass = ''
 
-            return self._json({'started': True, 'message': 'Automacao Instagram iniciada!'})
+                if create_fresh_email or not email or '@tutamail' not in email:
+                    try:
+                        print('[Instagram] Criando email Tutanota novo...')
+                        auto_instagram.status.update({'step': 0, 'message': 'Criando email novo...'})
+                        from auto_tutanota import create_fresh_tutanota
+                        from playwright.sync_api import sync_playwright
+
+                        # Criar browser temporario para Tutanota
+                        with sync_playwright() as p:
+                            tmp_browser = p.chromium.launch(
+                                headless=False,
+                                executable_path='C:/Program Files/Google/Chrome/Application/chrome.exe',
+                                args=['--start-maximized']
+                            )
+                            result = create_fresh_tutanota(tmp_browser)
+                            if result:
+                                tuta_email, tuta_pass, tuta_page, tuta_ctx = result
+                                print('[Instagram] Email criado: ' + tuta_email)
+                                auto_instagram.status.update({'message': 'Email: ' + tuta_email})
+                                try:
+                                    tuta_ctx.close()
+                                except:
+                                    pass
+                            else:
+                                print('[Instagram] FALHA ao criar Tutanota!')
+                                auto_instagram.status.update({
+                                    'done': True, 'error': 'Falha ao criar email Tutanota'
+                                })
+                                try:
+                                    tmp_browser.close()
+                                except:
+                                    pass
+                                return
+                            tmp_browser.close()
+                    except Exception as e:
+                        print('[Instagram] Erro Tutanota: ' + str(e))
+                        auto_instagram.status.update({
+                            'done': True, 'error': 'Erro ao criar email: ' + str(e)
+                        })
+                        return
+
+                auto_instagram.create_account(
+                    tuta_email, password, full_name, username,
+                    birth_day, birth_month, birth_year, tuta_pass
+                )
+
+            threading.Thread(target=instagram_with_fresh_email, daemon=True).start()
+
+            return self._json({'started': True, 'message': 'Criando email + Instagram...'})
 
         elif path == '/api/create-tutanota':
             username = data.get('username', '')

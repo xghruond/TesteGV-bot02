@@ -190,12 +190,81 @@ App.generateEmailVariations = function(fullName) {
   add(f + '.greenvillage');                           // joao.greenvillage
 
   // ── Letras dobradas / estilo redes sociais ──
-  add(f + f[f.length - 1] + '.' + l);               // joaoo.silva (dobra última)
+  add(f + f[f.length - 1] + '.' + l);               // joaoo.silva
   if (l) add('o' + f + '.' + l);                    // ojoao.silva
   add(f + '.oficial');                               // joao.oficial
   add('eu' + f + l);                                 // eujoaosilva
   add('sou' + f + l);                               // soujoaosilva
   add(f + '.' + l + '.real');                        // joao.silva.real
+
+  // ── Profissional / Trabalho ──
+  add(f + '.' + l + '.pro');                         // joao.silva.pro
+  add(f + '.' + l + '.work');                        // joao.silva.work
+  add(f + '.' + l + '.job');                         // joao.silva.job
+  add(f + '.pro');                                   // joao.pro
+  add(f + '.work');                                  // joao.work
+  add('pro.' + f + '.' + l);                        // pro.joao.silva
+  if (l) add(l + '.' + f + '.pro');                 // silva.joao.pro
+
+  // ── Com mais números ──
+  add(f + '.' + l + '123');                          // joao.silva123
+  add(f + '.' + l + rnd);                            // joao.silva47
+  add(f + l + '01');                                 // joaosilva01
+  add(f + l + yr);                                   // joaosilva26
+  add(f + '.' + rnd);                                // joao.47
+  if (l) {
+    add(l + '.' + f + rnd);                          // silva.joao47
+    add(l + f + yr);                                 // silvajoao26
+    add(f + l + '00');                               // joaosilva00
+    add(f + '.' + l + '.0' + (rnd % 10));           // joao.silva.07
+  }
+
+  // ── Invertido ──
+  if (l) {
+    add(l + f);                                      // silvajoao
+    add(l + '_' + f);                                // silva_joao
+    add(l + f[0] + f[1]);                           // silvajo
+    add(f[0] + f[1] + '.' + l);                    // jo.silva
+  }
+
+  // ── Estilo username ──
+  add('o' + f);                                      // ojoao
+  add('a' + f);                                      // ajoao
+  add('the' + f);                                    // thejoao
+  add('real' + f);                                   // realjoao
+  if (l) {
+    add('o' + f + l);                                // ojoaosilva
+    add('real' + f + '.' + l);                      // realjoao.silva
+    add('hey' + f + '.' + l);                       // heyjoao.silva
+    add(f + '.' + l + '.ok');                       // joao.silva.ok
+    add(f + '.' + l + '.top');                      // joao.silva.top
+  }
+
+  // ── Com prefixo/sufixo empresarial ──
+  add('gv.' + f);                                    // gv.joao
+  if (l) {
+    add('gv.' + f + l);                             // gv.joaosilva
+    add(f + '.' + l + '.gvcompany');                // joao.silva.gvcompany
+    add(f + l + '.gv');                             // joaosilva.gv
+    add('team.' + f + '.' + l);                     // team.joao.silva
+  }
+
+  // ── Criativos ──
+  if (l) {
+    add(f + '.' + l[0] + l[1]);                    // joao.si
+    add(f[0] + '.' + l + '.' + f);                 // j.silva.joao
+    add(f + l[0] + '.' + yr);                      // joaos.26
+    add(f.slice(0, 4) + '.' + l.slice(0, 4));     // joao.silv
+    add(f + '-' + l);                               // joao-silva
+    add(f + '.' + l + '.' + initials);             // joao.silva.js
+  }
+
+  // ── Diminutivos extras ──
+  if (dim) {
+    add(dim + l);                                    // joaozinhosilva
+    add(dim + '.' + yr);                            // joaozinho.26
+    add(dim + '.' + l + yr);                        // joaozinho.silva26
+  }
 
   // ── Só primeiro nome (sem sobrenome) ──
   if (!l) {

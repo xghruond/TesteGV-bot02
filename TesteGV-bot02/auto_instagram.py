@@ -13,9 +13,8 @@ import re
 import functools
 from playwright.sync_api import sync_playwright
 
-# Credenciais Tutanota (usada para verificacao de email)
-TUTA_EMAIL = 'teste.greenvillage@tutamail.com'
-TUTA_PASS = 'Waxdwaxdw134679852'
+# Importar criacao de Tutanota fresco
+from auto_tutanota import create_fresh_tutanota
 
 print = functools.partial(print, flush=True)
 
@@ -76,12 +75,14 @@ def react_fill(page, selector, value):
             return False
 
 
-def create_account(email, password, full_name, username, birth_day='1', birth_month='1', birth_year='2000'):
-    """Cria conta Instagram. Retorna status dict."""
+def create_account(email, password, full_name, username, birth_day='1', birth_month='1', birth_year='2000', tuta_pass=''):
+    """Cria conta Instagram. Retorna status dict.
+    tuta_pass: senha do email Tutanota (para buscar codigo de verificacao)."""
     # Limpar estado residual de chamadas anteriores
     create_account._code_done = False
     create_account._mail_page = None
     create_account._mail_attempts = 0
+    create_account._tuta_pass = tuta_pass
 
     with sync_playwright() as p:
         # === PASSO 1: Abrir Chrome ===
@@ -465,15 +466,15 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                         # Abrir Tutanota se ainda nao abriu
                         if not getattr(create_account, '_mail_page', None):
                             print('  -> Codigo de email detectado! Abrindo Tutanota...')
-                            update_status(8, 'Abrindo Tutanota para buscar codigo...')
+                            update_status(8, 'Login no Tutanota (' + email + ')...')
+                            # email e tuta_pass vem como parametros da funcao
+                            tuta_pass = getattr(create_account, '_tuta_pass', 'GvTuta2026!')
                             try:
                                 mail_page = context.new_page()
                                 mail_page.goto('https://app.tuta.com/login', timeout=30000)
                                 time.sleep(5)
 
-                                tuta_email = TUTA_EMAIL
-                                tuta_pass = TUTA_PASS
-                                print('  -> Tutanota login: ' + tuta_email)
+                                print('  -> Tutanota login: ' + email)
 
                                 # Preencher email
                                 try:
@@ -490,7 +491,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                 mail_page.keyboard.press('Control+a')
                                 mail_page.keyboard.press('Backspace')
                                 time.sleep(0.3)
-                                human_type(mail_page, tuta_email)
+                                human_type(mail_page, email)
                                 time.sleep(1)
 
                                 # Preencher senha
@@ -601,9 +602,13 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                     # Ler pagina inteira — o email aberto deve conter o codigo
                                     time.sleep(2)
                                     full_text = mail_page.evaluate("() => document.body.textContent || ''")
-                                    print('  -> Texto pagina (200 chars): ' + full_text[:200].replace('\n', ' '))
                                     codes = re.findall(r'\b(\d{6})\b', full_text)
-                                    print('  -> Codigos encontrados: ' + str(codes[:5]))
+                                    try:
+                                        safe_text = full_text[:200].encode('ascii', 'replace').decode().replace('\n', ' ')
+                                        print('  -> Pagina: ' + safe_text)
+                                    except:
+                                        print('  -> Pagina: (texto com caracteres especiais)')
+                                    print('  -> Codigos 6 digitos: ' + str(codes[:5]))
 
                                     if codes:
                                         code = codes[0]

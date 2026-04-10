@@ -1080,7 +1080,7 @@ var App = App || {};
 
   // Criar conta Instagram automaticamente
   bindAction('auto-create-instagram', function() {
-    var email = 'teste.greenvillage@tutamail.com';
+    var email = '';  // Server cria email Tutanota novo automaticamente
     var password = state.suggestedPassword || App.generatePassword(14);
     var fullName = state.employee.nomeCompleto || '';
     var username = state.employee.emailDesejado || '';
@@ -1089,7 +1089,7 @@ var App = App || {};
     var birthMonth = String(parseInt(birthParts[1] || '1'));
     var birthDay = String(parseInt(birthParts[2] || '1'));
 
-    if (!email || !password) {
+    if (!password) {
       App.showToast('Preencha os dados primeiro.', 'error');
       return;
     }
@@ -1158,7 +1158,8 @@ var App = App || {};
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: email, password: password, fullName: fullName,
-        username: username, birthDay: birthDay, birthMonth: birthMonth, birthYear: birthYear
+        username: username, birthDay: birthDay, birthMonth: birthMonth, birthYear: birthYear,
+        createFreshEmail: true
       })
     })
     .then(function(res) { return res.json(); })
