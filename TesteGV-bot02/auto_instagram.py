@@ -435,8 +435,21 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                 code_visible = False
                 try:
                     code_visible = code_input.first.is_visible(timeout=500)
-                except Exception as ce:
+                except:
                     pass
+                # Fallback: detectar pelo texto na pagina
+                if not code_visible:
+                    try:
+                        for kw in ['Insira o c', 'confirma', 'confirmation code', 'enviamos para']:
+                            if page.locator('text=' + kw).first.is_visible(timeout=200):
+                                code_visible = True
+                                # Tentar encontrar qualquer input visivel
+                                all_inputs = page.locator('input:visible')
+                                if all_inputs.count() > 0:
+                                    code_input = all_inputs.first
+                                break
+                    except:
+                        pass
 
                 # Log periodico para debug
                 if i > 0 and i % 10 == 0 and not code_done:
