@@ -116,13 +116,34 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         browser = p.chromium.launch(
             headless=False,
             channel='chrome',
-            args=['--start-maximized', '--window-position=0,0']
+            args=[
+                '--start-maximized',
+                '--window-position=0,0',
+                '--disable-blink-features=AutomationControlled',
+                '--disable-features=IsolateOrigins,site-per-process',
+                '--no-sandbox',
+                '--disable-dev-shm-usage',
+            ]
         )
         context = browser.new_context(
             no_viewport=True,
             locale='pt-BR',
-            timezone_id='America/Sao_Paulo'
+            timezone_id='America/Sao_Paulo',
+            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            viewport={'width': 1920, 'height': 1080},
+            screen={'width': 1920, 'height': 1080},
+            device_scale_factor=1,
+            is_mobile=False,
+            has_touch=False,
+            java_script_enabled=True,
         )
+        # Remover webdriver flag (anti-deteccao)
+        context.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+            Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+            Object.defineProperty(navigator, 'languages', { get: () => ['pt-BR', 'pt', 'en'] });
+            window.chrome = { runtime: {} };
+        """)
 
         # === PASSO 0: Logar no Tutanota ANTES de tudo ===
         update_status(1, 'Logando no Tutanota primeiro...')
@@ -198,12 +219,36 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         page = context.new_page()
         page.set_default_timeout(20000)
 
-        # === PASSO 2: Navegar para signup ===
-        update_status(2, 'Abrindo pagina de cadastro...')
+        # === PASSO 1.5: Aquecer sessao — navegar em sites normais primeiro ===
+        print('[1.5/8] Aquecendo sessao (simular humano)...')
+        update_status(2, 'Aquecendo sessao...')
+        try:
+            page.goto('https://www.google.com', timeout=15000)
+            time.sleep(random.uniform(3, 5))
+            # Scroll aleatorio
+            page.mouse.wheel(0, random.randint(100, 400))
+            time.sleep(random.uniform(2, 4))
+        except:
+            pass
+
+        # === PASSO 2: Navegar para Instagram via home (mais natural) ===
+        update_status(2, 'Abrindo Instagram...')
+        print('[2/8] Abrindo Instagram home...')
+        try:
+            page.goto('https://www.instagram.com/', timeout=30000)
+            page.wait_for_load_state('domcontentloaded')
+            time.sleep(random.uniform(4, 7))
+            # Scroll para parecer humano
+            page.mouse.wheel(0, random.randint(200, 500))
+            time.sleep(random.uniform(2, 4))
+        except:
+            pass
+
+        # Agora sim ir para signup
         print('[2/8] Navegando para signup...')
         page.goto('https://www.instagram.com/accounts/emailsignup/', timeout=60000)
         page.wait_for_load_state('domcontentloaded')
-        time.sleep(8)
+        time.sleep(random.uniform(5, 8))
 
         # Aceitar cookies se aparecer
         try:
@@ -328,7 +373,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         except Exception as e:
             print('  -> ERRO email: ' + str(e))
 
-        time.sleep(random.uniform(1.0, 2.0))
+        time.sleep(random.uniform(2.5, 4.5))
 
         # === PASSO 4: Preencher nome completo ===
         update_status(4, 'Preenchendo nome: ' + full_name)
@@ -378,7 +423,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         except Exception as e:
             print('  -> ERRO nome: ' + str(e))
 
-        time.sleep(random.uniform(1.0, 2.0))
+        time.sleep(random.uniform(2.5, 4.5))
 
         # === PASSO 5: Preencher username ===
         update_status(5, 'Preenchendo username: ' + username)
@@ -413,7 +458,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         except Exception as e:
             print('  -> ERRO username: ' + str(e))
 
-        time.sleep(random.uniform(1.0, 2.0))
+        time.sleep(random.uniform(2.5, 4.5))
 
         # === PASSO 6: Preencher senha ===
         update_status(6, 'Preenchendo senha...')
