@@ -1183,6 +1183,28 @@ var App = App || {};
             var stepsEl = document.getElementById('auto-steps');
             if (stepsEl) stepsEl.innerHTML = buildStepsHTML(s.step, s.message);
 
+            // Banner pulsante quando SMS necessario
+            var modal = document.getElementById('auto-modal');
+            var msg = (s.message || '').toUpperCase();
+            var needsAction = msg.indexOf('ACAO NECESSARIA') > -1 || msg.indexOf('SMS') > -1;
+            var existingBanner = document.getElementById('sms-banner');
+            if (needsAction && !existingBanner && modal) {
+              var banner = document.createElement('div');
+              banner.id = 'sms-banner';
+              banner.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:10000;background:#fbbf24;color:#000;padding:16px 24px;border-radius:12px;font-size:15px;font-weight:700;box-shadow:0 4px 20px rgba(251,191,36,0.5);animation:pulse 1.5s infinite;max-width:500px;text-align:center;';
+              banner.innerHTML = '\u26A0 DIGITE O CODIGO SMS NO INSTAGRAM';
+              document.body.appendChild(banner);
+              // Adicionar keyframe se nao existe
+              if (!document.getElementById('sms-pulse-style')) {
+                var style = document.createElement('style');
+                style.id = 'sms-pulse-style';
+                style.innerHTML = '@keyframes pulse { 0%,100% { opacity: 1; transform: translateX(-50%) scale(1); } 50% { opacity: 0.7; transform: translateX(-50%) scale(1.05); } }';
+                document.head.appendChild(style);
+              }
+            } else if (!needsAction && existingBanner) {
+              existingBanner.remove();
+            }
+
             if (s.done) {
               clearInterval(polling);
               if (s.success) {

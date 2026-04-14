@@ -59,10 +59,32 @@ def update_status(step, message, done=False, success=False, error=None):
 
 
 def human_type(page, text):
+    """Digitacao humanizada com pausas de 'pensamento'."""
+    char_count = 0
     for char in text:
         page.keyboard.type(char)
         time.sleep(random.uniform(0.12, 0.35))
+        char_count += 1
+        # A cada 4-7 chars, pausa mais longa (pensando)
+        if char_count >= random.randint(4, 7):
+            time.sleep(random.uniform(0.5, 1.2))
+            char_count = 0
     time.sleep(random.uniform(0.5, 1.5))
+
+
+def human_wiggle(page):
+    """Movimentos aleatorios de mouse + scroll para parecer humano."""
+    try:
+        for _ in range(random.randint(2, 4)):
+            x = random.randint(200, 1200)
+            y = random.randint(200, 700)
+            page.mouse.move(x, y, steps=random.randint(5, 15))
+            time.sleep(random.uniform(0.1, 0.3))
+        if random.random() > 0.5:
+            page.mouse.wheel(0, random.randint(-100, 100))
+            time.sleep(random.uniform(0.2, 0.5))
+    except:
+        pass
 
 
 def react_fill(page, selector, value):
@@ -107,6 +129,10 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
     create_account._tuta_pass = tuta_pass
     create_account._vpn_off_for_code = False
     create_account._code_search_started = False
+    create_account._sms_detected = False
+    create_account._sms_done = False
+    create_account._sms_start_time = 0
+    create_account._sms_initial_len = 0
 
     with sync_playwright() as p:
         # === PASSO 1: Abrir Chrome ===
@@ -130,19 +156,72 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             locale='pt-BR',
             timezone_id='America/Sao_Paulo',
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-            viewport={'width': 1920, 'height': 1080},
-            screen={'width': 1920, 'height': 1080},
-            device_scale_factor=1,
             is_mobile=False,
             has_touch=False,
             java_script_enabled=True,
         )
-        # Remover webdriver flag (anti-deteccao)
+        # Anti-deteccao reforcada (reduzir trigger de SMS no Instagram)
         context.add_init_script("""
-            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-            Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-            Object.defineProperty(navigator, 'languages', { get: () => ['pt-BR', 'pt', 'en'] });
-            window.chrome = { runtime: {} };
+            // Remover webdriver flag COMPLETAMENTE
+            delete Object.getPrototypeOf(navigator).webdriver;
+
+            // Hardware realista
+            Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 8 });
+            Object.defineProperty(navigator, 'deviceMemory', { get: () => 8 });
+
+            // Plugins como PluginArray-like (nao array simples)
+            Object.defineProperty(navigator, 'plugins', {
+                get: () => {
+                    const plugins = [
+                        { name: 'PDF Viewer', filename: 'internal-pdf-viewer', description: 'Portable Document Format' },
+                        { name: 'Chrome PDF Viewer', filename: 'internal-pdf-viewer', description: '' },
+                        { name: 'Chromium PDF Viewer', filename: 'internal-pdf-viewer', description: '' },
+                        { name: 'Microsoft Edge PDF Viewer', filename: 'internal-pdf-viewer', description: '' },
+                        { name: 'WebKit built-in PDF', filename: 'internal-pdf-viewer', description: '' }
+                    ];
+                    plugins.item = i => plugins[i];
+                    plugins.namedItem = n => plugins.find(p => p.name === n);
+                    plugins.refresh = () => {};
+                    return plugins;
+                }
+            });
+
+            Object.defineProperty(navigator, 'languages', { get: () => ['pt-BR', 'pt', 'en-US', 'en'] });
+
+            // Chrome runtime mais completo
+            window.chrome = {
+                runtime: {},
+                loadTimes: function() {},
+                csi: function() {},
+                app: {}
+            };
+
+            // Permissions real (prompt, nao denied)
+            if (navigator.permissions && navigator.permissions.query) {
+                const originalQuery = navigator.permissions.query;
+                navigator.permissions.query = (params) => {
+                    if (params.name === 'notifications') {
+                        return Promise.resolve({ state: 'prompt', onchange: null });
+                    }
+                    return originalQuery.call(navigator.permissions, params);
+                };
+            }
+
+            // WebGL vendor/renderer realista
+            const getParameter = WebGLRenderingContext.prototype.getParameter;
+            WebGLRenderingContext.prototype.getParameter = function(param) {
+                if (param === 37445) return 'Intel Inc.';
+                if (param === 37446) return 'Intel Iris OpenGL Engine';
+                return getParameter.call(this, param);
+            };
+
+            // Screen mais realista
+            Object.defineProperty(screen, 'availWidth', { get: () => 1920 });
+            Object.defineProperty(screen, 'availHeight', { get: () => 1040 });
+            Object.defineProperty(screen, 'width', { get: () => 1920 });
+            Object.defineProperty(screen, 'height', { get: () => 1080 });
+            Object.defineProperty(screen, 'colorDepth', { get: () => 24 });
+            Object.defineProperty(screen, 'pixelDepth', { get: () => 24 });
         """)
 
         # === PASSO 0: Logar no Tutanota ANTES de tudo ===
@@ -486,6 +565,12 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
 
         time.sleep(random.uniform(1.5, 2.5))
 
+        # === Pausa longa antes do submit (reduz deteccao de SMS) ===
+        print('  -> Pausa pre-submit (parecer humano revisando o form)...')
+        human_wiggle(page)
+        time.sleep(random.uniform(3, 6))
+        human_wiggle(page)
+
         # === PASSO 7: Clicar em Cadastre-se / Sign up ===
         update_status(7, 'Clicando em Cadastre-se...')
         print('[7/8] Clicando submit...')
@@ -709,17 +794,87 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                         except:
                             pass
 
-                # === Pular telas opcionais ===
-                try:
-                    for txt in ['Skip', 'Pular', 'Not Now', 'Agora n\u00e3o']:
-                        skip = page.locator('button:has-text("' + txt + '"), div[role="button"]:has-text("' + txt + '")')
-                        if skip.first.is_visible(timeout=300):
-                            skip.first.click()
-                            print('  -> Pulou: ' + txt)
-                            time.sleep(2)
-                            break
-                except:
-                    pass
+                # === Detectar tela de SMS/telefone ===
+                if not getattr(create_account, '_sms_done', False):
+                    try:
+                        sms_input = page.locator('input[type="tel"], input[name="phone_number"], input[aria-label*="telefone" i], input[aria-label*="celular" i], input[aria-label*="phone" i]')
+                        sms_visible = False
+                        try:
+                            sms_visible = sms_input.first.is_visible(timeout=400)
+                        except:
+                            pass
+
+                        # Fallback: detectar por texto
+                        if not sms_visible:
+                            try:
+                                for kw in ['nmero de celular', 'numero de celular', 'phone number', 'telefone', 'Adicione um n']:
+                                    if page.locator('text=' + kw).first.is_visible(timeout=200):
+                                        sms_visible = True
+                                        break
+                            except:
+                                pass
+
+                        if sms_visible:
+                            if not getattr(create_account, '_sms_detected', False):
+                                create_account._sms_detected = True
+                                create_account._sms_start_time = time.time()
+                                # Capturar valor inicial do input (pode ja ter algo digitado)
+                                try:
+                                    create_account._sms_initial_len = len(sms_input.first.input_value() or '')
+                                except:
+                                    create_account._sms_initial_len = 0
+                                print('\n  *** SMS NECESSARIO! ***')
+                                print('  *** Pegue o SMS no seu celular e digite o codigo NO INSTAGRAM ***')
+                                update_status(8, 'ACAO NECESSARIA: Digite o codigo SMS no Instagram — aguardando 10min')
+
+                            # Verificar se usuario digitou codigo
+                            try:
+                                current_val = sms_input.first.input_value() or ''
+                            except:
+                                current_val = ''
+
+                            if len(current_val) >= 6 and len(current_val) > create_account._sms_initial_len:
+                                print('  -> Codigo SMS digitado pelo usuario! Clicando Continuar...')
+                                time.sleep(2)  # Dar tempo de terminar de digitar
+                                for bt in ['Continuar', 'Next', 'Confirm', 'Avan', 'Enviar']:
+                                    try:
+                                        b = page.locator('button:has-text("' + bt + '"), div[role="button"]:has-text("' + bt + '")').first
+                                        if b.is_visible(timeout=2000):
+                                            b.click()
+                                            print('  -> Clicou: ' + bt)
+                                            break
+                                    except:
+                                        continue
+                                create_account._sms_done = True
+                                time.sleep(5)
+
+                            # Status com countdown
+                            elapsed = int(time.time() - create_account._sms_start_time)
+                            mm = elapsed // 60
+                            ss = elapsed % 60
+                            if elapsed % 10 == 0:
+                                update_status(8, 'ACAO NECESSARIA: Digite codigo SMS no Instagram (' + str(mm).zfill(2) + ':' + str(ss).zfill(2) + '/10:00)')
+
+                            # Timeout 10 min
+                            if elapsed > 600:
+                                print('  -> Timeout SMS (10min) — usuario nao respondeu')
+                                update_status(8, 'Timeout SMS', done=True, error='sms_timeout')
+                                break
+                    except:
+                        pass
+
+                # === Pular telas opcionais (nao pular se SMS ativo) ===
+                if not getattr(create_account, '_sms_detected', False) or getattr(create_account, '_sms_done', False):
+                    try:
+                        for txt in ['Skip', 'Pular', 'Not Now', 'Agora n\u00e3o']:
+                            skip = page.locator('button:has-text("' + txt + '"), div[role="button"]:has-text("' + txt + '")')
+                            if skip.first.is_visible(timeout=300):
+                                skip.first.click()
+                                print('  -> Pulou: ' + txt)
+                                time.sleep(2)
+                                break
+                    except:
+                        pass
 
             except:
                 pass
