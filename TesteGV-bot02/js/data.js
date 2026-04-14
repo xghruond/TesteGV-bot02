@@ -311,6 +311,42 @@ App.showToast = function(message, type) {
   return toast;
 };
 
+// === Bot Status Badge (header) ===
+App._botStatusTimer = null;
+App.showBotStatus = function(platform, startTime) {
+  var badge = document.getElementById('bot-status-badge');
+  if (!badge) return;
+  startTime = startTime || Date.now();
+  badge.classList.remove('hidden');
+  badge.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:9999px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4);font-size:11px;font-weight:600;color:#4ade80;';
+  var label = platform || 'Bot';
+
+  function updateTimer() {
+    var elapsed = Math.floor((Date.now() - startTime) / 1000);
+    var mm = Math.floor(elapsed / 60);
+    var ss = elapsed % 60;
+    var time = (mm < 10 ? '0' : '') + mm + ':' + (ss < 10 ? '0' : '') + ss;
+    badge.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;animation:botPulse 1.2s infinite;"></span>' +
+      '<span>' + label + ' — ' + time + '</span>';
+  }
+  updateTimer();
+  if (App._botStatusTimer) clearInterval(App._botStatusTimer);
+  App._botStatusTimer = setInterval(updateTimer, 1000);
+};
+
+App.hideBotStatus = function() {
+  var badge = document.getElementById('bot-status-badge');
+  if (badge) {
+    badge.classList.add('hidden');
+    badge.style.display = 'none';
+    badge.innerHTML = '';
+  }
+  if (App._botStatusTimer) {
+    clearInterval(App._botStatusTimer);
+    App._botStatusTimer = null;
+  }
+};
+
 App.showUndoToast = function(message, onUndo) {
   var container = document.getElementById('toast-container');
   if (!container) {

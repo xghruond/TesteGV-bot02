@@ -507,6 +507,20 @@ var App = App || {};
         '</div>';
     }
 
+    // Calcular estatisticas
+    var totalRecords = history.length;
+    var fullySuccess = 0;
+    var partialSuccess = 0;
+    var accountsCreated = 0;
+    for (var hi = 0; hi < history.length; hi++) {
+      var rec = history[hi];
+      var cc = Object.values(rec.platforms).filter(function(p) { return p.completed; }).length;
+      var tt = Object.keys(rec.platforms).length;
+      accountsCreated += cc;
+      if (cc === tt) fullySuccess++;
+      else if (cc > 0) partialSuccess++;
+    }
+
     var rows = history.slice().reverse().map(function(record, idx) {
       var completedCount = Object.values(record.platforms).filter(function(p) { return p.completed; }).length;
       var total = Object.keys(record.platforms).length;
@@ -526,7 +540,7 @@ var App = App || {};
       }
 
       return '' +
-        '<div class="group flex items-center gap-4 rounded-xl border border-dark-700/60 bg-dark-800/80 p-4 backdrop-blur-sm hover:border-brand-500/40 hover:bg-dark-800 transition-all cursor-pointer" data-action="view-history-item" data-history-id="' + record.id + '">' +
+        '<div class="history-row group flex items-center gap-4 rounded-xl border border-dark-700/60 bg-dark-800/80 p-4 backdrop-blur-sm hover:border-brand-500/40 hover:bg-dark-800 transition-all cursor-pointer" data-search-name="' + App.escapeHtml((record.employee.nomeCompleto || '').toLowerCase()) + '" data-action="view-history-item" data-history-id="' + record.id + '">' +
           '<div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-500/15 text-brand-400">' + App.icons.user + '</div>' +
           '<div class="flex-1 min-w-0">' +
             '<p class="font-semibold text-dark-100 truncate group-hover:text-white transition-colors">' + App.escapeHtml(record.employee.nomeCompleto) + '</p>' +
@@ -548,9 +562,35 @@ var App = App || {};
         '</div>';
     }).join('');
 
+    // Dashboard de estatisticas
+    var dashboardHtml =
+      '<div class="mb-6 grid grid-cols-3 gap-3">' +
+        '<div class="rounded-xl border border-dark-700/60 bg-dark-900/40 backdrop-blur-sm p-4 text-center">' +
+          '<div class="text-3xl font-bold text-brand-400">' + totalRecords + '</div>' +
+          '<div class="text-xs text-dark-400 mt-1">Onboardings</div>' +
+        '</div>' +
+        '<div class="rounded-xl border border-green-500/20 bg-green-500/5 backdrop-blur-sm p-4 text-center">' +
+          '<div class="text-3xl font-bold text-green-400">' + fullySuccess + '</div>' +
+          '<div class="text-xs text-dark-400 mt-1">Completos</div>' +
+        '</div>' +
+        '<div class="rounded-xl border border-amber-500/20 bg-amber-500/5 backdrop-blur-sm p-4 text-center">' +
+          '<div class="text-3xl font-bold text-amber-400">' + accountsCreated + '</div>' +
+          '<div class="text-xs text-dark-400 mt-1">Contas criadas</div>' +
+        '</div>' +
+      '</div>';
+
+    // Busca
+    var searchHtml =
+      '<div class="mb-4 relative">' +
+        '<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-500">' +
+          '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>' +
+        '</div>' +
+        '<input type="text" id="history-search" placeholder="Buscar por nome do colaborador..." class="dark-input block w-full rounded-xl py-2.5 pl-10 pr-4 text-sm" />' +
+      '</div>';
+
     return '' +
       '<div class="mx-auto max-w-3xl">' +
-        '<div class="mb-8 flex items-center justify-between">' +
+        '<div class="mb-6 flex items-center justify-between">' +
           '<div class="flex items-center gap-3">' +
             '<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/15 text-brand-400">' + App.icons.clipboard + '</div>' +
             '<div>' +
@@ -561,7 +601,9 @@ var App = App || {};
           '<button data-action="back-welcome" class="rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' +
             App.icons.chevronLeft + ' Voltar</button>' +
         '</div>' +
-        '<div class="space-y-3">' + rows + '</div>' +
+        dashboardHtml +
+        searchHtml +
+        '<div class="space-y-3" id="history-rows">' + rows + '</div>' +
       '</div>';
   }
 
@@ -625,6 +667,20 @@ var App = App || {};
           break;
         case 'history':
           content.innerHTML = renderHistory();
+          // Hook busca
+          setTimeout(function() {
+            var search = document.getElementById('history-search');
+            if (search) {
+              search.addEventListener('input', function() {
+                var q = search.value.toLowerCase().trim();
+                var rows = document.querySelectorAll('.history-row');
+                for (var r = 0; r < rows.length; r++) {
+                  var name = rows[r].getAttribute('data-search-name') || '';
+                  rows[r].style.display = (!q || name.indexOf(q) !== -1) ? '' : 'none';
+                }
+              });
+            }
+          }, 50);
           break;
         case 'history-detail':
           content.innerHTML = renderHistoryDetail(state.viewingHistoryId);
@@ -943,10 +999,14 @@ var App = App || {};
     var cancelled = false;
     var pollErrors = 0;
 
+    // Mostrar badge no header
+    App.showBotStatus('ProtonMail', Date.now());
+
     document.getElementById('auto-cancel').addEventListener('click', function() {
       cancelled = true;
       if (polling) clearInterval(polling);
       overlay.remove();
+      App.hideBotStatus();
     });
 
     // Iniciar automação no servidor
@@ -975,6 +1035,7 @@ var App = App || {};
 
             if (s.done) {
               clearInterval(polling);
+              App.hideBotStatus();
               if (s.success) {
                 // Sucesso!
                 state.platforms.protonmail = { completed: true, accountInfo: username + '@proton.me', password: password };
@@ -1152,10 +1213,14 @@ var App = App || {};
     var cancelled = false;
     var pollErrors = 0;
 
+    // Mostrar badge no header
+    App.showBotStatus('Instagram', Date.now());
+
     document.getElementById('auto-cancel').addEventListener('click', function() {
       cancelled = true;
       if (polling) clearInterval(polling);
       overlay.remove();
+      App.hideBotStatus();
     });
 
     fetch('/api/create-instagram', {
@@ -1207,6 +1272,7 @@ var App = App || {};
 
             if (s.done) {
               clearInterval(polling);
+              App.hideBotStatus();
               if (s.success) {
                 state.platforms.instagram = { completed: true, accountInfo: '@' + username };
                 App.storage.save(state);

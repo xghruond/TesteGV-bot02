@@ -53,6 +53,7 @@ App.renderHeader = function(state) {
             '</div>' +
           '</div>' +
           '<div class="flex items-center gap-2">' +
+            '<div id="bot-status-badge" class="hidden"></div>' +
             (state.employee.nomeCompleto ? '<span class="hidden text-xs text-dark-400 sm:inline">' + App.escapeHtml(state.employee.nomeCompleto) + '</span>' : '') +
             '<button data-action="reset" aria-label="Recomeçar onboarding" class="no-print flex h-9 w-9 items-center justify-center rounded-lg text-dark-500 transition-colors hover:bg-red-500/10 hover:text-red-400" title="Recomeçar">' +
               App.icons.refresh +

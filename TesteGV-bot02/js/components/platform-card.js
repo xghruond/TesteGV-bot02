@@ -26,8 +26,8 @@ App.renderPlatformCards = function(state) {
       : '';
 
     var borderColor = isCompleted
-      ? 'border-green-500/30 bg-green-500/5'
-      : 'border-dark-700/40 bg-dark-900/30 hover:border-brand-500/40 hover:bg-dark-900/50';
+      ? 'border-green-500/40 bg-green-500/5 shadow-lg shadow-green-500/10'
+      : 'border-dark-700/40 bg-dark-900/30 hover:border-brand-500/50 hover:bg-dark-900/50 hover:shadow-lg hover:shadow-brand-500/10 hover:scale-[1.02]';
 
     var undoButton = isCompleted
       ? '<button data-action="undo-platform" data-platform-id="' + platform.id + '" aria-label="Desfazer conclusão de ' + platform.name + '" class="mt-1 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-500/30 px-3 py-2 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/10 hover:border-amber-500/50">' +

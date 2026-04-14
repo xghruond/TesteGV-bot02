@@ -115,8 +115,8 @@ App.renderSummary = function(state) {
         '<h1 class="text-2xl font-bold">Relatório - Green BOT</h1>' +
         '<p class="text-sm text-gray-600">Gerado em: ' + completedAt + '</p>' +
       '</div>' +
-      '<div class="mb-6 text-center no-print">' +
-        '<div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/15 text-green-400">' +
+      '<div class="mb-6 text-center no-print hero-summary" style="position:relative;padding:24px 0;">' +
+        '<div class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-green-400/20 to-emerald-600/20 border-2 border-green-500/40 text-green-400 shadow-xl shadow-green-500/20" style="animation: pulseGlow 2s ease-in-out infinite;">' +
           App.icons.checkCircle +
         '</div>' +
         '<h2 class="text-2xl font-bold text-dark-50">Processo Concluído!</h2>' +
