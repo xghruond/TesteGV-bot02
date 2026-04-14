@@ -11,10 +11,33 @@ import time
 import random
 import re
 import functools
+import subprocess
 from playwright.sync_api import sync_playwright
 
 
 print = functools.partial(print, flush=True)
+
+
+def disconnect_vpn():
+    """Desconecta ProtonVPN para acessar Tutanota com IP real."""
+    print('  -> [VPN] Desconectando...')
+    subprocess.run(['taskkill', '/F', '/IM', 'ProtonVPN.WireGuardService.exe'],
+                   capture_output=True)
+    subprocess.run(['taskkill', '/F', '/IM', 'ProtonVPNService.exe'],
+                   capture_output=True)
+    time.sleep(4)
+    print('  -> [VPN] Desconectado!')
+
+
+def reconnect_vpn():
+    """Reconecta ProtonVPN."""
+    print('  -> [VPN] Reconectando...')
+    subprocess.run(['net', 'start', 'ProtonVPN Service'], capture_output=True)
+    # Abrir o client para trigger reconexao
+    subprocess.run(['start', '', 'C:/Program Files/Proton/VPN/v4.3.13/ProtonVPN.Client.exe'],
+                   shell=True, capture_output=True)
+    time.sleep(10)
+    print('  -> [VPN] Reconectado!')
 
 # Status global (lido pelo server.py)
 status = {
@@ -81,6 +104,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
     create_account._mail_page = None
     create_account._mail_attempts = 0
     create_account._tuta_pass = tuta_pass
+    create_account._vpn_off_for_code = False
 
     with sync_playwright() as p:
         # === PASSO 1: Abrir Chrome ===
@@ -97,6 +121,79 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             locale='pt-BR',
             timezone_id='America/Sao_Paulo'
         )
+
+        # === PASSO 0: Logar no Tutanota ANTES de tudo ===
+        update_status(1, 'Logando no Tutanota primeiro...')
+        print('[0/8] Logando no Tutanota (para buscar codigo depois)...')
+        mail_page = None
+        mail_logged_in = False
+        try:
+            disconnect_vpn()
+            mail_page = context.new_page()
+            mail_page.set_default_timeout(30000)
+            mail_page.goto('https://app.tuta.com/login', timeout=30000)
+            time.sleep(8)
+
+            tuta_email = 'teste.greenvillage@tutamail.com'
+            tuta_pass_val = 'Waxdwaxdw134679852'
+
+            # Preencher email
+            inputs = mail_page.locator('input:visible')
+            if inputs.count() >= 1:
+                inputs.nth(0).click()
+                time.sleep(0.5)
+                mail_page.keyboard.press('Control+a')
+                mail_page.keyboard.press('Backspace')
+                time.sleep(0.3)
+                human_type(mail_page, tuta_email)
+                print('  -> Email preenchido')
+            time.sleep(1)
+
+            # Senha
+            pw = mail_page.locator('input[type="password"]:visible')
+            if pw.count() >= 1:
+                pw.first.click()
+                time.sleep(0.5)
+                human_type(mail_page, tuta_pass_val)
+                print('  -> Senha preenchida')
+            time.sleep(1)
+
+            # Entrar via JS
+            mail_page.evaluate("""() => {
+                const btns = document.querySelectorAll('button');
+                for (const b of btns) {
+                    const t = (b.textContent || '').toLowerCase();
+                    if (b.offsetHeight > 0 && (t.includes('entrar') || t.includes('log in'))) {
+                        b.click(); return true;
+                    }
+                }
+                return false;
+            }""")
+            print('  -> Login enviado!')
+            time.sleep(15)
+
+            # Verificar inbox
+            for w in range(10):
+                try:
+                    body = mail_page.evaluate("() => (document.body.textContent || '').toLowerCase()")
+                    if 'entrada' in body or 'inbox' in body:
+                        mail_logged_in = True
+                        print('  -> Tutanota inbox OK!')
+                        break
+                except:
+                    pass
+                time.sleep(2)
+
+            if not mail_logged_in:
+                print('  -> AVISO: Tutanota pode nao ter logado, mas continuando...')
+
+            # Reconectar VPN para Instagram
+            reconnect_vpn()
+        except Exception as e:
+            print('  -> Erro login Tutanota: ' + str(e))
+            reconnect_vpn()
+
+        # === Agora abrir Instagram ===
         page = context.new_page()
         page.set_default_timeout(20000)
 
@@ -456,53 +553,22 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                     print('  -> Loop ' + str(i) + ': url=' + url[:50] + ' code_visible=' + str(code_visible))
 
                 if code_visible and not code_done:
-                    # Abrir Tutanota em background (SEM bring_to_front!)
-                    if not mail_page:
-                        print('  -> Tela de codigo detectada! Abrindo Tutanota...')
-                        update_status(8, 'Abrindo Tutanota...')
-                        try:
-                            mail_page = context.new_page()
-                            mail_page.goto('https://app.tuta.com/login', timeout=30000)
-                            time.sleep(5)
-                            tuta_email = 'teste.greenvillage@tutamail.com'
-                            tuta_pass = 'Waxdwaxdw134679852'
-                            print('  -> Tutanota login: ' + tuta_email)
-                            # Preencher email
-                            try:
-                                label = mail_page.locator('text=Endere').first
-                                if label.is_visible(timeout=3000):
-                                    box = label.bounding_box()
-                                    if box:
-                                        mail_page.mouse.click(box['x'] + 100, box['y'] + 10)
-                                        time.sleep(0.5)
-                            except:
-                                mail_page.keyboard.press('Tab')
-                                time.sleep(0.5)
-                            mail_page.keyboard.press('Control+a')
-                            mail_page.keyboard.press('Backspace')
-                            time.sleep(0.3)
-                            human_type(mail_page, tuta_email)
-                            time.sleep(1)
-                            # Senha
-                            mail_page.keyboard.press('Tab')
-                            time.sleep(0.5)
-                            human_type(mail_page, tuta_pass)
-                            time.sleep(1)
-                            # Entrar
-                            for txt in ['Entrar', 'Log in']:
+                    if not code_done:
+                        # Tutanota ja esta logado (step 0). So precisa desligar VPN e atualizar.
+                        if not getattr(create_account, '_vpn_off_for_code', False):
+                            print('  -> Tela de codigo detectada! Desligando VPN...')
+                            update_status(8, 'Desconectando VPN para buscar codigo...')
+                            disconnect_vpn()
+                            create_account._vpn_off_for_code = True
+                            time.sleep(3)
+                            # Atualizar inbox do Tutanota
+                            if mail_page:
                                 try:
-                                    btn = mail_page.locator('button:has-text("' + txt + '")').first
-                                    if btn.is_visible(timeout=2000):
-                                        btn.click()
-                                        break
+                                    mail_page.reload()
+                                    time.sleep(5)
+                                    print('  -> Tutanota inbox atualizado')
                                 except:
-                                    continue
-                            print('  -> Login Tutanota enviado!')
-                            time.sleep(15)
-                            mail_logged_in = True
-                        except Exception as e:
-                            print('  -> Erro login: ' + str(e))
-                            mail_page = None
+                                    pass
 
                     # Buscar codigo SEM trocar de aba (usa evaluate no background)
                     if mail_page and mail_logged_in:
@@ -512,16 +578,44 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                             update_status(8, 'Buscando codigo no Tutanota...')
 
                         try:
-                            # Reload a cada 10 tentativas
+                            # Reload a cada 10 tentativas para emails novos
                             if attempt > 1 and attempt % 10 == 0:
                                 mail_page.reload()
-                                time.sleep(5)
+                                time.sleep(8)
 
-                            # Buscar codigo na pagina do ProtonMail (sem bring_to_front)
+                            # Clicar em Entrada/Inbox para atualizar
+                            if attempt > 1 and attempt % 5 == 0:
+                                try:
+                                    mail_page.evaluate("""() => {
+                                        const els = document.querySelectorAll('*');
+                                        for (const el of els) {
+                                            if (el.offsetHeight > 0 && (el.textContent.trim() === 'Entrada' || el.textContent.trim() === 'Inbox')) {
+                                                el.click();
+                                                return true;
+                                            }
+                                        }
+                                        return false;
+                                    }""")
+                                except:
+                                    pass
+
+                            # Buscar codigo na pagina do Tutanota
                             full_text = mail_page.evaluate("() => document.body.textContent || ''")
+                            full_lower = full_text.lower()
                             codes = re.findall(r'\b(\d{6})\b', full_text)
 
-                            if codes and ('instagram' in full_text.lower() or len(codes) > 1):
+                            # Debug: mostrar o que vê a cada 15 tentativas
+                            if attempt % 15 == 0:
+                                try:
+                                    safe = full_text[:150].encode('ascii', 'replace').decode().replace('\n', ' ')
+                                    print('  -> Tutanota texto: ' + safe)
+                                    print('  -> Codigos: ' + str(codes[:5]))
+                                except:
+                                    pass
+
+                            has_ig = 'instagram' in full_lower or 'confirm' in full_lower or 'code' in full_lower
+
+                            if codes and has_ig:
                                 code = codes[0]
                                 print('  -> CODIGO ENCONTRADO: ' + code)
                                 update_status(8, 'Codigo: ' + code + ' — preenchendo...')
@@ -551,6 +645,8 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                     mail_page.close()
                                 except:
                                     pass
+                                # Reconectar VPN antes de submeter codigo
+                                reconnect_vpn()
                                 time.sleep(5)
                         except:
                             pass
@@ -577,7 +673,11 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             update_status(8, 'Timeout — verifique o navegador.', done=True, error='timeout')
             print('\nTimeout.')
 
-        print('Navegador aberto por 5 min...')
+        # Garantir VPN reconectado antes de fechar
+        try:
+            reconnect_vpn()
+        except:
+            pass
         time.sleep(10)
         browser.close()
 

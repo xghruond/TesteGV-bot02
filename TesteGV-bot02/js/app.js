@@ -1080,8 +1080,8 @@ var App = App || {};
 
   // Criar conta Instagram automaticamente
   bindAction('auto-create-instagram', function() {
-    // Avisar para usar VPN do Opera
-    if (!confirm('IMPORTANTE antes de continuar:\n\n1. Desconecte o Proton VPN\n2. Ative a VPN do Opera (clique VPN na barra de endereco)\n\nIsso evita bloqueios do Instagram.\n\nPronto?')) {
+    // VPN é gerenciado automaticamente pelo bot
+    if (!confirm('O bot vai criar a conta Instagram automaticamente.\nO VPN sera desligado/religado conforme necessario.\n\nContinuar?')) {
       return;
     }
 
