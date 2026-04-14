@@ -108,16 +108,14 @@ App.renderWizard = function(state) {
 
       // Credentials panel
       '<div class="mb-5 rounded-xl border border-brand-500/30 bg-dark-900/30 backdrop-blur-sm p-5">' +
-        '<div class="flex items-center justify-between mb-3">' +
-          '<h3 class="flex items-center gap-2 text-sm font-bold text-brand-400">' +
-            App.icons.clipboard + ' Dados para Cadastro' +
-          '</h3>' +
-          '<button data-action="copy" data-copy-text="' + App.escapeHtml(credentials.map(function(c) { return c.label + ': ' + c.value; }).join('\n')) + '" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-500/10 border border-brand-500/30 px-3 py-1.5 text-xs font-semibold text-brand-400 hover:bg-brand-500/20 transition-colors">' +
-            App.icons.copy + ' Copiar Tudo</button>' +
-        '</div>' +
+        '<h3 class="flex items-center gap-2 text-sm font-bold text-brand-400 mb-3">' +
+          App.icons.clipboard + ' Dados para Cadastro' +
+        '</h3>' +
         '<div class="bg-dark-900/30 rounded-lg p-3">' +
           credRows +
         '</div>' +
+        '<button data-action="copy" data-copy-text="' + App.escapeHtml(credentials.map(function(c) { return c.label + ': ' + c.value; }).join('\n')) + '" class="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500/15 border border-brand-500/40 px-4 py-3 text-sm font-bold text-brand-300 hover:bg-brand-500/25 hover:border-brand-500/60 transition-all active:scale-[0.98]">' +
+          App.icons.copy + ' Copiar Todos os Dados</button>' +
       '</div>' +
 
       // Open register button (com automação para ProtonMail e Instagram)

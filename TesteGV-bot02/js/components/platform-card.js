@@ -14,6 +14,13 @@ App.renderPlatformCards = function(state) {
       ? '<span class="inline-flex items-center gap-1 rounded-full bg-green-500/15 px-3 py-1 text-xs font-medium text-green-400">' + App.icons.check + ' Concluído</span>'
       : '<span class="inline-flex items-center rounded-full bg-dark-700/50 px-3 py-1 text-xs font-medium text-dark-400">Pendente</span>';
 
+    // Badge especial para Instagram (alta taxa de falha em 2026)
+    var warningBadge = '';
+    if (platform.id === 'instagram' && !isCompleted) {
+      warningBadge = '<span class="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-semibold text-amber-400 mt-1" title="Instagram detecta automacao e suspende contas. Recomendamos criar manualmente.">' +
+        '&#9888; Automação instável</span>';
+    }
+
     var accountInfo = isCompleted && pState.accountInfo
       ? '<p class="mt-1 text-xs text-dark-400 truncate max-w-[160px] sm:max-w-[180px]">' + esc(pState.accountInfo) + '</p>'
       : '';
@@ -39,6 +46,7 @@ App.renderPlatformCards = function(state) {
             accountInfo +
           '</div>' +
           statusBadge +
+          warningBadge +
         '</button>' +
         '<a href="' + platform.registerUrl + '" target="_blank" rel="noopener noreferrer"' +
           ' aria-label="Acessar site de ' + platform.name + '"' +

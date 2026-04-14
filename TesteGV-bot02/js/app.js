@@ -1665,6 +1665,16 @@ var App = App || {};
           return;
         }
 
+        // Mostrar loading state no botao
+        var submitBtn = document.getElementById('form-submit-btn');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          var lbl = submitBtn.querySelector('.submit-label');
+          var spn = submitBtn.querySelector('.submit-spinner');
+          if (lbl) lbl.textContent = 'Processando...';
+          if (spn) spn.style.display = 'inline-flex';
+        }
+
         for (var key in data) {
           if (data.hasOwnProperty(key)) state.employee[key] = data[key];
         }
@@ -1683,8 +1693,9 @@ var App = App || {};
         }
       });
 
-      // Auto-gerar chips de variações ao digitar o nome
+      // Auto-gerar chips de variações ao digitar o nome (com debounce)
       var nameInput = form.querySelector('[name="nomeCompleto"]');
+      var chipsDebounce = null;
       if (nameInput) {
         var updateEmailChips = function() {
           var chipsContainer = document.getElementById('email-variations-chips');
@@ -1703,9 +1714,59 @@ var App = App || {};
               '">' + App.escapeHtml(v) + '</button>';
           }).join('');
         };
-        nameInput.addEventListener('input', updateEmailChips);
+        nameInput.addEventListener('input', function() {
+          if (chipsDebounce) clearTimeout(chipsDebounce);
+          chipsDebounce = setTimeout(updateEmailChips, 300);
+        });
         // Preencher chips iniciais se o nome já existe
         updateEmailChips();
+      }
+
+      // === Preview de email ao vivo ===
+      var emailInput = form.querySelector('[name="emailDesejado"]');
+      var updateEmailPreview = function() {
+        var previewEl = document.getElementById('email-preview-value');
+        if (!previewEl || !emailInput) return;
+        var val = emailInput.value.trim();
+        previewEl.textContent = val || '...';
+      };
+      if (emailInput) {
+        emailInput.addEventListener('input', updateEmailPreview);
+        updateEmailPreview();
+      }
+
+      // === Validação inline em tempo real (no input, nao so blur) ===
+      var applyValidation = function(input) {
+        var fieldName = input.getAttribute('name');
+        var value = input.value;
+        var wrapper = input.closest('.field-wrapper');
+        if (!wrapper || !fieldName) return;
+
+        var iconSlot = wrapper.querySelector('.field-validity');
+        input.classList.remove('field-valid', 'field-invalid');
+        if (iconSlot) iconSlot.innerHTML = '';
+
+        if (!value || value.trim() === '') return;
+
+        var isValid = validateFieldVisual(fieldName, value);
+        if (isValid) {
+          input.classList.add('field-valid');
+          if (iconSlot) {
+            iconSlot.innerHTML = '<svg class="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
+          }
+        } else {
+          input.classList.add('field-invalid');
+          if (iconSlot) {
+            iconSlot.innerHTML = '<svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>';
+          }
+        }
+      };
+
+      var validationFields = form.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input[type="date"]');
+      for (var vi = 0; vi < validationFields.length; vi++) {
+        validationFields[vi].addEventListener('input', function() { applyValidation(this); });
+        // Aplicar validacao inicial se ja tem valor
+        if (validationFields[vi].value) applyValidation(validationFields[vi]);
       }
 
       // Auto-save form fields on blur + visual validation
