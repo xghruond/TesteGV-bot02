@@ -337,10 +337,30 @@ input[type="tel"]::placeholder {
 
 /* ===== Platform card hover effect ===== */
 .platform-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+  will-change: transform;
 }
 .platform-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.02);
+}
+.platform-card:active {
+  transform: translateY(-1px) scale(1.01);
+}
+
+/* ===== Frosted glass stronger ===== */
+.dark-input,
+.dark-header {
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+}
+
+/* History rows hover mais forte */
+.history-row {
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.history-row:hover {
+  transform: translateX(3px);
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.08);
 }
 
 /* ===== Wizard animations ===== */
