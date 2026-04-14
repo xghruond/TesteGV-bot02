@@ -61,7 +61,8 @@ def update_status(step, message, done=False, success=False, error=None):
 def human_type(page, text):
     for char in text:
         page.keyboard.type(char)
-        time.sleep(random.uniform(0.06, 0.18))
+        time.sleep(random.uniform(0.12, 0.35))
+    time.sleep(random.uniform(0.5, 1.5))
 
 
 def react_fill(page, selector, value):
@@ -105,6 +106,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
     create_account._mail_attempts = 0
     create_account._tuta_pass = tuta_pass
     create_account._vpn_off_for_code = False
+    create_account._code_search_started = False
 
     with sync_playwright() as p:
         # === PASSO 1: Abrir Chrome ===
@@ -187,13 +189,12 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             if not mail_logged_in:
                 print('  -> AVISO: Tutanota pode nao ter logado, mas continuando...')
 
-            # Reconectar VPN para Instagram
-            reconnect_vpn()
+            # NAO reconectar VPN — Instagram funciona melhor com IP real
+            print('  -> VPN permanece desligado para Instagram (IP real)')
         except Exception as e:
             print('  -> Erro login Tutanota: ' + str(e))
-            reconnect_vpn()
 
-        # === Agora abrir Instagram ===
+        # === Agora abrir Instagram (SEM VPN — IP real) ===
         page = context.new_page()
         page.set_default_timeout(20000)
 
@@ -553,24 +554,21 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                     print('  -> Loop ' + str(i) + ': url=' + url[:50] + ' code_visible=' + str(code_visible))
 
                 if code_visible and not code_done:
-                    if not code_done:
-                        # Tutanota ja esta logado (step 0). So precisa desligar VPN e atualizar.
-                        if not getattr(create_account, '_vpn_off_for_code', False):
-                            print('  -> Tela de codigo detectada! Desligando VPN...')
-                            update_status(8, 'Desconectando VPN para buscar codigo...')
-                            disconnect_vpn()
-                            create_account._vpn_off_for_code = True
-                            time.sleep(3)
-                            # Atualizar inbox do Tutanota
-                            if mail_page:
-                                try:
-                                    mail_page.reload()
-                                    time.sleep(5)
-                                    print('  -> Tutanota inbox atualizado')
-                                except:
-                                    pass
+                    # Tutanota ja esta logado (step 0) e VPN ja esta desligado
+                    if not getattr(create_account, '_code_search_started', False):
+                        create_account._code_search_started = True
+                        print('  -> Tela de codigo detectada! Atualizando Tutanota...')
+                        update_status(8, 'Buscando codigo no Tutanota...')
+                        # Atualizar inbox do Tutanota
+                        if mail_page:
+                            try:
+                                mail_page.reload()
+                                time.sleep(5)
+                                print('  -> Tutanota inbox atualizado')
+                            except:
+                                pass
 
-                    # Buscar codigo SEM trocar de aba (usa evaluate no background)
+                    # Buscar codigo no Tutanota
                     if mail_page and mail_logged_in:
                         attempt = i + 1
                         if attempt % 5 == 0:
@@ -578,42 +576,58 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                             update_status(8, 'Buscando codigo no Tutanota...')
 
                         try:
-                            # Reload a cada 10 tentativas para emails novos
-                            if attempt > 1 and attempt % 10 == 0:
+                            # Atualizar inbox: reload a cada 8 tentativas
+                            if attempt > 1 and attempt % 8 == 0:
                                 mail_page.reload()
-                                time.sleep(8)
+                                time.sleep(6)
 
-                            # Clicar em Entrada/Inbox para atualizar
-                            if attempt > 1 and attempt % 5 == 0:
-                                try:
-                                    mail_page.evaluate("""() => {
-                                        const els = document.querySelectorAll('*');
-                                        for (const el of els) {
-                                            if (el.offsetHeight > 0 && (el.textContent.trim() === 'Entrada' || el.textContent.trim() === 'Inbox')) {
-                                                el.click();
-                                                return true;
-                                            }
+                            # PASSO 1: Clicar no email do Instagram na lista
+                            clicked_email = mail_page.evaluate("""() => {
+                                // Buscar items clicaveis na lista de emails
+                                const items = document.querySelectorAll('div[role="button"], li, [class*="row"], [class*="list-row"]');
+                                for (const item of items) {
+                                    if (item.offsetHeight > 15 && item.offsetHeight < 120) {
+                                        const text = (item.textContent || '').toLowerCase();
+                                        if (text.includes('instagram') || text.includes('your') || text.includes('code') || text.includes('confirm')) {
+                                            item.click();
+                                            return 'clicked: ' + text.substring(0, 40);
                                         }
-                                        return false;
-                                    }""")
+                                    }
+                                }
+                                // Fallback: clicar primeiro item que parece email
+                                for (const item of items) {
+                                    if (item.offsetHeight > 30 && item.offsetHeight < 100 && item.textContent.length > 10) {
+                                        item.click();
+                                        return 'fallback: ' + item.textContent.substring(0, 30);
+                                    }
+                                }
+                                return 'nenhum';
+                            }""")
+
+                            if attempt % 5 == 0:
+                                try:
+                                    print('  -> Click email: ' + str(clicked_email).encode('ascii', 'replace').decode()[:60])
                                 except:
                                     pass
 
-                            # Buscar codigo na pagina do Tutanota
+                            # PASSO 2: Esperar painel de detalhes carregar
+                            time.sleep(3)
+
+                            # PASSO 3: Ler texto COMPLETO da pagina (agora com email aberto)
                             full_text = mail_page.evaluate("() => document.body.textContent || ''")
                             full_lower = full_text.lower()
                             codes = re.findall(r'\b(\d{6})\b', full_text)
 
-                            # Debug: mostrar o que vê a cada 15 tentativas
-                            if attempt % 15 == 0:
+                            # Debug a cada 10 tentativas
+                            if attempt % 10 == 0:
                                 try:
-                                    safe = full_text[:150].encode('ascii', 'replace').decode().replace('\n', ' ')
-                                    print('  -> Tutanota texto: ' + safe)
+                                    safe = full_text[:200].encode('ascii', 'replace').decode().replace('\n', ' ')
+                                    print('  -> Texto: ' + safe[:100])
                                     print('  -> Codigos: ' + str(codes[:5]))
                                 except:
                                     pass
 
-                            has_ig = 'instagram' in full_lower or 'confirm' in full_lower or 'code' in full_lower
+                            has_ig = 'instagram' in full_lower or 'confirm' in full_lower or 'code' in full_lower or 'your' in full_lower
 
                             if codes and has_ig:
                                 code = codes[0]
@@ -645,8 +659,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                     mail_page.close()
                                 except:
                                     pass
-                                # Reconectar VPN antes de submeter codigo
-                                reconnect_vpn()
+                                # VPN permanece desligado — Instagram com IP real
                                 time.sleep(5)
                         except:
                             pass
