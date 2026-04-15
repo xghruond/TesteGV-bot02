@@ -99,6 +99,34 @@ App.storage = {
     return this.loadFavorites().indexOf(historyId) !== -1;
   },
 
+  // === Plataformas customizadas ===
+  CUSTOM_PLATFORMS_KEY: 'gv-custom-platforms',
+
+  loadCustomPlatforms: function() {
+    try {
+      var raw = localStorage.getItem(this.CUSTOM_PLATFORMS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  },
+
+  saveCustomPlatform: function(platform) {
+    try {
+      var all = this.loadCustomPlatforms();
+      platform.id = 'custom_' + Date.now().toString(36);
+      platform.custom = true;
+      all.push(platform);
+      localStorage.setItem(this.CUSTOM_PLATFORMS_KEY, JSON.stringify(all));
+      return platform;
+    } catch (e) { return null; }
+  },
+
+  deleteCustomPlatform: function(id) {
+    try {
+      var all = this.loadCustomPlatforms().filter(function(p) { return p.id !== id; });
+      localStorage.setItem(this.CUSTOM_PLATFORMS_KEY, JSON.stringify(all));
+    } catch (e) {}
+  },
+
   // === Fila de import CSV ===
   IMPORT_QUEUE_KEY: 'gv-import-queue',
 

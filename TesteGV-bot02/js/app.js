@@ -28,6 +28,40 @@ var App = App || {};
     viewingHistoryId: null
   };
 
+  // === Mesclar plataformas customizadas em App.platforms ===
+  function loadCustomPlatformsIntoApp() {
+    var customs = App.storage.loadCustomPlatforms();
+    for (var i = 0; i < customs.length; i++) {
+      var p = customs[i];
+      if (!App.platforms[p.id]) {
+        App.platforms[p.id] = {
+          id: p.id,
+          name: p.name,
+          description: p.description || 'Plataforma customizada',
+          registerUrl: p.registerUrl || '#',
+          custom: true,
+          color: {
+            bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700',
+            accent: 'bg-indigo-600', hover: 'hover:border-indigo-400',
+            light: 'bg-indigo-100', icon: '#6366f1'
+          },
+          icon: p.icon || '<svg viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
+          steps: [
+            {
+              title: 'Criar conta em ' + p.name,
+              description: p.instructions || 'Abra o site e crie sua conta manualmente.',
+              tip: p.tip || 'Use o email ProtonMail criado anteriormente e a senha sugerida.',
+              action: 'open_register',
+              hasAutomation: false
+            }
+          ]
+        };
+        defaultState.platforms[p.id] = { completed: false, accountInfo: '' };
+      }
+    }
+  }
+  loadCustomPlatformsIntoApp();
+
   // Estado atual
   var state = JSON.parse(JSON.stringify(defaultState));
   var hasSavedState = false;
@@ -594,6 +628,9 @@ var App = App || {};
             ? '<button data-action="resume-queue" class="mt-2 w-full rounded-xl border border-amber-500/30 bg-amber-500/10 px-8 py-3 text-sm font-medium text-amber-400 hover:bg-amber-500/20 transition-colors">' +
                 'Continuar fila (' + App.storage.loadImportQueue().length + ' restantes)</button>'
             : '') +
+          '<button data-action="manage-platforms" class="mt-2 w-full rounded-xl border border-indigo-500/30 bg-indigo-500/5 px-8 py-3 text-sm font-medium text-indigo-300 hover:bg-indigo-500/10 hover:border-indigo-500/50 transition-colors flex items-center justify-center gap-2">' +
+            '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>' +
+            ' Gerenciar Plataformas</button>' +
           '<button data-action="view-logs" class="mt-2 w-full rounded-xl border border-dark-700/50 bg-dark-800/40 px-8 py-3 text-sm font-medium text-dark-400 backdrop-blur-sm transition-all hover:bg-dark-800/60 hover:border-brand-500/30 hover:text-brand-400">' +
             '<svg class="inline-block w-4 h-4 mr-1.5 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>' +
             'Logs de Automacao</button>' +
@@ -2177,6 +2214,95 @@ var App = App || {};
 
   bindAction('view-logs', function() {
     navigateTo('logs');
+  });
+
+  bindAction('manage-platforms', function() {
+    var existing = document.getElementById('platforms-modal');
+    if (existing) { existing.remove(); return; }
+    var customs = App.storage.loadCustomPlatforms();
+    var modal = document.createElement('div');
+    modal.id = 'platforms-modal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(8px);';
+
+    var customList = customs.length
+      ? customs.map(function(p) {
+          return '<div class="flex items-center justify-between p-3 rounded-lg border border-indigo-500/30 bg-indigo-500/5 mb-2">' +
+            '<div class="flex-1 min-w-0">' +
+              '<p class="text-sm font-semibold text-indigo-300">' + App.escapeHtml(p.name) + '</p>' +
+              '<p class="text-xs text-dark-500 truncate">' + App.escapeHtml(p.registerUrl || '') + '</p>' +
+            '</div>' +
+            '<button data-action="delete-custom-platform" data-platform-id="' + p.id + '" class="p-2 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors">' +
+              App.icons.trash +
+            '</button>' +
+          '</div>';
+        }).join('')
+      : '<p class="text-sm text-dark-500 text-center py-4">Nenhuma plataforma custom ainda. Adicione abaixo!</p>';
+
+    modal.innerHTML =
+      '<div style="background:rgba(15,23,42,0.98);border:1px solid rgba(99,102,241,0.3);border-radius:20px;padding:2rem;max-width:500px;width:100%;max-height:85vh;overflow-y:auto;">' +
+        '<div class="flex items-center justify-between mb-4">' +
+          '<h3 class="text-lg font-bold text-indigo-300">Plataformas Customizadas</h3>' +
+          '<button data-action="close-platforms-modal" class="text-dark-500 hover:text-white text-2xl leading-none">×</button>' +
+        '</div>' +
+        '<p class="text-xs text-dark-400 mb-4">Adicione plataformas como LinkedIn, Twitter, Discord. Funcionam como guia manual (sem automacao).</p>' +
+        '<div class="mb-4">' + customList + '</div>' +
+        '<div class="rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-4">' +
+          '<h4 class="text-sm font-semibold text-indigo-300 mb-3">Adicionar nova</h4>' +
+          '<div class="space-y-2">' +
+            '<input id="cp-name" type="text" placeholder="Nome (ex: LinkedIn)" class="dark-input w-full rounded-lg px-3 py-2 text-sm" />' +
+            '<input id="cp-url" type="url" placeholder="URL de cadastro (https://...)" class="dark-input w-full rounded-lg px-3 py-2 text-sm" />' +
+            '<textarea id="cp-instructions" placeholder="Instrucoes de criacao (HTML permitido)" rows="3" class="dark-input w-full rounded-lg px-3 py-2 text-sm"></textarea>' +
+            '<input id="cp-tip" type="text" placeholder="Dica (opcional)" class="dark-input w-full rounded-lg px-3 py-2 text-sm" />' +
+          '</div>' +
+          '<button data-action="save-custom-platform" class="mt-3 w-full rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-600 transition-colors">' +
+            '+ Adicionar Plataforma</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(modal);
+  });
+
+  bindAction('close-platforms-modal', function() {
+    var m = document.getElementById('platforms-modal');
+    if (m) m.remove();
+  });
+
+  bindAction('save-custom-platform', function() {
+    var name = (document.getElementById('cp-name') || {}).value || '';
+    var url = (document.getElementById('cp-url') || {}).value || '';
+    var instructions = (document.getElementById('cp-instructions') || {}).value || '';
+    var tip = (document.getElementById('cp-tip') || {}).value || '';
+    if (!name.trim()) {
+      App.showToast('Nome e obrigatorio', 'error');
+      return;
+    }
+    App.storage.saveCustomPlatform({
+      name: name.trim(),
+      registerUrl: url.trim(),
+      instructions: instructions.trim(),
+      tip: tip.trim()
+    });
+    App.showToast('Plataforma "' + name + '" adicionada!', 'success');
+    loadCustomPlatformsIntoApp();
+    var m = document.getElementById('platforms-modal');
+    if (m) m.remove();
+    // Re-abrir modal para mostrar atualizado
+    setTimeout(function() {
+      if (actionHandlers['manage-platforms']) actionHandlers['manage-platforms'](null, null);
+    }, 100);
+  });
+
+  bindAction('delete-custom-platform', function(e, el) {
+    var id = el.getAttribute('data-platform-id');
+    if (!confirm('Remover esta plataforma?')) return;
+    App.storage.deleteCustomPlatform(id);
+    delete App.platforms[id];
+    delete defaultState.platforms[id];
+    App.showToast('Plataforma removida', 'success');
+    var m = document.getElementById('platforms-modal');
+    if (m) m.remove();
+    setTimeout(function() {
+      if (actionHandlers['manage-platforms']) actionHandlers['manage-platforms'](null, null);
+    }, 100);
   });
 
   bindAction('toggle-theme', function() {

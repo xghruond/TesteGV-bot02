@@ -718,58 +718,109 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                             update_status(8, 'Buscando codigo no Tutanota...')
 
                         try:
-                            # Atualizar inbox: reload a cada 8 tentativas
-                            if attempt > 1 and attempt % 8 == 0:
-                                mail_page.reload()
-                                time.sleep(6)
+                            # Reload agressivo: primeiros 3 ciclos sao rapidos, depois a cada 5
+                            if attempt in (2, 4, 6) or (attempt > 6 and attempt % 5 == 0):
+                                try:
+                                    mail_page.reload()
+                                    time.sleep(4)
+                                except:
+                                    pass
 
-                            # PASSO 1: Clicar no email do Instagram na lista
-                            clicked_email = mail_page.evaluate("""() => {
-                                // Buscar items clicaveis na lista de emails
-                                const items = document.querySelectorAll('div[role="button"], li, [class*="row"], [class*="list-row"]');
-                                for (const item of items) {
-                                    if (item.offsetHeight > 15 && item.offsetHeight < 120) {
-                                        const text = (item.textContent || '').toLowerCase();
-                                        if (text.includes('instagram') || text.includes('your') || text.includes('code') || text.includes('confirm')) {
-                                            item.click();
-                                            return 'clicked: ' + text.substring(0, 40);
-                                        }
-                                    }
-                                }
-                                // Fallback: clicar primeiro item que parece email
-                                for (const item of items) {
-                                    if (item.offsetHeight > 30 && item.offsetHeight < 100 && item.textContent.length > 10) {
-                                        item.click();
-                                        return 'fallback: ' + item.textContent.substring(0, 30);
-                                    }
-                                }
-                                return 'nenhum';
+                            # ESTRATEGIA 1: Ler subject direto da lista (padrao atual do Tuta: "NNNNNN is your Instagram code")
+                            # Prioriza o email MAIS RECENTE (primeiro na lista)
+                            code_from_subject = mail_page.evaluate(r"""() => {
+                                // Buscar todo texto da pagina que case com padrao "NNNNNN is your Instagram code"
+                                const bodyText = document.body.innerText || '';
+                                const match = bodyText.match(/(\d{6})\s+is\s+your\s+Instagram\s+code/i);
+                                if (match) return match[1];
+                                // Alt: "Instagram code: NNNNNN"
+                                const m2 = bodyText.match(/Instagram[^0-9]{0,30}(\d{6})/i);
+                                if (m2) return m2[1];
+                                return null;
                             }""")
 
-                            if attempt % 5 == 0:
-                                try:
-                                    print('  -> Click email: ' + str(clicked_email).encode('ascii', 'replace').decode()[:60])
-                                except:
+                            if code_from_subject:
+                                code = code_from_subject
+                                print('  -> CODIGO ENCONTRADO (via subject): ' + code)
+                                update_status(8, 'Codigo: ' + code + ' — preenchendo...')
+                                codes = [code]
+                                has_ig = True
+                                # Pular para preenchimento
+                                if codes and has_ig:
                                     pass
+                            else:
+                                # ESTRATEGIA 2: Clicar no email Instagram mais recente para abrir
+                                clicked_email = mail_page.evaluate(r"""() => {
+                                    // Tuta: lista de emails usa aria-label ou texto visivel
+                                    // Seletores priorizados do mais especifico pro mais generico
+                                    const selectors = [
+                                        '.list-row', '[class*="list-row"]',
+                                        'li[role="option"]', 'li[role="button"]',
+                                        'div[role="row"]', 'div[role="button"]',
+                                        'li', 'div[class*="row"]'
+                                    ];
+                                    for (const sel of selectors) {
+                                        const items = document.querySelectorAll(sel);
+                                        for (const item of items) {
+                                            if (item.offsetHeight < 15 || item.offsetHeight > 150) continue;
+                                            const text = (item.textContent || '').toLowerCase();
+                                            // Priorizar emails nao-lidos (negrito costuma indicar)
+                                            if (text.includes('instagram') && (text.includes('code') || text.includes('your') || /\d{6}/.test(text))) {
+                                                item.scrollIntoView({ block: 'center' });
+                                                item.click();
+                                                return 'clicked-ig: ' + text.substring(0, 60);
+                                            }
+                                        }
+                                    }
+                                    // Fallback generico: primeiro com "instagram"
+                                    const all = document.querySelectorAll('*');
+                                    for (const el of all) {
+                                        if (el.children.length > 3) continue;
+                                        const txt = (el.textContent || '').toLowerCase();
+                                        if (txt.includes('instagram') && /\d{6}/.test(txt) && el.offsetHeight < 100) {
+                                            el.click();
+                                            return 'fallback: ' + txt.substring(0, 60);
+                                        }
+                                    }
+                                    return 'nenhum';
+                                }""")
 
-                            # PASSO 2: Esperar painel de detalhes carregar
-                            time.sleep(3)
+                                if attempt % 5 == 0:
+                                    try:
+                                        print('  -> Click email: ' + str(clicked_email).encode('ascii', 'replace').decode()[:80])
+                                    except:
+                                        pass
 
-                            # PASSO 3: Ler texto COMPLETO da pagina (agora com email aberto)
-                            full_text = mail_page.evaluate("() => document.body.textContent || ''")
-                            full_lower = full_text.lower()
-                            codes = re.findall(r'\b(\d{6})\b', full_text)
+                                # Esperar painel abrir
+                                time.sleep(2.5)
 
-                            # Debug a cada 10 tentativas
-                            if attempt % 10 == 0:
-                                try:
-                                    safe = full_text[:200].encode('ascii', 'replace').decode().replace('\n', ' ')
-                                    print('  -> Texto: ' + safe[:100])
-                                    print('  -> Codigos: ' + str(codes[:5]))
-                                except:
-                                    pass
+                                # Ler texto apos abrir email
+                                full_text = mail_page.evaluate("() => document.body.innerText || ''")
+                                full_lower = full_text.lower()
 
-                            has_ig = 'instagram' in full_lower or 'confirm' in full_lower or 'code' in full_lower or 'your' in full_lower
+                                # Regex mais preciso: busca padroes comuns do Instagram
+                                codes = []
+                                # Padrao 1: "NNNNNN is your Instagram code"
+                                m = re.search(r'(\d{6})\s+is\s+your\s+instagram', full_text, re.IGNORECASE)
+                                if m: codes.append(m.group(1))
+                                # Padrao 2: "Instagram code: NNNNNN" ou "code NNNNNN"
+                                if not codes:
+                                    m = re.search(r'instagram[^0-9]{1,50}(\d{6})', full_text, re.IGNORECASE)
+                                    if m: codes.append(m.group(1))
+                                # Fallback: qualquer 6 digitos se tem "instagram" no texto
+                                if not codes and 'instagram' in full_lower:
+                                    codes = re.findall(r'\b(\d{6})\b', full_text)
+
+                                # Debug
+                                if attempt % 8 == 0:
+                                    try:
+                                        safe = full_text[:250].encode('ascii', 'replace').decode().replace('\n', ' ')
+                                        print('  -> Texto preview: ' + safe[:120])
+                                        print('  -> Codigos detectados: ' + str(codes[:5]))
+                                    except:
+                                        pass
+
+                                has_ig = 'instagram' in full_lower or 'confirm' in full_lower or 'code' in full_lower
 
                             if codes and has_ig:
                                 code = codes[0]
