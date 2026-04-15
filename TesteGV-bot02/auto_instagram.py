@@ -980,6 +980,15 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         print('  -> mail_page esta ' + ('OK' if mail_page else 'NONE'))
         print('  -> mail_logged_in esta ' + str(mail_logged_in))
 
+        # Se mail_page existe mas nao logou, tentar re-login
+        if mail_page and not mail_logged_in:
+            print('  -> Tentando re-login no Tutanota antes de prosseguir...')
+            if tuta_relogin(mail_page):
+                mail_logged_in = True
+                print('  -> Re-login OK!')
+            else:
+                print('  -> Re-login falhou, bot vai ficar em modo manual')
+
         code_done = False
         conta_criada = False
 
