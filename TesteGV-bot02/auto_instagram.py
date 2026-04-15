@@ -69,6 +69,63 @@ def safe_goto_ig(page, url, label='goto'):
                  label='instagram.' + label, bot='instagram')
 
 
+def tuta_is_logged_in(page):
+    """Retorna True se o Tuta esta logado (nao na tela de login)."""
+    try:
+        body = page.evaluate("() => (document.body.textContent || '').toLowerCase()")
+        # Indicadores de tela de login
+        if 'endereço de e-mail' in body and 'senha' in body and 'lembrar' in body:
+            return False
+        # Indicadores de inbox logado
+        return 'entrada' in body or 'inbox' in body
+    except:
+        return False
+
+
+def tuta_relogin(mail_page):
+    """Re-loga no Tuta se deslogou. Retorna True se sucesso."""
+    print('  -> [TUTA] Detectado logout, re-logando...')
+    try:
+        mail_page.goto('https://app.tuta.com/login', timeout=30000)
+        time.sleep(6)
+        inputs = mail_page.locator('input:visible')
+        if inputs.count() >= 1:
+            inputs.nth(0).click()
+            time.sleep(0.3)
+            mail_page.keyboard.press('Control+a')
+            mail_page.keyboard.press('Backspace')
+            time.sleep(0.2)
+            for ch in 'teste.greenvillage@tutamail.com':
+                mail_page.keyboard.type(ch, delay=50)
+        time.sleep(0.8)
+        pw = mail_page.locator('input[type="password"]:visible')
+        if pw.count() >= 1:
+            pw.first.click()
+            time.sleep(0.3)
+            for ch in 'Waxdwaxdw134679852':
+                mail_page.keyboard.type(ch, delay=50)
+        time.sleep(0.5)
+        mail_page.evaluate(r"""() => {
+            const btns = document.querySelectorAll('button');
+            for (const b of btns) {
+                const t = (b.textContent || '').toLowerCase();
+                if (b.offsetHeight > 0 && (t.includes('entrar') || t.includes('log in'))) {
+                    b.click(); return true;
+                }
+            }
+            return false;
+        }""")
+        time.sleep(10)
+        if tuta_is_logged_in(mail_page):
+            print('  -> [TUTA] Re-login OK!')
+            return True
+        print('  -> [TUTA] Re-login falhou')
+        return False
+    except Exception as e:
+        print('  -> [TUTA] Erro re-login: ' + str(e)[:80])
+        return False
+
+
 def human_type(page, text):
     """Digitacao humanizada com pausas de 'pensamento'."""
     char_count = 0
@@ -300,47 +357,26 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             if not mail_logged_in:
                 print('  -> AVISO: Tutanota pode nao ter logado, mas continuando...')
 
-            # === LIMPAR emails Instagram antigos (evita usar codigo expirado) ===
+            # === Cache de codigos ja vistos (evita usar codigos antigos) ===
+            # Ao inves de deletar (que causa logout), vamos salvar os codigos
+            # existentes ANTES do Instagram enviar o novo. Qualquer codigo novo
+            # que aparecer depois = eh o novo que deve ser usado.
+            seen_codes = set()
             if mail_logged_in:
-                print('  -> Limpando emails Instagram antigos do inbox...')
                 try:
                     time.sleep(2)
-                    for clean_attempt in range(15):
-                        # Clicar em qualquer email Instagram e deletar
-                        result = mail_page.evaluate(r"""() => {
-                            const selectors = ['.list-row', '[class*="list-row"]', 'li[role="option"]',
-                                               'li[role="button"]', 'div[role="row"]', 'li'];
-                            for (const sel of selectors) {
-                                const items = document.querySelectorAll(sel);
-                                for (const item of items) {
-                                    if (item.offsetHeight < 15 || item.offsetHeight > 150) continue;
-                                    const text = (item.textContent || '').toLowerCase();
-                                    if (text.includes('instagram')) {
-                                        item.scrollIntoView({ block: 'center' });
-                                        item.click();
-                                        return 'clicked';
-                                    }
-                                }
-                            }
-                            return 'none';
-                        }""")
-                        if result == 'none':
-                            print('  -> Sem mais emails Instagram para limpar')
-                            break
-                        time.sleep(1)
-                        # Pressionar Delete para mover para lixeira
-                        mail_page.keyboard.press('Delete')
-                        time.sleep(0.8)
-                        # Confirmar se aparecer dialog
-                        try:
-                            mail_page.keyboard.press('Enter')
-                        except:
-                            pass
-                        time.sleep(0.8)
-                        print('  -> Email antigo deletado (' + str(clean_attempt + 1) + ')')
-                    print('  -> Limpeza concluida, inbox pronto para receber novo codigo')
+                    existing = mail_page.evaluate(r"""() => {
+                        const t = document.body.innerText || '';
+                        const matches = t.match(/(\d{6})\s+is\s+your\s+Instagram\s+code/gi) || [];
+                        return matches.map(m => (m.match(/(\d{6})/) || [])[1]).filter(Boolean);
+                    }""")
+                    for c in (existing or []):
+                        seen_codes.add(c)
+                    print('  -> Codigos Instagram ja existentes no inbox: ' + str(len(seen_codes)))
+                    if seen_codes:
+                        print('  -> (serao IGNORADOS) ' + ', '.join(list(seen_codes)[:5]))
                 except Exception as e:
-                    print('  -> Erro limpeza (ignorado): ' + str(e)[:80])
+                    print('  -> Erro cache codigos (ignorado): ' + str(e)[:80])
 
             # NAO reconectar VPN — Instagram funciona melhor com IP real
             print('  -> VPN permanece desligado para Instagram (IP real)')
@@ -752,14 +788,17 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                         attempt = i + 1
                         elapsed = int(time.time() - getattr(create_account, '_code_start_time', time.time()))
 
-                        # Reload a cada 4 ciclos (12s) com espera maior para emails novos carregarem
-                        if attempt % 4 == 0:
+                        # Verificar se Tuta ainda esta logado (reload causa logout, nao fazer!)
+                        if attempt % 5 == 0:
                             try:
-                                print('  -> [' + str(elapsed) + 's] Atualizando inbox Tutanota...')
-                                mail_page.reload()
-                                time.sleep(5)
+                                if not tuta_is_logged_in(mail_page):
+                                    print('  -> [' + str(elapsed) + 's] Tuta deslogou! Re-logando...')
+                                    tuta_relogin(mail_page)
+                                else:
+                                    # Sem reload — apenas log de confirmacao
+                                    print('  -> [' + str(elapsed) + 's] Tuta ainda logado, aguardando email...')
                             except Exception as e:
-                                print('  -> Erro reload: ' + str(e)[:60])
+                                print('  -> Erro check login: ' + str(e)[:60])
 
                         try:
                             # ESTRATEGIA 1: Pega o PRIMEIRO email visivel da lista (sempre o mais recente)
@@ -811,19 +850,28 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                     pass
 
                             if code_from_subject and code_from_subject.get('code'):
-                                code = code_from_subject['code']
-                                source = code_from_subject.get('source', '?')
-                                cands = code_from_subject.get('candidates', 0)
-                                print('  -> *** CODIGO ENCONTRADO: ' + code + ' (fonte: ' + source + ', candidatos: ' + str(cands) + ') ***')
-                                # Se for primeira tentativa (menos de 15s) e tem varios candidatos,
-                                # esperar mais um pouco para garantir que o email novo ja apareceu
-                                if elapsed < 10 and cands > 1:
-                                    print('  -> Aguardando 6s para garantir email mais recente...')
-                                    time.sleep(6)
-                                    continue  # revalidar no proximo loop
-                                update_status(8, 'Codigo: ' + code + ' — preenchendo...')
-                                codes = [code]
-                                has_ig = True
+                                # Buscar TODOS os codigos e filtrar os ja vistos
+                                all_codes = mail_page.evaluate(r"""() => {
+                                    const t = document.body.innerText || '';
+                                    const matches = t.match(/(\d{6})\s+is\s+your\s+Instagram\s+code/gi) || [];
+                                    return matches.map(m => (m.match(/(\d{6})/) || [])[1]).filter(Boolean);
+                                }""") or []
+
+                                # Achar codigo NOVO (que nao estava antes)
+                                new_codes = [c for c in all_codes if c not in seen_codes]
+
+                                if new_codes:
+                                    code = new_codes[0]  # primeiro codigo novo
+                                    print('  -> *** CODIGO NOVO ENCONTRADO: ' + code + ' (ignorados: ' + str(len(seen_codes)) + ' antigos) ***')
+                                    update_status(8, 'Codigo: ' + code + ' — preenchendo...')
+                                    codes = [code]
+                                    has_ig = True
+                                else:
+                                    # Todos os codigos encontrados ja estavam no inbox antes
+                                    if attempt % 5 == 0:
+                                        print('  -> [' + str(elapsed) + 's] Aguardando email novo... (' + str(len(all_codes)) + ' codigos vistos, todos antigos)')
+                                    codes = []
+                                    has_ig = False
                             else:
                                 # ESTRATEGIA 2: clicar no email e ler conteudo
                                 if attempt % 2 == 0:
