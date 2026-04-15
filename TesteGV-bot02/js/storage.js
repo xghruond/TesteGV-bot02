@@ -72,5 +72,49 @@ App.storage = {
     } catch (e) {
       console.warn('Erro ao remover do histórico:', e);
     }
+  },
+
+  // === Favoritos (perfis pinnados) ===
+  FAVORITES_KEY: 'gv-onboarding-favorites',
+
+  loadFavorites: function() {
+    try {
+      var raw = localStorage.getItem(this.FAVORITES_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  },
+
+  toggleFavorite: function(historyId) {
+    try {
+      var favs = this.loadFavorites();
+      var idx = favs.indexOf(historyId);
+      if (idx === -1) favs.push(historyId);
+      else favs.splice(idx, 1);
+      localStorage.setItem(this.FAVORITES_KEY, JSON.stringify(favs));
+      return idx === -1;
+    } catch (e) { return false; }
+  },
+
+  isFavorite: function(historyId) {
+    return this.loadFavorites().indexOf(historyId) !== -1;
+  },
+
+  // === Fila de import CSV ===
+  IMPORT_QUEUE_KEY: 'gv-import-queue',
+
+  saveImportQueue: function(queue) {
+    try { localStorage.setItem(this.IMPORT_QUEUE_KEY, JSON.stringify(queue)); }
+    catch (e) {}
+  },
+
+  loadImportQueue: function() {
+    try {
+      var raw = localStorage.getItem(this.IMPORT_QUEUE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  },
+
+  clearImportQueue: function() {
+    localStorage.removeItem(this.IMPORT_QUEUE_KEY);
   }
 };

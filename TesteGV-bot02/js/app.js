@@ -32,6 +32,39 @@ var App = App || {};
   var state = JSON.parse(JSON.stringify(defaultState));
   var hasSavedState = false;
 
+  // Undo/Redo stacks (formulario)
+  var formUndoStack = [];
+  var formRedoStack = [];
+  var UNDO_MAX = 30;
+
+  function captureFormSnapshot() {
+    var form = document.getElementById('employee-form');
+    if (!form) return {};
+    var snap = {};
+    var inputs = form.querySelectorAll('input, select');
+    for (var i = 0; i < inputs.length; i++) {
+      var name = inputs[i].getAttribute('name');
+      if (name) snap[name] = inputs[i].value;
+    }
+    return snap;
+  }
+
+  function applyFormSnapshot(snap) {
+    var form = document.getElementById('employee-form');
+    if (!form) return;
+    var inputs = form.querySelectorAll('input, select');
+    for (var i = 0; i < inputs.length; i++) {
+      var name = inputs[i].getAttribute('name');
+      if (name && snap.hasOwnProperty(name)) inputs[i].value = snap[name];
+    }
+  }
+
+  function pushFormUndo() {
+    formUndoStack.push(captureFormSnapshot());
+    if (formUndoStack.length > UNDO_MAX) formUndoStack.shift();
+    formRedoStack = [];
+  }
+
   // Restaurar estado salvo
   var saved = App.storage.load();
   if (saved) {
@@ -399,6 +432,26 @@ var App = App || {};
       return;
     }
 
+    // Ctrl+Z / Ctrl+Shift+Z — undo/redo no formulario
+    if (e.ctrlKey && (e.key === 'z' || e.key === 'Z')) {
+      if (state.currentScreen !== 'form') return;
+      e.preventDefault();
+      if (e.shiftKey) {
+        if (formRedoStack.length === 0) return;
+        var redoSnap = formRedoStack.pop();
+        formUndoStack.push(captureFormSnapshot());
+        applyFormSnapshot(redoSnap);
+        App.showToast('Refeito', 'info');
+      } else {
+        if (formUndoStack.length === 0) return;
+        var undoSnap = formUndoStack.pop();
+        formRedoStack.push(captureFormSnapshot());
+        applyFormSnapshot(undoSnap);
+        App.showToast('Desfeito', 'info');
+      }
+      return;
+    }
+
     // Esc — voltar / fechar modal
     if (e.key === 'Escape') {
       var modal = document.getElementById('automation-overlay');
@@ -463,6 +516,31 @@ var App = App || {};
           App.icons.clipboard + ' Hist\u00f3rico (' + historyCount + ')</button>'
       : '';
 
+    // Favoritos: chips com cargo/departamento de perfis pinnados
+    var favIds = App.storage.loadFavorites();
+    var favChipsHtml = '';
+    if (favIds.length) {
+      var favRecords = [];
+      for (var fx = 0; fx < historyArr.length; fx++) {
+        if (favIds.indexOf(historyArr[fx].id) !== -1) favRecords.push(historyArr[fx]);
+      }
+      if (favRecords.length) {
+        favChipsHtml = '<div class="mb-6">' +
+          '<p class="text-[10px] font-semibold uppercase tracking-wider text-amber-400 mb-2 flex items-center justify-center gap-1">' +
+            '<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.3l-6.18 3.7 1.64-7.03L2 9.24l7.19-.61L12 2l2.81 6.63L22 9.24l-5.46 4.73 1.64 7.03z"/></svg>' +
+            ' Favoritos' +
+          '</p>' +
+          '<div class="flex flex-wrap justify-center gap-2">' +
+            favRecords.map(function(fr) {
+              var label = fr.employee.cargo || fr.employee.nomeCompleto || 'Template';
+              return '<button data-action="load-favorite" data-history-id="' + fr.id + '" class="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-400 hover:bg-amber-500/20 transition-colors">' +
+                App.escapeHtml(label) + '</button>';
+            }).join('') +
+          '</div>' +
+        '</div>';
+      }
+    }
+
     return '' +
       '<div class="flex min-h-[90vh] items-center justify-center px-4">' +
         '<div class="w-full max-w-xl text-center">' +
@@ -485,6 +563,7 @@ var App = App || {};
 
           // Dashboard de estatisticas (se ha historico)
           dashboardHtml +
+          favChipsHtml +
 
           // Cards de plataformas - grid 4 colunas com stagger
           '<div class="mb-8">' +
@@ -506,6 +585,15 @@ var App = App || {};
             ? '<button data-action="continue" class="mt-3 w-full rounded-xl border border-brand-500/30 bg-brand-500/10 px-8 py-3.5 text-base font-semibold text-brand-400 backdrop-blur-sm transition-all hover:bg-brand-500/20 hover:border-brand-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)]">Continuar de onde parei</button>'
             : '') +
           historyButton +
+          '<label class="mt-2 w-full rounded-xl border border-dark-700/50 bg-dark-800/40 px-8 py-3 text-sm font-medium text-dark-400 backdrop-blur-sm transition-all hover:bg-dark-800/60 hover:border-brand-500/30 hover:text-brand-400 cursor-pointer flex items-center justify-center gap-2">' +
+            '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>' +
+            ' Importar CSV em massa' +
+            '<input type="file" id="csv-import-input" accept=".csv" style="display:none;" />' +
+          '</label>' +
+          (App.storage.loadImportQueue().length > 0
+            ? '<button data-action="resume-queue" class="mt-2 w-full rounded-xl border border-amber-500/30 bg-amber-500/10 px-8 py-3 text-sm font-medium text-amber-400 hover:bg-amber-500/20 transition-colors">' +
+                'Continuar fila (' + App.storage.loadImportQueue().length + ' restantes)</button>'
+            : '') +
           '<button data-action="view-logs" class="mt-2 w-full rounded-xl border border-dark-700/50 bg-dark-800/40 px-8 py-3 text-sm font-medium text-dark-400 backdrop-blur-sm transition-all hover:bg-dark-800/60 hover:border-brand-500/30 hover:text-brand-400">' +
             '<svg class="inline-block w-4 h-4 mr-1.5 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>' +
             'Logs de Automacao</button>' +
@@ -644,6 +732,11 @@ var App = App || {};
             '<p class="text-xs text-dark-600">' + App.formatDateTimeBR(record.completedAt) + '</p>' +
           '</div>' +
           '<div class="flex items-center gap-1">' +
+            '<button data-action="toggle-favorite" data-history-id="' + record.id + '" title="' + (App.storage.isFavorite(record.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos') + '" class="p-1.5 rounded-lg transition-colors ' + (App.storage.isFavorite(record.id) ? 'text-amber-400 hover:bg-amber-500/10' : 'text-dark-700 hover:text-amber-400 hover:bg-amber-500/10 opacity-0 group-hover:opacity-100') + '">' +
+              (App.storage.isFavorite(record.id)
+                ? '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.3l-6.18 3.7 1.64-7.03L2 9.24l7.19-.61L12 2l2.81 6.63L22 9.24l-5.46 4.73 1.64 7.03z"/></svg>'
+                : '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>') +
+            '</button>' +
             '<button data-action="delete-history" data-history-id="' + record.id + '" title="Remover do hist\u00f3rico" class="p-1.5 rounded-lg text-dark-700 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100">' +
               App.icons.trash +
             '</button>' +
@@ -706,8 +799,12 @@ var App = App || {};
               '<p class="text-sm text-dark-500">' + history.length + ' processo' + (history.length !== 1 ? 's' : '') + ' realizado' + (history.length !== 1 ? 's' : '') + '</p>' +
             '</div>' +
           '</div>' +
-          '<button data-action="back-welcome" class="rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' +
-            App.icons.chevronLeft + ' Voltar</button>' +
+          '<div class="flex items-center gap-2">' +
+            '<button data-action="export-history-csv" class="rounded-xl border border-brand-500/30 bg-brand-500/10 px-4 py-2.5 text-sm font-medium text-brand-400 hover:bg-brand-500/20 transition-colors">' +
+              App.icons.download + ' CSV</button>' +
+            '<button data-action="back-welcome" class="rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' +
+              App.icons.chevronLeft + ' Voltar</button>' +
+          '</div>' +
         '</div>' +
         dashboardHtml +
         searchHtml +
@@ -1848,6 +1945,37 @@ var App = App || {};
   });
 
   // Exportar TXT
+  bindAction('show-qr', function(e, el) {
+    var container = document.getElementById('qr-credentials-container');
+    if (!container) return;
+    if (container.style.display !== 'none' && container.innerHTML.trim()) {
+      container.style.display = 'none';
+      container.innerHTML = '';
+      return;
+    }
+    if (typeof QRCode === 'undefined') {
+      App.showToast('Biblioteca QR nao carregada', 'error');
+      return;
+    }
+    var email = state.employee.emailDesejado ? state.employee.emailDesejado + '@proton.me' : '';
+    var senha = state.suggestedPassword || '';
+    var payload = {
+      nome: state.employee.nomeCompleto || '',
+      email: email,
+      senha: senha,
+      proton: email,
+      instagram: '@' + (state.employee.emailDesejado || ''),
+      gerado: new Date().toISOString().slice(0, 19)
+    };
+    var text = JSON.stringify(payload);
+    container.style.display = 'flex';
+    container.innerHTML = '<div class="rounded-xl border border-purple-500/30 bg-white p-6 shadow-xl shadow-purple-500/10"><canvas id="qr-canvas"></canvas><p class="mt-3 text-xs text-gray-700 text-center max-w-[200px]">Escaneie para copiar credenciais</p></div>';
+    var canvas = document.getElementById('qr-canvas');
+    QRCode.toCanvas(canvas, text, { width: 220, margin: 1, color: { dark: '#000', light: '#fff' } }, function(err) {
+      if (err) App.showToast('Erro ao gerar QR: ' + err.message, 'error');
+    });
+  });
+
   bindAction('export-txt', function() {
     var text = App.generateSummaryText(state);
     var fileName = 'onboarding-' + (state.employee.nomeCompleto || 'relatorio').replace(/\s+/g, '-').toLowerCase() + '.txt';
@@ -1892,8 +2020,180 @@ var App = App || {};
     navigateTo('history');
   });
 
+  bindAction('toggle-favorite', function(e, el) {
+    e.stopPropagation();
+    var id = el.getAttribute('data-history-id');
+    var added = App.storage.toggleFavorite(id);
+    App.showToast(added ? 'Adicionado aos favoritos' : 'Removido dos favoritos', 'success');
+    render();
+  });
+
+  bindAction('load-favorite', function(e, el) {
+    var id = el.getAttribute('data-history-id');
+    var history = App.storage.loadHistory();
+    var record = null;
+    for (var i = 0; i < history.length; i++) {
+      if (history[i].id === id) { record = history[i]; break; }
+    }
+    if (!record) return;
+    // Carregar cargo/departamento do favorito como template
+    state.employee = {
+      nomeCompleto: '',
+      emailDesejado: '',
+      dataNascimento: '',
+      cargo: record.employee.cargo || '',
+      departamento: record.employee.departamento || '',
+      dataAdmissao: ''
+    };
+    App.storage.save(state);
+    App.showToast('Template carregado: ' + (record.employee.cargo || 'cargo'), 'success');
+    navigateTo('form');
+  });
+
+  bindAction('export-history-csv', function() {
+    var history = App.storage.loadHistory();
+    if (!history.length) {
+      App.showToast('Nenhum registro no historico', 'info');
+      return;
+    }
+    var header = ['Nome', 'Email', 'Cargo', 'Departamento', 'DataAdmissao', 'ProtonMail', 'Instagram', 'Facebook', 'TikTok', 'Status', 'CriadoEm'];
+    var lines = [header.join(',')];
+    for (var i = 0; i < history.length; i++) {
+      var r = history[i];
+      var emp = r.employee || {};
+      var platforms = r.platforms || {};
+      var completed = 0;
+      var total = 0;
+      var pKeys = Object.keys(platforms);
+      for (var k = 0; k < pKeys.length; k++) {
+        total++;
+        if (platforms[pKeys[k]].completed) completed++;
+      }
+      function csvEscape(v) {
+        v = String(v == null ? '' : v);
+        if (v.indexOf(',') !== -1 || v.indexOf('"') !== -1 || v.indexOf('\n') !== -1) {
+          return '"' + v.replace(/"/g, '""') + '"';
+        }
+        return v;
+      }
+      function pInfo(id) {
+        return platforms[id] && platforms[id].completed ? (platforms[id].accountInfo || 'criada') : '';
+      }
+      lines.push([
+        csvEscape(emp.nomeCompleto),
+        csvEscape((emp.emailDesejado || '') + '@proton.me'),
+        csvEscape(emp.cargo),
+        csvEscape(App.departmentLabels[emp.departamento] || emp.departamento),
+        csvEscape(emp.dataAdmissao),
+        csvEscape(pInfo('protonmail')),
+        csvEscape(pInfo('instagram')),
+        csvEscape(pInfo('facebook')),
+        csvEscape(pInfo('tiktok')),
+        csvEscape(completed + '/' + total),
+        csvEscape(r.completedAt)
+      ].join(','));
+    }
+    var csv = '\uFEFF' + lines.join('\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'historico-greenbot-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    App.showToast('CSV exportado (' + history.length + ' registros)', 'success');
+  });
+
   bindAction('view-logs', function() {
     navigateTo('logs');
+  });
+
+  bindAction('resume-queue', function() {
+    loadNextFromQueue();
+  });
+
+  function parseCsv(text) {
+    var lines = text.replace(/\r/g, '').split('\n').filter(function(l) { return l.trim(); });
+    if (lines.length < 2) return [];
+    function splitLine(line) {
+      var result = [];
+      var cur = '';
+      var inQ = false;
+      for (var i = 0; i < line.length; i++) {
+        var ch = line[i];
+        if (ch === '"') {
+          if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+          else inQ = !inQ;
+        } else if (ch === ',' && !inQ) {
+          result.push(cur); cur = '';
+        } else {
+          cur += ch;
+        }
+      }
+      result.push(cur);
+      return result;
+    }
+    var headers = splitLine(lines[0]).map(function(h) { return h.trim().toLowerCase(); });
+    var rows = [];
+    for (var i = 1; i < lines.length; i++) {
+      var cols = splitLine(lines[i]);
+      var obj = {};
+      for (var j = 0; j < headers.length; j++) obj[headers[j]] = (cols[j] || '').trim();
+      rows.push(obj);
+    }
+    return rows;
+  }
+
+  function mapCsvRowToEmployee(row) {
+    return {
+      nomeCompleto: row.nome || row['nome completo'] || row.name || '',
+      emailDesejado: row.email || row.username || row['e-mail'] || '',
+      dataNascimento: row.nascimento || row['data nascimento'] || row['data_nascimento'] || '',
+      cargo: row.cargo || row.position || '',
+      departamento: (row.departamento || row.department || '').toLowerCase(),
+      dataAdmissao: row.admissao || row['data admissao'] || row['data_admissao'] || ''
+    };
+  }
+
+  function loadNextFromQueue() {
+    var queue = App.storage.loadImportQueue();
+    if (!queue.length) {
+      App.showToast('Fila vazia', 'info');
+      return;
+    }
+    var next = queue.shift();
+    App.storage.saveImportQueue(queue);
+    state.employee = mapCsvRowToEmployee(next);
+    state.suggestedPassword = App.generatePassword(14);
+    state.platforms = JSON.parse(JSON.stringify(defaultState.platforms));
+    App.storage.save(state);
+    App.showToast('Colaborador carregado. ' + queue.length + ' restante(s) na fila', 'success');
+    navigateTo('form');
+  }
+
+  document.addEventListener('change', function(e) {
+    if (e.target && e.target.id === 'csv-import-input') {
+      var file = e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          var rows = parseCsv(ev.target.result);
+          if (!rows.length) {
+            App.showToast('CSV vazio ou invalido', 'error');
+            return;
+          }
+          App.storage.saveImportQueue(rows);
+          App.showToast(rows.length + ' colaboradores na fila. Iniciando...', 'success');
+          setTimeout(loadNextFromQueue, 400);
+        } catch (err) {
+          App.showToast('Erro ao ler CSV: ' + err.message, 'error');
+        }
+      };
+      reader.readAsText(file, 'utf-8');
+    }
   });
 
   bindAction('refresh-logs', function() {
@@ -2237,9 +2537,17 @@ var App = App || {};
         }, 3000);
       };
       var draftInputs = form.querySelectorAll('input, select');
+      var undoDebounce = null;
       for (var di = 0; di < draftInputs.length; di++) {
         draftInputs[di].addEventListener('input', scheduleDraftSave);
+        draftInputs[di].addEventListener('input', function() {
+          if (undoDebounce) clearTimeout(undoDebounce);
+          undoDebounce = setTimeout(pushFormUndo, 600);
+        });
       }
+      // Snapshot inicial para undo a partir do 1o estado
+      formUndoStack = [captureFormSnapshot()];
+      formRedoStack = [];
 
       // Auto-save form fields on blur + visual validation
       var formFields = form.querySelectorAll('input, select');

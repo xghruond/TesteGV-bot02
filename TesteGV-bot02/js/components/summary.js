@@ -138,7 +138,11 @@ App.renderSummary = function(state) {
         '<h3 class="mb-4 flex items-center gap-2 text-lg font-bold text-dark-100">' + App.icons.listChecks + ' Contas Criadas</h3>' +
         '<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">' + accountCards + '</div>' +
       '</div>' +
-      '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 no-print">' +
+      '<div id="qr-credentials-container" class="mb-6 flex justify-center no-print" style="display:none;"></div>' +
+      '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 no-print">' +
+        '<button data-action="show-qr" aria-label="Gerar QR Code das credenciais" class="flex items-center justify-center gap-2 rounded-xl border border-purple-500/30 bg-purple-500/5 px-5 py-3 text-sm font-medium text-purple-400 transition-colors hover:bg-purple-500/10 hover:border-purple-500/50">' +
+          '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>' +
+          ' QR Code</button>' +
         '<button data-action="export-txt" aria-label="Exportar relatório como arquivo de texto" class="flex items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-5 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
           App.icons.download + ' TXT</button>' +
         '<button data-action="copy-summary" aria-label="Copiar resumo para área de transferência" class="flex items-center justify-center gap-2 rounded-xl border border-dark-600/50 px-5 py-3 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-brand-400 hover:border-brand-500/30">' +
