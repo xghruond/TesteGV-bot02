@@ -300,6 +300,48 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             if not mail_logged_in:
                 print('  -> AVISO: Tutanota pode nao ter logado, mas continuando...')
 
+            # === LIMPAR emails Instagram antigos (evita usar codigo expirado) ===
+            if mail_logged_in:
+                print('  -> Limpando emails Instagram antigos do inbox...')
+                try:
+                    time.sleep(2)
+                    for clean_attempt in range(15):
+                        # Clicar em qualquer email Instagram e deletar
+                        result = mail_page.evaluate(r"""() => {
+                            const selectors = ['.list-row', '[class*="list-row"]', 'li[role="option"]',
+                                               'li[role="button"]', 'div[role="row"]', 'li'];
+                            for (const sel of selectors) {
+                                const items = document.querySelectorAll(sel);
+                                for (const item of items) {
+                                    if (item.offsetHeight < 15 || item.offsetHeight > 150) continue;
+                                    const text = (item.textContent || '').toLowerCase();
+                                    if (text.includes('instagram')) {
+                                        item.scrollIntoView({ block: 'center' });
+                                        item.click();
+                                        return 'clicked';
+                                    }
+                                }
+                            }
+                            return 'none';
+                        }""")
+                        if result == 'none':
+                            print('  -> Sem mais emails Instagram para limpar')
+                            break
+                        time.sleep(1)
+                        # Pressionar Delete para mover para lixeira
+                        mail_page.keyboard.press('Delete')
+                        time.sleep(0.8)
+                        # Confirmar se aparecer dialog
+                        try:
+                            mail_page.keyboard.press('Enter')
+                        except:
+                            pass
+                        time.sleep(0.8)
+                        print('  -> Email antigo deletado (' + str(clean_attempt + 1) + ')')
+                    print('  -> Limpeza concluida, inbox pronto para receber novo codigo')
+                except Exception as e:
+                    print('  -> Erro limpeza (ignorado): ' + str(e)[:80])
+
             # NAO reconectar VPN — Instagram funciona melhor com IP real
             print('  -> VPN permanece desligado para Instagram (IP real)')
         except Exception as e:
