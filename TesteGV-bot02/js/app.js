@@ -958,6 +958,7 @@ var App = App || {};
           break;
         case 'summary':
           content.innerHTML = App.renderSummary(state);
+          setTimeout(launchConfetti, 600);
           break;
         case 'history':
           content.innerHTML = renderHistory();
@@ -2312,6 +2313,53 @@ var App = App || {};
     tourIndex = 0;
     showTourStep();
   }
+
+  // === Confetti celebration ===
+  function launchConfetti() {
+    var container = document.createElement('div');
+    container.className = 'confetti-container';
+    document.body.appendChild(container);
+    var colors = ['#22c55e', '#4ade80', '#fbbf24', '#f472b6', '#60a5fa', '#a78bfa', '#34d399', '#f87171'];
+    var shapes = ['square', 'circle'];
+    for (var i = 0; i < 80; i++) {
+      var piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      var color = colors[Math.floor(Math.random() * colors.length)];
+      var shape = shapes[Math.floor(Math.random() * shapes.length)];
+      var size = 6 + Math.random() * 10;
+      piece.style.width = size + 'px';
+      piece.style.height = shape === 'circle' ? size + 'px' : (size * 0.6) + 'px';
+      piece.style.backgroundColor = color;
+      piece.style.borderRadius = shape === 'circle' ? '50%' : '2px';
+      piece.style.left = Math.random() * 100 + '%';
+      piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+      piece.style.animationDelay = (Math.random() * 1.5) + 's';
+      piece.style.opacity = '0.9';
+      container.appendChild(piece);
+    }
+    setTimeout(function() { if (container.parentNode) container.parentNode.removeChild(container); }, 5000);
+  }
+
+  // === Magnetic tilt 3D on cards ===
+  document.addEventListener('mousemove', function(e) {
+    var cards = document.querySelectorAll('.futuristic-card, .platform-card');
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      var rect = card.getBoundingClientRect();
+      var cx = rect.left + rect.width / 2;
+      var cy = rect.top + rect.height / 2;
+      var dx = e.clientX - cx;
+      var dy = e.clientY - cy;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 300) {
+        var rx = (dy / 300) * 4;
+        var ry = -(dx / 300) * 4;
+        card.style.transform = 'perspective(800px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) translateY(-2px)';
+      } else {
+        card.style.transform = '';
+      }
+    }
+  });
 
   // Autostart na primeira visita (depois do render inicial)
   try {

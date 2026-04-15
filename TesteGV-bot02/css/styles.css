@@ -337,14 +337,19 @@ input[type="tel"]::placeholder {
 
 /* ===== Platform card hover effect ===== */
 .platform-card {
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
   will-change: transform;
+  perspective: 800px;
 }
 .platform-card:hover {
-  transform: translateY(-3px) scale(1.02);
+  transform: translateY(-6px) scale(1.03) rotateX(2deg);
+  box-shadow: 0 12px 40px rgba(34, 197, 94, 0.15), 0 0 60px rgba(34, 197, 94, 0.06);
+  border-color: rgba(34, 197, 94, 0.4) !important;
+  background: rgba(15, 23, 42, 0.8) !important;
 }
 .platform-card:active {
-  transform: translateY(-1px) scale(1.01);
+  transform: translateY(-2px) scale(1.01);
+  transition-duration: 0.1s;
 }
 
 /* ===== Frosted glass stronger ===== */
@@ -356,11 +361,12 @@ input[type="tel"]::placeholder {
 
 /* History rows hover mais forte */
 .history-row {
-  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
 }
 .history-row:hover {
-  transform: translateX(3px);
-  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.08);
+  transform: translateX(6px) scale(1.01);
+  box-shadow: 0 8px 30px rgba(34, 197, 94, 0.12), -4px 0 0 rgba(34, 197, 94, 0.6);
+  background: rgba(15, 23, 42, 0.9) !important;
 }
 
 /* ===== Wizard animations ===== */
@@ -562,9 +568,10 @@ input[type="tel"]::placeholder {
   transition: opacity 0.35s ease;
 }
 .futuristic-card:hover {
-  transform: translateY(-4px) scale(1.03);
-  border-color: rgba(34, 197, 94, 0.3);
-  box-shadow: 0 8px 30px rgba(34, 197, 94, 0.15), 0 0 60px rgba(34, 197, 94, 0.05);
+  transform: translateY(-6px) scale(1.04) rotateX(1deg);
+  border-color: rgba(34, 197, 94, 0.4);
+  box-shadow: 0 12px 40px rgba(34, 197, 94, 0.2), 0 0 80px rgba(34, 197, 94, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: rgba(15, 23, 42, 0.75);
 }
 .futuristic-card:hover::before {
   opacity: 1;
@@ -601,8 +608,9 @@ input[type="tel"]::placeholder {
   overflow: hidden;
 }
 .btn-futuristic:hover {
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.4), 0 8px 30px rgba(34, 197, 94, 0.3);
-  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 0 25px rgba(34, 197, 94, 0.5), 0 12px 40px rgba(34, 197, 94, 0.35), 0 0 80px rgba(34, 197, 94, 0.15);
+  transform: translateY(-3px) scale(1.03);
+  filter: brightness(1.1);
 }
 .btn-futuristic:active {
   transform: translateY(0) scale(0.98);
@@ -712,8 +720,13 @@ input[type="tel"]::placeholder {
 }
 .dark-input:focus {
   border-color: #22c55e;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15), 0 0 20px rgba(34, 197, 94, 0.08);
-  background: rgba(10, 18, 32, 0.92);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15), 0 0 20px rgba(34, 197, 94, 0.08), 0 0 40px rgba(34, 197, 94, 0.04);
+  background: rgba(10, 18, 32, 0.95);
+  animation: inputFocusPulse 2s ease-in-out infinite;
+}
+@keyframes inputFocusPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15), 0 0 20px rgba(34, 197, 94, 0.08); }
+  50% { box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25), 0 0 30px rgba(34, 197, 94, 0.12); }
 }
 .dark-input::placeholder {
   color: #64748b;
@@ -1063,6 +1076,98 @@ input[type="tel"]::placeholder {
   .text-dark-400, .text-dark-500 { color: #444 !important; }
   .rounded-lg, .rounded-xl, .rounded-2xl { border-radius: 6px !important; }
   .shadow-sm, .shadow-md, .shadow-lg { box-shadow: none !important; }
+}
+
+/* === Confetti celebration === */
+@keyframes confettiFall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+.confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9000;
+  overflow: hidden;
+}
+.confetti-piece {
+  position: absolute;
+  top: -20px;
+  width: 10px;
+  height: 10px;
+  animation: confettiFall linear forwards;
+}
+
+/* === Magnetic hover (tilt 3D on mouse move) === */
+.tilt-3d {
+  transition: transform 0.15s ease-out;
+  transform-style: preserve-3d;
+}
+
+/* === Glow text on hover === */
+.glow-hover:hover {
+  text-shadow: 0 0 8px rgba(74, 222, 128, 0.6), 0 0 20px rgba(74, 222, 128, 0.3);
+}
+
+/* === Smooth page transitions === */
+.screen-enter {
+  animation: pageEnter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes pageEnter {
+  0% { opacity: 0; transform: translateY(20px) scale(0.98); filter: blur(4px); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+/* === Ripple v2 (more visible) === */
+.ripple-v2 {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.4) 0%, transparent 70%);
+  transform: scale(0);
+  animation: rippleV2 0.7s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes rippleV2 {
+  0% { transform: scale(0); opacity: 1; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+/* === Floating action hint === */
+@keyframes floatHint {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* === Badge pulse (status indicators) === */
+@keyframes badgePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(74, 222, 128, 0); }
+}
+.badge-pulse {
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+/* === Success checkmark animated === */
+@keyframes checkDraw {
+  0% { stroke-dashoffset: 50; }
+  100% { stroke-dashoffset: 0; }
+}
+.check-animated path {
+  stroke-dasharray: 50;
+  stroke-dashoffset: 50;
+  animation: checkDraw 0.6s ease-out 0.3s forwards;
+}
+
+/* === Stagger reveal enhanced === */
+.stagger-in {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: staggerReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes staggerReveal {
+  0% { opacity: 0; transform: translateY(16px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* === Loading skeletons (D.1) === */
