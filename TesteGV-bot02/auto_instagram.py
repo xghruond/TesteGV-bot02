@@ -710,29 +710,45 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                         attempt = i + 1
                         elapsed = int(time.time() - getattr(create_account, '_code_start_time', time.time()))
 
-                        # Reload agressivo: a cada 3 ciclos (9s) enquanto nao achar
-                        if attempt % 3 == 0:
+                        # Reload a cada 4 ciclos (12s) com espera maior para emails novos carregarem
+                        if attempt % 4 == 0:
                             try:
                                 print('  -> [' + str(elapsed) + 's] Atualizando inbox Tutanota...')
                                 mail_page.reload()
-                                time.sleep(3.5)
+                                time.sleep(5)
                             except Exception as e:
                                 print('  -> Erro reload: ' + str(e)[:60])
 
                         try:
-                            # ESTRATEGIA 1: Regex direto no texto da pagina (email MAIS RECENTE primeiro)
-                            # No inbox, o email mais recente aparece no topo — primeiro match = mais novo
+                            # ESTRATEGIA 1: Pega o PRIMEIRO email visivel da lista (sempre o mais recente)
+                            # Tuta ordena por data desc — primeiro DOM element = mais novo
                             code_from_subject = mail_page.evaluate(r"""() => {
-                                const bodyText = document.body.innerText || document.body.textContent || '';
-                                // Padrao 1 (exato): "NNNNNN is your Instagram code"
+                                // Procurar todos os elementos com texto contendo "is your Instagram code"
+                                // e selecionar o QUE ESTA MAIS NO TOPO na pagina (menor Y)
+                                const candidates = [];
+                                const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+                                let node;
+                                while (node = walker.nextNode()) {
+                                    const text = node.textContent || '';
+                                    const m = text.match(/(\d{6})\s+is\s+your\s+Instagram\s+code/i);
+                                    if (m && node.parentElement) {
+                                        const rect = node.parentElement.getBoundingClientRect();
+                                        if (rect.top >= 0 && rect.top < window.innerHeight + 500) {
+                                            candidates.push({ code: m[1], top: rect.top, text: text.substring(0, 60) });
+                                        }
+                                    }
+                                }
+                                // Ordenar por top asc (mais no topo = mais recente)
+                                candidates.sort((a, b) => a.top - b.top);
+                                if (candidates.length > 0) {
+                                    return { code: candidates[0].code, source: 'top-element', candidates: candidates.length };
+                                }
+                                // Fallback: regex no texto
+                                const bodyText = document.body.innerText || '';
                                 let m = bodyText.match(/(\d{6})\s+is\s+your\s+Instagram\s+code/i);
-                                if (m) return { code: m[1], source: 'exato' };
-                                // Padrao 2: "Instagram" seguido de 6 digitos ate 40 chars depois
+                                if (m) return { code: m[1], source: 'regex-flat', candidates: 0 };
                                 m = bodyText.match(/Instagram[^0-9]{1,40}(\d{6})/i);
-                                if (m) return { code: m[1], source: 'instagram-flex' };
-                                // Padrao 3: codigo NNNNNN (qualquer lingua, apos "code"/"codigo")
-                                m = bodyText.match(/c[oó]digo[^0-9]{1,30}(\d{6})|code[^0-9]{1,30}(\d{6})/i);
-                                if (m) return { code: m[1] || m[2], source: 'codigo-generico' };
+                                if (m) return { code: m[1], source: 'instagram-flex', candidates: 0 };
                                 return null;
                             }""")
 
@@ -755,7 +771,14 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                             if code_from_subject and code_from_subject.get('code'):
                                 code = code_from_subject['code']
                                 source = code_from_subject.get('source', '?')
-                                print('  -> *** CODIGO ENCONTRADO: ' + code + ' (regex: ' + source + ') ***')
+                                cands = code_from_subject.get('candidates', 0)
+                                print('  -> *** CODIGO ENCONTRADO: ' + code + ' (fonte: ' + source + ', candidatos: ' + str(cands) + ') ***')
+                                # Se for primeira tentativa (menos de 15s) e tem varios candidatos,
+                                # esperar mais um pouco para garantir que o email novo ja apareceu
+                                if elapsed < 10 and cands > 1:
+                                    print('  -> Aguardando 6s para garantir email mais recente...')
+                                    time.sleep(6)
+                                    continue  # revalidar no proximo loop
                                 update_status(8, 'Codigo: ' + code + ' — preenchendo...')
                                 codes = [code]
                                 has_ig = True
