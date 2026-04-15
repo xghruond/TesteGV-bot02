@@ -81,15 +81,17 @@ def get_cdp_context(p):
     return None, None
 
 
-def get_sms24_numbers(cdp_context, country='us'):
+def get_sms24_numbers(cdp_context, country='ca', max_check=12):
     """
-    Lista numeros de sms24.me/en/countries/<country> via CDP.
-    Returns: lista de dicts [{'number': '+1234', 'href': '...', 'no_prefix': '234'}, ...]
+    Lista numeros de sms24.me/en/countries/<country> via CDP e RANKEIA:
+    1) Visita cada numero para ler timestamp + historico Instagram
+    2) Prioriza: tem Instagram > ativo recente
+    3) Filtra: descarta mortos (> 6h)
+    Returns: lista rankeada de {number, href, no_prefix, age_min, ig_count}
     """
     if not cdp_context:
         return []
     try:
-        # Reutilizar pagina existente ou criar
         pages = cdp_context.pages
         sms_page = None
         for pg in pages:
@@ -105,27 +107,70 @@ def get_sms24_numbers(cdp_context, country='us'):
 
         numbers = sms_page.evaluate(r"""() => {
             const results = [];
-            const links = document.querySelectorAll('a');
+            const links = document.querySelectorAll('a[href*="/numbers/"]');
             for (const link of links) {
                 const txt = (link.textContent || '').trim();
-                const href = link.href || '';
                 const m = txt.match(/\+\d{10,15}/);
-                if (m && href.includes('/numbers/')) {
-                    results.push({ number: m[0], href: href });
-                }
+                if (m) results.push({ number: m[0], href: link.href });
             }
-            return results.slice(0, 20);
+            return results;
         }""") or []
 
-        # Adicionar no_prefix (sem +1 para US)
-        for n in numbers:
-            full = n['number'].lstrip('+')
-            if country == 'us' and full.startswith('1') and len(full) == 11:
-                n['no_prefix'] = full[1:]
+        if not numbers:
+            return []
+
+        print('  -> [SMS24] ' + str(len(numbers)) + ' numeros listados, analisando atividade...')
+
+        # Visitar cada numero para coletar info (limitado a max_check)
+        analyzed = []
+        for idx, n in enumerate(numbers[:max_check]):
+            try:
+                sms_page.goto(n['href'], timeout=15000)
+                time.sleep(1.8)
+                info = sms_page.evaluate(r"""() => {
+                    const body = (document.body.innerText || '');
+                    const tMatch = body.match(/(\d+)\s+(minute|hour|day|week|second)s?\s+ago/i);
+                    let ageMin = 999999;
+                    if (tMatch) {
+                        const n = parseInt(tMatch[1]);
+                        const unit = tMatch[2].toLowerCase();
+                        if (unit.includes('second')) ageMin = 0;
+                        else if (unit.includes('minute')) ageMin = n;
+                        else if (unit.includes('hour')) ageMin = n * 60;
+                        else if (unit.includes('day')) ageMin = n * 1440;
+                        else if (unit.includes('week')) ageMin = n * 10080;
+                    }
+                    const igCount = (body.substring(0, 3000).match(/instagram/gi) || []).length;
+                    return { ageMin, igCount };
+                }""") or {}
+                analyzed.append({
+                    'number': n['number'],
+                    'href': n['href'],
+                    'age_min': info.get('ageMin', 999999),
+                    'ig_count': info.get('igCount', 0)
+                })
+            except:
+                continue
+
+        # Filtrar mortos (>= 6 horas)
+        alive = [a for a in analyzed if a['age_min'] < 360]
+        # Ordenar: mais IG historico primeiro, depois mais recente
+        alive.sort(key=lambda x: (-x['ig_count'], x['age_min']))
+
+        # Adicionar no_prefix
+        for a in alive:
+            full = a['number'].lstrip('+')
+            # US e CA usam +1
+            if (country in ('us', 'ca')) and full.startswith('1') and len(full) == 11:
+                a['no_prefix'] = full[1:]
             else:
-                n['no_prefix'] = full
-        print('  -> [SMS24] ' + str(len(numbers)) + ' numeros encontrados')
-        return numbers
+                a['no_prefix'] = full
+
+        print('  -> [SMS24] ' + str(len(alive)) + ' ativos (' + str(len(analyzed) - len(alive)) + ' mortos descartados)')
+        for i, a in enumerate(alive[:7]):
+            mark = ('[IG=' + str(a['ig_count']) + ']') if a['ig_count'] > 0 else '[--]'
+            print('    ' + str(i + 1) + '. ' + a['number'] + ' ' + mark + ' (' + str(a['age_min']) + 'min)')
+        return alive
     except Exception as e:
         print('  -> [SMS24] Erro: ' + str(e)[:100])
         return []
@@ -1255,8 +1300,15 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
 
                             if cdp_ctx:
                                 print('  -> [SMS] Usando sms24.me via CDP')
-                                update_status(8, 'Buscando numero sms24.me...')
-                                numbers_list = get_sms24_numbers(cdp_ctx, 'us')
+                                # Cascata de paises: CA (mais Instagram) > US > BR
+                                # Todos usam +1 ou similar, Instagram aceita bem
+                                country_priority = ['ca', 'us', 'br']
+                                for try_country in country_priority:
+                                    update_status(8, 'Buscando numero sms24.me (' + try_country.upper() + ')...')
+                                    numbers_list = get_sms24_numbers(cdp_ctx, try_country)
+                                    if numbers_list:
+                                        print('  -> [SMS] Encontrou ' + str(len(numbers_list)) + ' numeros ativos em ' + try_country.upper())
+                                        break
                                 is_sms24 = True
 
                             if not numbers_list:
@@ -1271,7 +1323,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                 create_account._sms_handler_running = False
                                 create_account._sms_manual_fallback = True
                             else:
-                                max_tries = min(5, len(numbers_list))
+                                max_tries = min(7, len(numbers_list))
                                 success = False
 
                                 for try_idx in range(max_tries):
@@ -1340,18 +1392,37 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                     except:
                                         pass
 
-                                    print('  -> [SMS] Aguardando SMS (60s max)...')
+                                    print('  -> [SMS] Aguardando SMS (90s max)...')
                                     sms_code = None
                                     poll_start = time.time()
                                     last_reload = 0
-                                    while time.time() - poll_start < 60:
+                                    resend_done = False
+                                    while time.time() - poll_start < 90:
                                         try:
                                             elapsed_poll = int(time.time() - poll_start)
+                                            # Reload sms_page a cada 12s
                                             if elapsed_poll - last_reload >= 12 and elapsed_poll > 5:
                                                 last_reload = elapsed_poll
                                                 try:
                                                     sms_page.reload()
                                                     time.sleep(3)
+                                                except:
+                                                    pass
+                                            # Aos 40s, clicar "Não recebi o código" no Instagram para forcar reenvio
+                                            if not resend_done and elapsed_poll >= 40:
+                                                resend_done = True
+                                                try:
+                                                    page.bring_to_front()
+                                                    time.sleep(0.5)
+                                                    for resend_bt in ['N\u00e3o recebi', 'Didn', 'Resend', 'Reenviar', 'send another']:
+                                                        try:
+                                                            rb = page.locator('button:has-text("' + resend_bt + '"), div[role="button"]:has-text("' + resend_bt + '"), a:has-text("' + resend_bt + '")').first
+                                                            if rb.is_visible(timeout=1000):
+                                                                rb.click(force=True, timeout=2000)
+                                                                print('  -> [SMS] Clicou resend: "' + resend_bt + '"')
+                                                                break
+                                                        except:
+                                                            continue
                                                 except:
                                                     pass
                                             sms_code = extract_instagram_code_from_page(sms_page, existing_codes, is_sms24)
