@@ -69,6 +69,117 @@ def safe_goto_ig(page, url, label='goto'):
                  label='instagram.' + label, bot='instagram')
 
 
+def get_sms_number(context):
+    """
+    Abre receive-smss.com, lista numeros disponiveis, retorna o primeiro que atende.
+    Returns: (sms_page, number_full, number_no_prefix) ou (None, None, None)
+    Number format: '+13802603245' (full), '3802603245' (sem +1 para US)
+    """
+    try:
+        sms_page = context.new_page()
+        sms_page.set_default_timeout(15000)
+        sms_page.goto('https://receive-smss.com/', timeout=20000)
+        time.sleep(3)
+        numbers = sms_page.evaluate(r"""() => {
+            const results = [];
+            const links = document.querySelectorAll('a');
+            for (const link of links) {
+                const txt = (link.textContent || '').trim();
+                const m = txt.match(/\+?\d{10,15}/);
+                if (m) {
+                    results.push({ number: m[0], href: link.href });
+                }
+            }
+            return results.slice(0, 10);
+        }""") or []
+        if not numbers:
+            print('  -> [SMS] Nenhum numero encontrado')
+            sms_page.close()
+            return None, None, None
+        print('  -> [SMS] ' + str(len(numbers)) + ' numeros disponiveis')
+        # Preferir US (+1) ja que Instagram deixa default
+        chosen = None
+        for n in numbers:
+            num = n['number'].lstrip('+')
+            if num.startswith('1') and len(num) == 11:
+                chosen = n
+                break
+        if not chosen:
+            chosen = numbers[0]
+        full = chosen['number']
+        if not full.startswith('+'):
+            full = '+' + full
+        no_prefix = full.lstrip('+')
+        # Se for US (+1), remover o 1 inicial
+        if no_prefix.startswith('1') and len(no_prefix) == 11:
+            no_prefix = no_prefix[1:]
+        print('  -> [SMS] Numero escolhido: ' + full + ' (sem prefixo: ' + no_prefix + ')')
+        # Navegar para a pagina do numero para ver SMS
+        sms_page.goto(chosen['href'], timeout=20000)
+        time.sleep(2)
+        return sms_page, full, no_prefix
+    except Exception as e:
+        print('  -> [SMS] Erro ao pegar numero: ' + str(e)[:80])
+        try: sms_page.close()
+        except: pass
+        return None, None, None
+
+
+def wait_for_instagram_sms(sms_page, seen_codes=None, max_wait=180):
+    """
+    Faz polling na pagina do SMS esperando por mensagem do Instagram.
+    Returns: codigo de 6 digitos ou None
+    """
+    seen_codes = seen_codes or set()
+    import re as _re
+    start = time.time()
+    attempt = 0
+    while time.time() - start < max_wait:
+        attempt += 1
+        try:
+            # Reload para pegar novas mensagens
+            if attempt > 1 and attempt % 3 == 0:
+                sms_page.reload()
+                time.sleep(3)
+
+            # Buscar mensagens que contenham "Instagram" + codigo
+            messages = sms_page.evaluate(r"""() => {
+                const rows = document.querySelectorAll('.msgg, [class*="msg"]');
+                const msgs = [];
+                for (const row of rows) {
+                    const text = (row.textContent || '').trim();
+                    if (text.length > 10 && text.length < 400) {
+                        msgs.push(text);
+                    }
+                }
+                return msgs;
+            }""") or []
+
+            for msg in messages:
+                if 'instagram' not in msg.lower():
+                    continue
+                # Procurar codigo 6 digitos
+                m = _re.search(r'(\d{6})', msg)
+                if not m:
+                    continue
+                code = m.group(1)
+                if code in seen_codes:
+                    continue
+                print('  -> [SMS] *** CODIGO INSTAGRAM: ' + code + ' ***')
+                print('  -> [SMS] Mensagem: ' + msg[:100])
+                return code
+
+            elapsed = int(time.time() - start)
+            if attempt % 2 == 0:
+                print('  -> [SMS] [' + str(elapsed) + 's] aguardando SMS do Instagram... (mensagens: ' + str(len(messages)) + ')')
+            time.sleep(5)
+        except Exception as e:
+            print('  -> [SMS] Erro polling: ' + str(e)[:80])
+            time.sleep(3)
+    print('  -> [SMS] Timeout apos ' + str(max_wait) + 's')
+    return None
+
+
 def tuta_is_logged_in(page):
     """Retorna True se o Tuta esta logado (nao na tela de login)."""
     try:
@@ -1016,7 +1127,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                         except Exception as e:
                             print('  -> Erro busca Tuta: ' + str(e)[:80])
 
-                # === Detectar tela de SMS/telefone ===
+                # === Detectar tela de SMS/telefone (AUTOMATIZADO via receive-smss.com) ===
                 if not getattr(create_account, '_sms_done', False):
                     try:
                         sms_input = page.locator('input[type="tel"], input[name="phone_number"], input[aria-label*="telefone" i], input[aria-label*="celular" i], input[aria-label*="phone" i]')
@@ -1036,54 +1147,134 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                             except:
                                 pass
 
-                        if sms_visible:
-                            if not getattr(create_account, '_sms_detected', False):
-                                create_account._sms_detected = True
-                                create_account._sms_start_time = time.time()
-                                # Capturar valor inicial do input (pode ja ter algo digitado)
+                        if sms_visible and not getattr(create_account, '_sms_handler_running', False):
+                            create_account._sms_handler_running = True
+                            print('\n' + '='*60)
+                            print('  *** TELA DE SMS DETECTADA — automatizando via receive-smss.com ***')
+                            print('='*60)
+                            update_status(8, 'Automatizando SMS via receive-smss.com...')
+
+                            # 1) Pegar numero temporario
+                            sms_page, full_num, no_prefix = get_sms_number(context)
+                            if not sms_page:
+                                print('  -> [SMS] Falha ao pegar numero, voltando pro modo manual')
+                                create_account._sms_handler_running = False
+                            else:
+                                # Cache de codigos existentes no numero (ignorar)
+                                existing_codes = set()
                                 try:
-                                    create_account._sms_initial_len = len(sms_input.first.input_value() or '')
+                                    pre_msgs = sms_page.evaluate(r"""() => {
+                                        const rows = document.querySelectorAll('.msgg, [class*="msg"]');
+                                        const out = [];
+                                        for (const r of rows) {
+                                            const t = (r.textContent || '').trim();
+                                            if (t.length > 5) out.push(t);
+                                        }
+                                        return out;
+                                    }""") or []
+                                    import re as _re2
+                                    for m in pre_msgs:
+                                        for c in _re2.findall(r'\b(\d{6})\b', m):
+                                            existing_codes.add(c)
+                                    print('  -> [SMS] Codigos ja existentes no numero: ' + str(len(existing_codes)))
                                 except:
-                                    create_account._sms_initial_len = 0
-                                print('\n  *** SMS NECESSARIO! ***')
-                                print('  *** Pegue o SMS no seu celular e digite o codigo NO INSTAGRAM ***')
-                                update_status(8, 'ACAO NECESSARIA: Digite o codigo SMS no Instagram — aguardando 10min')
+                                    pass
 
-                            # Verificar se usuario digitou codigo
-                            try:
-                                current_val = sms_input.first.input_value() or ''
-                            except:
-                                current_val = ''
-
-                            if len(current_val) >= 6 and len(current_val) > create_account._sms_initial_len:
-                                print('  -> Codigo SMS digitado pelo usuario! Clicando Continuar...')
-                                time.sleep(2)  # Dar tempo de terminar de digitar
-                                for bt in ['Continuar', 'Next', 'Confirm', 'Avan', 'Enviar']:
+                                # 2) Preencher numero no Instagram
+                                try:
+                                    page.bring_to_front()
+                                    time.sleep(0.5)
+                                    ci = sms_input.first
+                                    # Tentativa 1: fill
                                     try:
-                                        b = page.locator('button:has-text("' + bt + '"), div[role="button"]:has-text("' + bt + '")').first
-                                        if b.is_visible(timeout=2000):
-                                            b.click()
-                                            print('  -> Clicou: ' + bt)
-                                            break
+                                        ci.fill(no_prefix, timeout=4000)
+                                        print('  -> [SMS] Numero preenchido via fill()')
                                     except:
-                                        continue
-                                create_account._sms_done = True
-                                time.sleep(5)
+                                        # Tentativa 2: JS direto
+                                        page.evaluate(r"""(num) => {
+                                            const inp = document.querySelector('input[type="tel"], input[name="phone_number"], input[aria-label*="telefone" i]');
+                                            if (inp) {
+                                                inp.focus();
+                                                const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                                                setter.call(inp, num);
+                                                inp.dispatchEvent(new Event('input', { bubbles: true }));
+                                                inp.dispatchEvent(new Event('change', { bubbles: true }));
+                                            }
+                                        }""", no_prefix)
+                                        print('  -> [SMS] Numero preenchido via JS')
+                                    time.sleep(1.5)
+                                    # Clicar Enviar codigo
+                                    for bt in ['Enviar c', 'Send Code', 'Send', 'Enviar', 'Continuar', 'Next']:
+                                        try:
+                                            b = page.locator('button:has-text("' + bt + '"), div[role="button"]:has-text("' + bt + '")').first
+                                            if b.is_visible(timeout=1500):
+                                                b.click(force=True, timeout=3000)
+                                                print('  -> [SMS] Clicou: "' + bt + '"')
+                                                break
+                                        except:
+                                            continue
+                                    time.sleep(3)
+                                except Exception as e:
+                                    print('  -> [SMS] Erro preencher numero: ' + str(e)[:80])
 
-                            # Status com countdown
-                            elapsed = int(time.time() - create_account._sms_start_time)
-                            mm = elapsed // 60
-                            ss = elapsed % 60
-                            if elapsed % 10 == 0:
-                                update_status(8, 'ACAO NECESSARIA: Digite codigo SMS no Instagram (' + str(mm).zfill(2) + ':' + str(ss).zfill(2) + '/10:00)')
+                                # 3) Esperar SMS chegar no receive-smss.com
+                                print('  -> [SMS] Aguardando SMS do Instagram no numero ' + full_num + '...')
+                                update_status(8, 'Aguardando SMS do Instagram...')
+                                sms_code = wait_for_instagram_sms(sms_page, seen_codes=existing_codes, max_wait=180)
 
-                            # Timeout 10 min
-                            if elapsed > 600:
-                                print('  -> Timeout SMS (10min) — usuario nao respondeu')
-                                update_status(8, 'Timeout SMS', done=True, error='sms_timeout')
-                                break
-                    except:
-                        pass
+                                if sms_code:
+                                    # 4) Preencher codigo no Instagram
+                                    page.bring_to_front()
+                                    time.sleep(1)
+                                    code_input2 = page.locator('input[type="text"][maxlength="6"], input[name*="code" i], input[aria-label*="digo" i], input[type="tel"]')
+                                    filled = False
+                                    try:
+                                        code_input2.first.fill(sms_code, timeout=4000)
+                                        filled = True
+                                        print('  -> [SMS] Codigo preenchido via fill()')
+                                    except:
+                                        try:
+                                            page.evaluate(r"""(code) => {
+                                                const inputs = document.querySelectorAll('input');
+                                                for (const inp of inputs) {
+                                                    if (inp.type === 'hidden' || inp.disabled) continue;
+                                                    if (inp.offsetHeight === 0) continue;
+                                                    inp.focus();
+                                                    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                                                    setter.call(inp, code);
+                                                    inp.dispatchEvent(new Event('input', { bubbles: true }));
+                                                    inp.dispatchEvent(new Event('change', { bubbles: true }));
+                                                    return true;
+                                                }
+                                            }""", sms_code)
+                                            filled = True
+                                            print('  -> [SMS] Codigo preenchido via JS')
+                                        except Exception as e:
+                                            print('  -> [SMS] Erro fill codigo: ' + str(e)[:80])
+
+                                    if filled:
+                                        time.sleep(1)
+                                        for bt in ['Continuar', 'Next', 'Confirm', 'Avan', 'Confirmar']:
+                                            try:
+                                                b = page.locator('button:has-text("' + bt + '"), div[role="button"]:has-text("' + bt + '")').first
+                                                if b.is_visible(timeout=1500):
+                                                    b.click(force=True, timeout=3000)
+                                                    print('  -> [SMS] >>> CODIGO ENVIADO com "' + bt + '"')
+                                                    break
+                                            except:
+                                                continue
+                                        create_account._sms_done = True
+                                        try:
+                                            sms_page.close()
+                                        except:
+                                            pass
+                                        time.sleep(5)
+                                else:
+                                    print('  -> [SMS] Nao recebeu SMS em 180s. Talvez o numero nao esteja recebendo.')
+                                    print('  -> [SMS] Continuando em modo manual — digite o codigo manualmente no Instagram')
+                                    create_account._sms_handler_running = False
+                    except Exception as e:
+                        print('  -> Erro SMS handler: ' + str(e)[:100])
 
                 # === Pular telas opcionais (nao pular se SMS ativo) ===
                 if not getattr(create_account, '_sms_detected', False) or getattr(create_account, '_sms_done', False):
