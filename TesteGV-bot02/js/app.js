@@ -1153,6 +1153,11 @@ var App = App || {};
       App.hideBotStatus();
     });
 
+    // Detecao de stall (timeout warning)
+    var lastStepChange = Date.now();
+    var lastStep = 0;
+    var stallWarningShown = false;
+
     // Iniciar automação no servidor
     fetch('/api/create-protonmail', {
       method: 'POST',
@@ -1173,6 +1178,25 @@ var App = App || {};
         fetch('/api/status')
           .then(function(r) { return r.json(); })
           .then(function(s) {
+            // Detectar stall (step nao muda por 30s)
+            if (s.step !== lastStep) {
+              lastStep = s.step;
+              lastStepChange = Date.now();
+              stallWarningShown = false;
+              var sw = document.getElementById('stall-warning');
+              if (sw) sw.remove();
+            } else if (!stallWarningShown && !s.done && Date.now() - lastStepChange > 30000) {
+              stallWarningShown = true;
+              var stepsElW = document.getElementById('auto-steps');
+              if (stepsElW) {
+                var warn = document.createElement('div');
+                warn.id = 'stall-warning';
+                warn.style.cssText = 'margin-top:12px;padding:12px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);border-radius:10px;color:#fbbf24;font-size:12px;text-align:center;';
+                warn.innerHTML = '&#9888; Sem progresso ha 30s — pode ser lentidao. Aguarde ou cancele e tente novamente.';
+                stepsElW.parentNode.insertBefore(warn, stepsElW.nextSibling);
+              }
+            }
+
             // Atualizar modal
             var stepsEl = document.getElementById('auto-steps');
             if (stepsEl) stepsEl.innerHTML = buildStepsHTML(s.step, s.message);
@@ -1180,6 +1204,8 @@ var App = App || {};
             if (s.done) {
               clearInterval(polling);
               App.hideBotStatus();
+              var swe = document.getElementById('stall-warning');
+              if (swe) swe.remove();
               if (s.success) {
                 // Sucesso!
                 App.notify('ProtonMail criado!', username + '@proton.me');
@@ -1660,6 +1686,34 @@ var App = App || {};
     App.copyToClipboard(text, el);
   });
 
+  // Copiar como tabela (Excel-friendly)
+  bindAction('copy-as-table', function(e, el) {
+    var emp = state.employee;
+    var password = state.suggestedPassword || '';
+    var email = emp.emailDesejado ? emp.emailDesejado + '@proton.me' : '';
+    var rows = [];
+    // Header
+    rows.push(['Nome', 'Email', 'Senha', 'Plataforma', 'Conta', 'Status'].join('\t'));
+    // Para cada plataforma criada
+    var platformIds = Object.keys(state.platforms);
+    for (var i = 0; i < platformIds.length; i++) {
+      var pid = platformIds[i];
+      var ps = state.platforms[pid];
+      var platName = (App.platforms[pid] && App.platforms[pid].name) || pid;
+      rows.push([
+        emp.nomeCompleto || '',
+        email,
+        password,
+        platName,
+        ps.accountInfo || '',
+        ps.completed ? 'Criada' : 'Pendente'
+      ].join('\t'));
+    }
+    var text = rows.join('\n');
+    App.copyToClipboard(text, el);
+    App.showToast('Tabela copiada! Cole no Excel/Sheets', 'success');
+  });
+
   // Exportar TXT
   bindAction('export-txt', function() {
     var text = App.generateSummaryText(state);
@@ -1867,13 +1921,14 @@ var App = App || {};
         if (oldError) oldError.remove();
 
         if (errors.length > 0) {
-          var errorHtml = '<div class="form-error mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4">' +
-            '<p class="text-sm font-semibold text-red-400 mb-1">Corrija os seguintes erros:</p>' +
-            '<ul class="list-disc pl-5 text-sm text-red-300">' +
-            errors.map(function(err) { return '<li>' + err + '</li>'; }).join('') +
-            '</ul></div>';
-          form.querySelector('button[type="submit"]').insertAdjacentHTML('beforebegin', errorHtml);
-          App.showToast('Preencha todos os campos obrigatórios', 'error');
+          // Mostrar modal com todos os erros
+          App.showErrorModal(errors, function(fieldId) {
+            var input = document.querySelector('[name="' + fieldId + '"]');
+            if (input) {
+              input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              input.focus();
+            }
+          });
           return;
         }
 
@@ -2135,4 +2190,18 @@ var App = App || {};
 
   // Iniciar a aplicação
   render();
+
+  // Iniciar poll de conectividade (delayed para nao atrasar startup)
+  setTimeout(function() {
+    if (App.startConnectivityPoll) App.startConnectivityPoll();
+  }, 2000);
+
+  // Renderizar connectivity badge apos cada render (se ja tiver estado)
+  var origRender = render;
+  // Nota: render e const local, nao posso reatribuir. Uso setInterval leve.
+  setInterval(function() {
+    if (App._connectivityState && App.renderConnectivityBadge) {
+      App.renderConnectivityBadge();
+    }
+  }, 3000);
 })();

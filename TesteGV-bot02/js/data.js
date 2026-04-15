@@ -334,6 +334,120 @@ App.showBotStatus = function(platform, startTime) {
   App._botStatusTimer = setInterval(updateTimer, 1000);
 };
 
+// === Connectivity check ===
+App._connectivityState = null;
+App._connectivityInterval = null;
+App.checkConnectivity = function() {
+  fetch('/api/connectivity')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      App._connectivityState = data;
+      App.renderConnectivityBadge();
+    })
+    .catch(function() {});
+};
+
+App.renderConnectivityBadge = function() {
+  var badge = document.getElementById('connectivity-badge');
+  if (!badge || !App._connectivityState) return;
+  var data = App._connectivityState;
+  var total = Object.keys(data).length;
+  var ok = 0;
+  for (var k in data) { if (data[k].ok) ok++; }
+
+  var color, dot, label;
+  if (ok === total) {
+    color = 'bg-green-500/15 border border-green-500/30 text-green-400';
+    dot = '#4ade80';
+    label = 'Tudo online';
+  } else if (ok > 0) {
+    color = 'bg-amber-500/15 border border-amber-500/30 text-amber-400';
+    dot = '#fbbf24';
+    label = ok + '/' + total + ' online';
+  } else {
+    color = 'bg-red-500/15 border border-red-500/30 text-red-400';
+    dot = '#f87171';
+    label = 'Offline';
+  }
+
+  badge.className = 'flex items-center gap-1 px-2 py-1 rounded-lg text-xs cursor-pointer ' + color;
+  badge.classList.remove('hidden');
+  badge.innerHTML = '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:' + dot + ';"></span>' +
+    '<span class="hidden sm:inline">' + label + '</span>';
+  badge.setAttribute('title', 'Conectividade: ' + Object.keys(data).map(function(k) {
+    return k + ': ' + (data[k].ok ? '✓' : '✗');
+  }).join(', '));
+};
+
+App.startConnectivityPoll = function() {
+  if (App._connectivityInterval) return;
+  App.checkConnectivity();
+  App._connectivityInterval = setInterval(App.checkConnectivity, 60000); // a cada 1min
+};
+
+// === Modal de erros de validacao ===
+App.showErrorModal = function(errors, onFieldClick) {
+  var existing = document.getElementById('error-modal');
+  if (existing) existing.remove();
+
+  var modal = document.createElement('div');
+  modal.id = 'error-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9600;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(8px);animation:fadeIn 0.2s ease;';
+
+  var errorList = errors.map(function(err, i) {
+    // Tenta extrair field id (primeira palavra relevante)
+    var fieldMap = {
+      'Nome completo': 'nomeCompleto', 'E-mail': 'emailDesejado',
+      'Data de nascimento': 'dataNascimento', 'Cargo': 'cargo',
+      'Departamento': 'departamento', 'Data de admissão': 'dataAdmissao'
+    };
+    var fieldId = '';
+    for (var key in fieldMap) {
+      if (err.indexOf(key) !== -1) { fieldId = fieldMap[key]; break; }
+    }
+    return '<li style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;margin-bottom:8px;cursor:' + (fieldId ? 'pointer' : 'default') + ';" ' +
+      (fieldId ? 'data-field-id="' + fieldId + '"' : '') + '>' +
+      '<svg style="width:16px;height:16px;color:#f87171;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+      '<span style="color:#fecaca;font-size:13px;flex:1;">' + App.escapeHtml(err) + '</span>' +
+      (fieldId ? '<svg style="width:14px;height:14px;color:#f87171;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>' : '') +
+      '</li>';
+  }).join('');
+
+  modal.innerHTML =
+    '<div style="background:rgba(15,23,42,0.98);border:1px solid rgba(239,68,68,0.3);border-radius:20px;padding:2rem;max-width:480px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,0.6);">' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">' +
+        '<div style="width:44px;height:44px;border-radius:12px;background:rgba(239,68,68,0.15);display:flex;align-items:center;justify-content:center;">' +
+          '<svg style="width:22px;height:22px;color:#f87171;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>' +
+        '</div>' +
+        '<div>' +
+          '<h3 style="font-size:16px;font-weight:700;color:#f1f5f9;">Corrija os seguintes erros</h3>' +
+          '<p style="font-size:12px;color:#94a3b8;margin-top:2px;">' + errors.length + ' problema' + (errors.length !== 1 ? 's' : '') + ' encontrado' + (errors.length !== 1 ? 's' : '') + ' (clique para ir ao campo)</p>' +
+        '</div>' +
+      '</div>' +
+      '<ul id="error-list" style="list-style:none;padding:0;margin:0;max-height:300px;overflow-y:auto;">' + errorList + '</ul>' +
+      '<button id="error-close" style="margin-top:16px;width:100%;border-radius:12px;padding:12px;background:#334155;color:#f1f5f9;font-weight:600;border:none;cursor:pointer;font-size:14px;">Fechar</button>' +
+    '</div>';
+
+  document.body.appendChild(modal);
+
+  document.getElementById('error-close').addEventListener('click', function() {
+    modal.remove();
+  });
+
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) modal.remove();
+  });
+
+  // Delegar cliques nos itens da lista
+  document.getElementById('error-list').addEventListener('click', function(e) {
+    var li = e.target.closest('li[data-field-id]');
+    if (!li) return;
+    var fid = li.getAttribute('data-field-id');
+    modal.remove();
+    if (onFieldClick) setTimeout(function() { onFieldClick(fid); }, 200);
+  });
+};
+
 // === Notificacoes desktop ===
 App.requestNotificationPermission = function() {
   if (!('Notification' in window)) return false;
@@ -764,12 +878,12 @@ App.platforms = {
 };
 
 App.formFields = [
-  { id: 'nomeCompleto', label: 'Nome completo', type: 'text', placeholder: 'Ex: João da Silva', required: true, minLength: 3, icon: 'user' },
-  { id: 'emailDesejado', label: 'E-mail desejado (usuário ProtonMail)', type: 'text', placeholder: 'nome.sobrenome ou nome.empresa', required: true, minLength: 3, helpText: 'Sugestões: maria.santos, pedro.costa.gv, ana.tech — o "@proton.me" será adicionado automaticamente.', icon: 'mail' },
-  { id: 'dataNascimento', label: 'Data de nascimento', type: 'date', required: true, icon: 'calendar' },
-  { id: 'cargo', label: 'Cargo', type: 'text', placeholder: 'Ex: Analista de Marketing', required: true, icon: 'briefcase' },
+  { id: 'nomeCompleto', label: 'Nome completo', type: 'text', placeholder: 'Ex: João da Silva', required: true, minLength: 3, icon: 'user', help: 'Nome real completo do colaborador. Será usado nos perfis Instagram, Facebook e TikTok como display name.' },
+  { id: 'emailDesejado', label: 'E-mail desejado (usuário ProtonMail)', type: 'text', placeholder: 'nome.sobrenome ou nome.empresa', required: true, minLength: 3, helpText: 'Sugestões: maria.santos, pedro.costa.gv, ana.tech — o "@proton.me" será adicionado automaticamente.', icon: 'mail', help: 'Este username ProtonMail é a base de TUDO: vira o e-mail principal usado para criar Instagram, Facebook e TikTok. Escolha algo único e profissional.' },
+  { id: 'dataNascimento', label: 'Data de nascimento', type: 'date', required: true, icon: 'calendar', help: 'Usada no cadastro do Instagram e Facebook. Colaboradores menores de 18 anos podem ter restrições nas plataformas.' },
+  { id: 'cargo', label: 'Cargo', type: 'text', placeholder: 'Ex: Analista de Marketing', required: true, icon: 'briefcase', help: 'Aparece apenas no resumo/relatório interno. Não é enviado para as plataformas externas.' },
   {
-    id: 'departamento', label: 'Departamento', type: 'select', required: true, icon: 'building',
+    id: 'departamento', label: 'Departamento', type: 'select', required: true, icon: 'building', help: 'Usado apenas para organização interna e filtros no histórico de onboarding.',
     options: [
       { value: '', label: 'Selecione o departamento' },
       { value: 'marketing', label: 'Marketing' },
@@ -783,7 +897,7 @@ App.formFields = [
       { value: 'outro', label: 'Outro' }
     ]
   },
-  { id: 'dataAdmissao', label: 'Data de admissão', type: 'date', required: true, icon: 'calendar-check' }
+  { id: 'dataAdmissao', label: 'Data de admissão', type: 'date', required: true, icon: 'calendar-check', help: 'Data em que o colaborador foi contratado. Usada apenas no relatório final.' }
 ];
 
 // === Wizard helpers ===

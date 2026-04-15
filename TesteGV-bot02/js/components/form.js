@@ -7,6 +7,12 @@ App.renderForm = function(state) {
     var requiredMark = field.required
       ? ' <span class="text-red-400">*</span><span class="required-indicator">(obrigatório)</span>'
       : '';
+    var helpTip = field.help
+      ? ' <span class="help-tip" tabindex="0" role="button" aria-label="Ajuda sobre ' + field.label + '">' +
+          '<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.5 9a2.5 2.5 0 015 0c0 1.5-2.5 2-2.5 3.5M12 16h.01"/></svg>' +
+          '<span class="help-tip-text">' + App.escapeHtml(field.help) + '</span>' +
+        '</span>'
+      : '';
 
     if (field.type === 'select') {
       var optionsHtml = field.options.map(function(opt) {
@@ -16,7 +22,7 @@ App.renderForm = function(state) {
       return '' +
         '<div>' +
           '<label for="' + field.id + '" class="mb-1.5 block text-sm font-medium text-dark-200">' +
-            field.label + requiredMark +
+            field.label + requiredMark + helpTip +
           '</label>' +
           '<div class="relative">' +
             '<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-500">' + iconHtml + '</div>' +
@@ -42,7 +48,7 @@ App.renderForm = function(state) {
     return '' +
       '<div class="field-wrapper" data-field-id="' + field.id + '">' +
         '<label for="' + field.id + '" class="mb-1.5 block text-sm font-medium text-dark-200">' +
-          field.label + requiredMark +
+          field.label + requiredMark + helpTip +
         '</label>' +
         '<div class="relative">' +
           '<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-500">' + iconHtml + '</div>' +

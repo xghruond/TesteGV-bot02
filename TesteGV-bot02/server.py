@@ -69,6 +69,30 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if path == '/api/health':
             return self._json({'ok': True})
 
+        if path == '/api/connectivity':
+            # Checar acessibilidade dos servicos externos
+            import urllib.request
+            services = {
+                'protonmail': 'https://account.proton.me/signup',
+                'tutanota': 'https://app.tuta.com/login',
+                'instagram': 'https://www.instagram.com/accounts/emailsignup/'
+            }
+            result = {}
+            for name, url in services.items():
+                try:
+                    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                    resp = urllib.request.urlopen(req, timeout=4)
+                    result[name] = {
+                        'ok': True,
+                        'status': resp.getcode()
+                    }
+                except Exception as e:
+                    result[name] = {
+                        'ok': False,
+                        'error': str(e)[:80]
+                    }
+            return self._json(result)
+
         if path == '/api/status':
             platform = params.get('platform', 'protonmail')
             if platform == 'instagram':

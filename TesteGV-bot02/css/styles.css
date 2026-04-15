@@ -1064,3 +1064,68 @@ input[type="tel"]::placeholder {
   .rounded-lg, .rounded-xl, .rounded-2xl { border-radius: 6px !important; }
   .shadow-sm, .shadow-md, .shadow-lg { box-shadow: none !important; }
 }
+
+/* === Help tooltip (field contextual help) === */
+.help-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-left: 6px;
+  width: 16px;
+  height: 16px;
+  color: rgba(148, 163, 184, 0.7);
+  cursor: help;
+  vertical-align: middle;
+  transition: color 0.15s;
+  outline: none;
+}
+.help-tip:hover,
+.help-tip:focus {
+  color: rgb(74, 222, 128);
+}
+.help-tip-text {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  min-width: 200px;
+  max-width: 280px;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  border-radius: 8px;
+  color: rgb(226, 232, 240);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  white-space: normal;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 50;
+  backdrop-filter: blur(8px);
+}
+.help-tip-text::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(74, 222, 128, 0.3);
+}
+.help-tip:hover .help-tip-text,
+.help-tip:focus .help-tip-text {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+@media (max-width: 640px) {
+  .help-tip-text {
+    min-width: 160px;
+    max-width: 220px;
+    font-size: 10.5px;
+  }
+}
