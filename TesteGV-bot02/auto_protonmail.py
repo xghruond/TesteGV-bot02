@@ -12,6 +12,11 @@ import random
 import re
 import functools
 from playwright.sync_api import sync_playwright
+try:
+    from bot_utils import retry, log_event
+except ImportError:
+    def retry(op, **kw): return op()
+    def log_event(*a, **k): pass
 
 print = functools.partial(print, flush=True)
 
@@ -34,6 +39,13 @@ def update_status(step, message, done=False, success=False, error=None):
     status['done'] = done
     status['success'] = success
     status['error'] = error
+    level = 'error' if error else ('info' if not done else ('info' if success else 'warn'))
+    log_event('protonmail', level, message, step=step, extra={'done': done, 'success': success})
+
+
+def safe_goto(page, url, label='goto'):
+    return retry(lambda: page.goto(url, timeout=60000), tries=3, backoff=1.5,
+                 label='protonmail.' + label, bot='protonmail')
 
 
 def human_type(page, text):
@@ -323,7 +335,7 @@ def create_account(username, password, display_name):
         page = context.new_page()
         page.set_default_timeout(30000)
 
-        page.goto('https://account.proton.me/signup?plan=free', timeout=60000)
+        safe_goto(page, 'https://account.proton.me/signup?plan=free', label='signup')
         page.wait_for_load_state('domcontentloaded')
         print('  -> Pagina carregada')
         time.sleep(random.uniform(8, 12))

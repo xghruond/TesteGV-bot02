@@ -506,6 +506,9 @@ var App = App || {};
             ? '<button data-action="continue" class="mt-3 w-full rounded-xl border border-brand-500/30 bg-brand-500/10 px-8 py-3.5 text-base font-semibold text-brand-400 backdrop-blur-sm transition-all hover:bg-brand-500/20 hover:border-brand-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)]">Continuar de onde parei</button>'
             : '') +
           historyButton +
+          '<button data-action="view-logs" class="mt-2 w-full rounded-xl border border-dark-700/50 bg-dark-800/40 px-8 py-3 text-sm font-medium text-dark-400 backdrop-blur-sm transition-all hover:bg-dark-800/60 hover:border-brand-500/30 hover:text-brand-400">' +
+            '<svg class="inline-block w-4 h-4 mr-1.5 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>' +
+            'Logs de Automacao</button>' +
 
           // Versão com separador
           '<div class="futuristic-separator mt-8"><span class="dot"></span></div>' +
@@ -606,6 +609,12 @@ var App = App || {};
       var completedCount = Object.values(record.platforms).filter(function(p) { return p.completed; }).length;
       var total = Object.keys(record.platforms).length;
       var allDone = completedCount === total;
+      var completedPlatformsList = [];
+      var _pids = Object.keys(record.platforms);
+      for (var _p = 0; _p < _pids.length; _p++) {
+        if (record.platforms[_pids[_p]].completed) completedPlatformsList.push(_pids[_p]);
+      }
+      var dateIso = (record.completedAt || '').slice(0, 10);
       var statusBadge = allDone
         ? '<span class="inline-flex items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 text-xs font-medium text-green-400">' + App.icons.check + ' Completo</span>'
         : '<span class="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-400">' + completedCount + '/' + total + '</span>';
@@ -621,7 +630,7 @@ var App = App || {};
       }
 
       return '' +
-        '<div class="history-row group flex items-center gap-4 rounded-xl border border-dark-700/60 bg-dark-800/80 p-4 backdrop-blur-sm hover:border-brand-500/40 hover:bg-dark-800 transition-all cursor-pointer" data-search-name="' + App.escapeHtml((record.employee.nomeCompleto || '').toLowerCase()) + '" data-action="view-history-item" data-history-id="' + record.id + '">' +
+        '<div class="history-row group flex items-center gap-4 rounded-xl border border-dark-700/60 bg-dark-800/80 p-4 backdrop-blur-sm hover:border-brand-500/40 hover:bg-dark-800 transition-all cursor-pointer" data-search-name="' + App.escapeHtml((record.employee.nomeCompleto || '').toLowerCase()) + '" data-filter-date="' + dateIso + '" data-filter-status="' + (allDone ? 'complete' : 'partial') + '" data-filter-platforms="' + completedPlatformsList.join(',') + '" data-action="view-history-item" data-history-id="' + record.id + '">' +
           '<div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-500/15 text-brand-400">' + App.icons.user + '</div>' +
           '<div class="flex-1 min-w-0">' +
             '<p class="font-semibold text-dark-100 truncate group-hover:text-white transition-colors">' + App.escapeHtml(record.employee.nomeCompleto) + '</p>' +
@@ -660,13 +669,31 @@ var App = App || {};
         '</div>' +
       '</div>';
 
-    // Busca
+    // Busca avancada: nome + data + status + plataforma
     var searchHtml =
-      '<div class="mb-4 relative">' +
-        '<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-500">' +
-          '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>' +
+      '<div class="mb-4 space-y-3">' +
+        '<div class="relative">' +
+          '<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-500">' +
+            '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>' +
+          '</div>' +
+          '<input type="text" id="history-search" placeholder="Buscar por nome do colaborador..." class="dark-input block w-full rounded-xl py-2.5 pl-10 pr-4 text-sm" />' +
         '</div>' +
-        '<input type="text" id="history-search" placeholder="Buscar por nome do colaborador..." class="dark-input block w-full rounded-xl py-2.5 pl-10 pr-4 text-sm" />' +
+        '<div class="grid grid-cols-2 sm:grid-cols-4 gap-2">' +
+          '<input type="date" id="history-date-from" title="Data inicial" class="dark-input rounded-lg px-3 py-2 text-xs" />' +
+          '<input type="date" id="history-date-to" title="Data final" class="dark-input rounded-lg px-3 py-2 text-xs" />' +
+          '<select id="history-status" class="dark-input rounded-lg px-3 py-2 text-xs">' +
+            '<option value="">Todos os status</option>' +
+            '<option value="complete">Completo (4/4)</option>' +
+            '<option value="partial">Parcial</option>' +
+          '</select>' +
+          '<select id="history-platform" class="dark-input rounded-lg px-3 py-2 text-xs">' +
+            '<option value="">Todas plataformas</option>' +
+            '<option value="protonmail">Com ProtonMail</option>' +
+            '<option value="instagram">Com Instagram</option>' +
+            '<option value="facebook">Com Facebook</option>' +
+            '<option value="tiktok">Com TikTok</option>' +
+          '</select>' +
+        '</div>' +
       '</div>';
 
     return '' +
@@ -686,6 +713,79 @@ var App = App || {};
         searchHtml +
         '<div class="space-y-3" id="history-rows">' + rows + '</div>' +
       '</div>';
+  }
+
+  function renderLogsScreen() {
+    return '' +
+      '<div class="mx-auto max-w-5xl">' +
+        '<div class="mb-6 flex items-center justify-between">' +
+          '<div class="flex items-center gap-3">' +
+            '<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/15 text-brand-400">' +
+              '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>' +
+            '</div>' +
+            '<div><h2 class="text-2xl font-bold text-dark-50">Logs de Automacao</h2>' +
+              '<p class="text-sm text-dark-500" id="logs-count">Carregando...</p></div>' +
+          '</div>' +
+          '<div class="flex items-center gap-2">' +
+            '<button data-action="refresh-logs" class="rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-brand-400 transition-colors">' + App.icons.refresh + ' Atualizar</button>' +
+            '<button data-action="clear-logs" class="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/20 transition-colors">Limpar</button>' +
+            '<button data-action="back-welcome" class="rounded-xl border border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">' + App.icons.chevronLeft + ' Voltar</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="flex items-center gap-2 mb-4">' +
+          '<select id="logs-filter-bot" class="dark-input rounded-lg px-3 py-2 text-xs">' +
+            '<option value="">Todos os bots</option>' +
+            '<option value="protonmail">ProtonMail</option>' +
+            '<option value="instagram">Instagram</option>' +
+            '<option value="tutanota">Tutanota</option>' +
+          '</select>' +
+          '<select id="logs-filter-level" class="dark-input rounded-lg px-3 py-2 text-xs">' +
+            '<option value="">Todos os niveis</option>' +
+            '<option value="info">Info</option>' +
+            '<option value="warn">Warning</option>' +
+            '<option value="error">Error</option>' +
+          '</select>' +
+        '</div>' +
+        '<div id="logs-container" class="space-y-1.5 font-mono text-xs"><p class="text-dark-500 text-center py-8">Carregando logs...</p></div>' +
+      '</div>';
+  }
+
+  function loadAndRenderLogs() {
+    var container = document.getElementById('logs-container');
+    var countEl = document.getElementById('logs-count');
+    if (!container) return;
+    fetch('/api/logs')
+      .then(function(r) { return r.json(); })
+      .catch(function() { return { logs: [] }; })
+      .then(function(data) {
+        var logs = (data && data.logs) || [];
+        var botFilter = (document.getElementById('logs-filter-bot') || {}).value || '';
+        var levelFilter = (document.getElementById('logs-filter-level') || {}).value || '';
+        var filtered = logs.filter(function(l) {
+          if (botFilter && l.bot !== botFilter) return false;
+          if (levelFilter && l.level !== levelFilter) return false;
+          return true;
+        });
+        if (countEl) countEl.textContent = filtered.length + ' eventos' + (filtered.length !== logs.length ? ' (de ' + logs.length + ')' : '');
+        if (filtered.length === 0) {
+          container.innerHTML = '<p class="text-dark-500 text-center py-8">Nenhum log registrado ainda. Rode uma automacao!</p>';
+          return;
+        }
+        container.innerHTML = filtered.slice().reverse().map(function(l) {
+          var levelClass = l.level === 'error' ? 'text-red-400 border-red-500/30 bg-red-500/5' :
+                           l.level === 'warn' ? 'text-amber-400 border-amber-500/30 bg-amber-500/5' :
+                           'text-dark-300 border-dark-700/50 bg-dark-800/40';
+          var botBadge = '<span class="inline-block rounded px-1.5 py-0.5 bg-brand-500/10 text-brand-400 text-[10px] font-semibold">' + App.escapeHtml(l.bot) + '</span>';
+          var stepInfo = (l.step !== null && l.step !== undefined) ? ' <span class="text-dark-500">[step ' + l.step + ']</span>' : '';
+          var extra = l.extra && Object.keys(l.extra).length
+            ? '<div class="text-[10px] text-dark-500 mt-1">' + App.escapeHtml(JSON.stringify(l.extra)) + '</div>' : '';
+          return '<div class="flex items-start gap-2 rounded-lg border px-3 py-2 ' + levelClass + '">' +
+            '<span class="text-dark-500 shrink-0">' + App.escapeHtml(l.ts.split('T')[1] || l.ts) + '</span>' +
+            botBadge +
+            '<div class="flex-1 min-w-0">' + App.escapeHtml(l.message) + stepInfo + extra + '</div>' +
+          '</div>';
+        }).join('');
+      });
   }
 
   function renderHistoryDetail(recordId) {
@@ -718,7 +818,7 @@ var App = App || {};
     var content = document.getElementById('app-content');
     var checklistContainer = document.getElementById('app-checklist');
 
-    if (state.currentScreen === 'welcome' || state.currentScreen === 'history' || state.currentScreen === 'history-detail') {
+    if (state.currentScreen === 'welcome' || state.currentScreen === 'history' || state.currentScreen === 'history-detail' || state.currentScreen === 'logs') {
       header.innerHTML = '';
     } else {
       header.innerHTML = App.renderHeader(state);
@@ -748,23 +848,56 @@ var App = App || {};
           break;
         case 'history':
           content.innerHTML = renderHistory();
-          // Hook busca
+          // Hook busca avancada
           setTimeout(function() {
             var search = document.getElementById('history-search');
-            if (search) {
-              search.addEventListener('input', function() {
-                var q = search.value.toLowerCase().trim();
-                var rows = document.querySelectorAll('.history-row');
-                for (var r = 0; r < rows.length; r++) {
-                  var name = rows[r].getAttribute('data-search-name') || '';
-                  rows[r].style.display = (!q || name.indexOf(q) !== -1) ? '' : 'none';
-                }
-              });
+            var dateFrom = document.getElementById('history-date-from');
+            var dateTo = document.getElementById('history-date-to');
+            var statusSel = document.getElementById('history-status');
+            var platSel = document.getElementById('history-platform');
+
+            function applyFilters() {
+              var q = (search && search.value || '').toLowerCase().trim();
+              var df = (dateFrom && dateFrom.value) || '';
+              var dt = (dateTo && dateTo.value) || '';
+              var st = (statusSel && statusSel.value) || '';
+              var pf = (platSel && platSel.value) || '';
+              var rows = document.querySelectorAll('.history-row');
+              for (var r = 0; r < rows.length; r++) {
+                var row = rows[r];
+                var name = row.getAttribute('data-search-name') || '';
+                var rowDate = row.getAttribute('data-filter-date') || '';
+                var rowStatus = row.getAttribute('data-filter-status') || '';
+                var rowPlats = row.getAttribute('data-filter-platforms') || '';
+                var show = true;
+                if (q && name.indexOf(q) === -1) show = false;
+                if (df && rowDate && rowDate < df) show = false;
+                if (dt && rowDate && rowDate > dt) show = false;
+                if (st && rowStatus !== st) show = false;
+                if (pf && rowPlats.split(',').indexOf(pf) === -1) show = false;
+                row.style.display = show ? '' : 'none';
+              }
             }
+
+            if (search) search.addEventListener('input', applyFilters);
+            if (dateFrom) dateFrom.addEventListener('change', applyFilters);
+            if (dateTo) dateTo.addEventListener('change', applyFilters);
+            if (statusSel) statusSel.addEventListener('change', applyFilters);
+            if (platSel) platSel.addEventListener('change', applyFilters);
           }, 50);
           break;
         case 'history-detail':
           content.innerHTML = renderHistoryDetail(state.viewingHistoryId);
+          break;
+        case 'logs':
+          content.innerHTML = renderLogsScreen();
+          setTimeout(function() {
+            loadAndRenderLogs();
+            var bf = document.getElementById('logs-filter-bot');
+            var lf = document.getElementById('logs-filter-level');
+            if (bf) bf.addEventListener('change', loadAndRenderLogs);
+            if (lf) lf.addEventListener('change', loadAndRenderLogs);
+          }, 50);
           break;
         default:
           content.innerHTML = renderWelcome();
@@ -1759,6 +1892,22 @@ var App = App || {};
     navigateTo('history');
   });
 
+  bindAction('view-logs', function() {
+    navigateTo('logs');
+  });
+
+  bindAction('refresh-logs', function() {
+    loadAndRenderLogs();
+  });
+
+  bindAction('clear-logs', function() {
+    if (!confirm('Limpar todos os logs?')) return;
+    fetch('/api/logs/clear', { method: 'POST' }).then(function() {
+      loadAndRenderLogs();
+      App.showToast('Logs limpos', 'success');
+    });
+  });
+
   bindAction('back-welcome', function() {
     navigateTo('welcome');
   });
@@ -1921,7 +2070,6 @@ var App = App || {};
         if (oldError) oldError.remove();
 
         if (errors.length > 0) {
-          // Mostrar modal com todos os erros
           App.showErrorModal(errors, function(fieldId) {
             var input = document.querySelector('[name="' + fieldId + '"]');
             if (input) {
@@ -1932,32 +2080,53 @@ var App = App || {};
           return;
         }
 
-        // Mostrar loading state no botao
-        var submitBtn = document.getElementById('form-submit-btn');
-        if (submitBtn) {
-          submitBtn.disabled = true;
-          var lbl = submitBtn.querySelector('.submit-label');
-          var spn = submitBtn.querySelector('.submit-spinner');
-          if (lbl) lbl.textContent = 'Processando...';
-          if (spn) spn.style.display = 'inline-flex';
+        function proceed() {
+          var submitBtn = document.getElementById('form-submit-btn');
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            var lbl = submitBtn.querySelector('.submit-label');
+            var spn = submitBtn.querySelector('.submit-spinner');
+            if (lbl) lbl.textContent = 'Processando...';
+            if (spn) spn.style.display = 'inline-flex';
+          }
+          for (var key in data) {
+            if (data.hasOwnProperty(key)) state.employee[key] = data[key];
+          }
+          if (!state.suggestedPassword) {
+            state.suggestedPassword = App.generatePassword(14);
+          }
+          App.storage.save(state);
+          if (preferManual) {
+            preferManual = false;
+            state.wizardMode = false;
+            navigateTo('platforms');
+          } else {
+            state.wizardMode = true;
+            state.wizardPlatformIndex = 0;
+            navigateTo('wizard');
+          }
         }
 
-        for (var key in data) {
-          if (data.hasOwnProperty(key)) state.employee[key] = data[key];
-        }
-        if (!state.suggestedPassword) {
-          state.suggestedPassword = App.generatePassword(14);
-        }
-        App.storage.save(state);
-        if (preferManual) {
-          preferManual = false;
-          state.wizardMode = false;
-          navigateTo('platforms');
-        } else {
-          state.wizardMode = true;
-          state.wizardPlatformIndex = 0;
-          navigateTo('wizard');
-        }
+        // B.2: validacao de username ProtonMail antes de prosseguir
+        var usernameToCheck = (data.emailDesejado || '').trim();
+        if (!usernameToCheck) { proceed(); return; }
+
+        fetch('/api/check-username?username=' + encodeURIComponent(usernameToCheck))
+          .then(function(r) { return r.json(); })
+          .catch(function() { return { ok: true }; })
+          .then(function(res) {
+            if (res && res.ok === false) {
+              App.showErrorModal(
+                [{ field: 'E-mail desejado (usuário ProtonMail)', message: res.reason || 'Username invalido' }],
+                function(fid) {
+                  var inp = document.querySelector('[name="emailDesejado"]');
+                  if (inp) { inp.scrollIntoView({ behavior: 'smooth', block: 'center' }); inp.focus(); }
+                }
+              );
+              return;
+            }
+            proceed();
+          });
       });
 
       // Auto-gerar chips de variações ao digitar o nome (com debounce)
@@ -2034,6 +2203,42 @@ var App = App || {};
         validationFields[vi].addEventListener('input', function() { applyValidation(this); });
         // Aplicar validacao inicial se ja tem valor
         if (validationFields[vi].value) applyValidation(validationFields[vi]);
+      }
+
+      // Auto-save debounced (3s) com indicador
+      var draftDebounce = null;
+      var saveDraftIndicator = function() {
+        var ind = document.getElementById('draft-indicator');
+        if (!ind) {
+          ind = document.createElement('div');
+          ind.id = 'draft-indicator';
+          ind.className = 'fixed bottom-4 left-4 z-30 flex items-center gap-1.5 rounded-lg bg-dark-800/90 border border-brand-500/30 px-3 py-1.5 text-xs text-brand-400 backdrop-blur-sm shadow-lg';
+          document.body.appendChild(ind);
+        }
+        var now = new Date();
+        var h = String(now.getHours()).padStart(2, '0');
+        var m = String(now.getMinutes()).padStart(2, '0');
+        ind.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Rascunho salvo às ' + h + ':' + m;
+        ind.style.opacity = '1';
+        setTimeout(function() { if (ind) ind.style.opacity = '0.4'; }, 2500);
+      };
+      var scheduleDraftSave = function() {
+        if (draftDebounce) clearTimeout(draftDebounce);
+        draftDebounce = setTimeout(function() {
+          var inputs = form.querySelectorAll('input, select');
+          for (var j = 0; j < inputs.length; j++) {
+            var name = inputs[j].getAttribute('name');
+            if (name && state.employee.hasOwnProperty(name)) {
+              state.employee[name] = inputs[j].value;
+            }
+          }
+          App.storage.save(state);
+          saveDraftIndicator();
+        }, 3000);
+      };
+      var draftInputs = form.querySelectorAll('input, select');
+      for (var di = 0; di < draftInputs.length; di++) {
+        draftInputs[di].addEventListener('input', scheduleDraftSave);
       }
 
       // Auto-save form fields on blur + visual validation

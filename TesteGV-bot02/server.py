@@ -22,6 +22,32 @@ sys.path.insert(0, ROOT_DIR)
 import auto_protonmail
 import auto_instagram
 import auto_tutanota
+import bot_utils
+
+
+PROTON_RESERVED = {
+    'admin', 'root', 'test', 'info', 'contact', 'support', 'help',
+    'noreply', 'no-reply', 'postmaster', 'abuse', 'webmaster',
+    'hostmaster', 'security', 'ceo', 'sales', 'proton', 'protonmail'
+}
+
+
+def validate_proton_username(username):
+    """Validacao local: regex + tamanho + reservados."""
+    import re
+    if not username:
+        return {'ok': False, 'reason': 'Username vazio'}
+    if len(username) < 3:
+        return {'ok': False, 'reason': 'Muito curto (minimo 3 caracteres)'}
+    if len(username) > 40:
+        return {'ok': False, 'reason': 'Muito longo (maximo 40 caracteres)'}
+    if not re.match(r'^[a-z0-9][a-z0-9._-]*[a-z0-9]$', username.lower()):
+        return {'ok': False, 'reason': 'Formato invalido. Use letras, numeros, ponto, traco, underscore'}
+    if username.lower() in PROTON_RESERVED:
+        return {'ok': False, 'reason': 'Username reservado. Escolha outro'}
+    if '..' in username or '--' in username or '__' in username:
+        return {'ok': False, 'reason': 'Sem caracteres especiais repetidos'}
+    return {'ok': True, 'reason': 'Username valido'}
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -93,6 +119,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     }
             return self._json(result)
 
+        if path == '/api/logs':
+            return self._json({'logs': bot_utils.get_logs()})
+
+        if path == '/api/check-username':
+            username = params.get('username', '').strip()
+            return self._json(validate_proton_username(username))
+
         if path == '/api/status':
             platform = params.get('platform', 'protonmail')
             if platform == 'instagram':
@@ -125,6 +158,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             data = json.loads(body)
         except:
             data = {}
+
+        if path == '/api/logs/clear':
+            bot_utils.clear_logs()
+            return self._json({'ok': True})
 
         if path == '/api/create-protonmail':
             username = data.get('username', '')

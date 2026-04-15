@@ -13,6 +13,11 @@ import re
 import functools
 import subprocess
 from playwright.sync_api import sync_playwright
+try:
+    from bot_utils import retry, log_event
+except ImportError:
+    def retry(op, **kw): return op()
+    def log_event(*a, **k): pass
 
 
 print = functools.partial(print, flush=True)
@@ -56,6 +61,13 @@ def update_status(step, message, done=False, success=False, error=None):
     status['done'] = done
     status['success'] = success
     status['error'] = error
+    level = 'error' if error else ('info' if not done else ('info' if success else 'warn'))
+    log_event('instagram', level, message, step=step, extra={'done': done, 'success': success})
+
+
+def safe_goto_ig(page, url, label='goto'):
+    return retry(lambda: page.goto(url, timeout=60000), tries=3, backoff=1.5,
+                 label='instagram.' + label, bot='instagram')
 
 
 def human_type(page, text):
@@ -325,7 +337,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
 
         # Agora sim ir para signup
         print('[2/8] Navegando para signup...')
-        page.goto('https://www.instagram.com/accounts/emailsignup/', timeout=60000)
+        safe_goto_ig(page, 'https://www.instagram.com/accounts/emailsignup/', label='signup')
         page.wait_for_load_state('domcontentloaded')
         time.sleep(random.uniform(5, 8))
 

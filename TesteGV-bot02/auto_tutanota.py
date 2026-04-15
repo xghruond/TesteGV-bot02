@@ -10,6 +10,11 @@ import time
 import random
 import functools
 from playwright.sync_api import sync_playwright
+try:
+    from bot_utils import retry, log_event
+except ImportError:
+    def retry(op, **kw): return op()
+    def log_event(*a, **k): pass
 
 print = functools.partial(print, flush=True)
 
@@ -32,6 +37,13 @@ def update_status(step, message, done=False, success=False, error=None):
     status['done'] = done
     status['success'] = success
     status['error'] = error
+    level = 'error' if error else 'info'
+    log_event('tutanota', level, message, step=step, extra={'done': done, 'success': success})
+
+
+def safe_goto_tuta(page, url, label='goto'):
+    return retry(lambda: page.goto(url, timeout=60000), tries=3, backoff=1.5,
+                 label='tutanota.' + label, bot='tutanota')
 
 
 def human_type(page, text):
@@ -136,7 +148,7 @@ def _create_tutanota_on_page(page, username, password):
     """Logica interna de criacao de conta Tutanota via keyboard navigation.
     Retorna True se sucesso, False se falha."""
 
-    page.goto('https://app.tuta.com/signup', timeout=60000)
+    safe_goto_tuta(page, 'https://app.tuta.com/signup', label='signup')
     page.wait_for_load_state('domcontentloaded')
     time.sleep(random.uniform(8, 12))
 
