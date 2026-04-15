@@ -377,9 +377,87 @@ var App = App || {};
     actionHandlers[name] = handler;
   }
 
+  // === Atalhos de teclado ===
+  document.addEventListener('keydown', function(e) {
+    // Ignorar atalhos dentro de inputs/textareas
+    var tag = (e.target.tagName || '').toLowerCase();
+    var isInput = tag === 'input' || tag === 'textarea' || tag === 'select';
+
+    // Ctrl+N — novo colaborador
+    if (e.ctrlKey && e.key === 'n') {
+      e.preventDefault();
+      if (confirm('Iniciar novo colaborador? (os dados atuais serao salvos no historico)')) {
+        if (actionHandlers['reset']) actionHandlers['reset'](e, null);
+      }
+      return;
+    }
+
+    // Ctrl+H — historico
+    if (e.ctrlKey && e.key === 'h') {
+      e.preventDefault();
+      navigateTo('history');
+      return;
+    }
+
+    // Esc — voltar / fechar modal
+    if (e.key === 'Escape') {
+      var modal = document.getElementById('automation-overlay');
+      if (modal) {
+        var cancelBtn = document.getElementById('auto-cancel');
+        if (cancelBtn) cancelBtn.click();
+        return;
+      }
+      // Fechar drawer checklist se aberto
+      var drawer = document.querySelector('.checklist-drawer.open');
+      if (drawer && actionHandlers['toggle-checklist']) {
+        actionHandlers['toggle-checklist'](e, null);
+        return;
+      }
+    }
+
+    // Enter (fora de input) — submit tela atual
+    if (e.key === 'Enter' && !isInput && !e.shiftKey) {
+      var primaryBtn = document.querySelector('button[data-action="start"], button[data-action="continue"], #form-submit-btn');
+      if (primaryBtn && primaryBtn.offsetHeight > 0) {
+        e.preventDefault();
+        primaryBtn.click();
+      }
+    }
+  });
+
   // === Tela de boas-vindas ===
   function renderWelcome() {
-    var historyCount = App.storage.loadHistory().length;
+    var historyArr = App.storage.loadHistory();
+    var historyCount = historyArr.length;
+
+    // Calcular estatisticas
+    var accountsCreated = 0;
+    var completedCount = 0;
+    for (var hx = 0; hx < historyArr.length; hx++) {
+      var r = historyArr[hx];
+      var cc = Object.values(r.platforms).filter(function(p) { return p.completed; }).length;
+      var tt = Object.keys(r.platforms).length;
+      accountsCreated += cc;
+      if (cc === tt) completedCount++;
+    }
+
+    var dashboardHtml = historyCount > 0
+      ? '<div class="mb-6 grid grid-cols-3 gap-2 max-w-md mx-auto">' +
+          '<div class="rounded-xl border border-brand-500/20 bg-brand-500/5 backdrop-blur-sm p-3 text-center hover:border-brand-500/40 hover:bg-brand-500/10 transition-all">' +
+            '<div class="text-2xl font-bold text-brand-400">' + historyCount + '</div>' +
+            '<div class="text-[10px] text-dark-400 uppercase tracking-wider">Onboardings</div>' +
+          '</div>' +
+          '<div class="rounded-xl border border-green-500/20 bg-green-500/5 backdrop-blur-sm p-3 text-center hover:border-green-500/40 hover:bg-green-500/10 transition-all">' +
+            '<div class="text-2xl font-bold text-green-400">' + completedCount + '</div>' +
+            '<div class="text-[10px] text-dark-400 uppercase tracking-wider">Completos</div>' +
+          '</div>' +
+          '<div class="rounded-xl border border-amber-500/20 bg-amber-500/5 backdrop-blur-sm p-3 text-center hover:border-amber-500/40 hover:bg-amber-500/10 transition-all">' +
+            '<div class="text-2xl font-bold text-amber-400">' + accountsCreated + '</div>' +
+            '<div class="text-[10px] text-dark-400 uppercase tracking-wider">Contas</div>' +
+          '</div>' +
+        '</div>'
+      : '';
+
     var historyButton = historyCount > 0
       ? '<button data-action="view-history" class="mt-4 w-full rounded-xl border border-dark-700/50 bg-dark-800/40 px-8 py-3.5 text-base font-medium text-dark-300 backdrop-blur-sm transition-all hover:bg-dark-800/60 hover:border-brand-500/30 hover:text-white">' +
           App.icons.clipboard + ' Hist\u00f3rico (' + historyCount + ')</button>'
@@ -402,8 +480,11 @@ var App = App || {};
             '<h1 class="mb-3 text-5xl font-extrabold tracking-tight neon-text">' +
               '<span class="text-gradient">Green BOT</span>' +
             '</h1>' +
-            '<p id="typewriter-text" class="text-lg text-dark-400 h-7"></p>' +
+            '<p id="typewriter-text" class="text-lg text-dark-400 h-7 mb-4"></p>' +
           '</div>' +
+
+          // Dashboard de estatisticas (se ha historico)
+          dashboardHtml +
 
           // Cards de plataformas - grid 4 colunas com stagger
           '<div class="mb-8">' +
@@ -764,6 +845,8 @@ var App = App || {};
   bindAction('start', function(e, el) {
     createRipple(e, el);
     state.startedAt = new Date().toISOString();
+    // Pedir permissao de notificacao (primeira interacao)
+    if (App.requestNotificationPermission) App.requestNotificationPermission();
     navigateTo('form');
   });
 
@@ -889,6 +972,67 @@ var App = App || {};
     // Disparar geração de chips de email
     var nameEl = document.querySelector('[name="nomeCompleto"]');
     if (nameEl) nameEl.dispatchEvent(new Event('input'));
+  });
+
+  // Mostrar modal de atalhos de teclado
+  bindAction('show-shortcuts', function() {
+    var existing = document.getElementById('shortcuts-modal');
+    if (existing) { existing.remove(); return; }
+    var modal = document.createElement('div');
+    modal.id = 'shortcuts-modal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(8px);';
+    modal.innerHTML =
+      '<div style="background:rgba(15,23,42,0.97);border:1px solid rgba(34,197,94,0.3);border-radius:20px;padding:2rem;max-width:420px;width:100%;">' +
+        '<h3 style="font-size:18px;font-weight:700;color:#f1f5f9;margin-bottom:16px;text-align:center;">&#9000; Atalhos de Teclado</h3>' +
+        '<div style="display:flex;flex-direction:column;gap:10px;">' +
+          '<div style="display:flex;justify-content:space-between;padding:10px;background:rgba(30,41,59,0.5);border-radius:10px;">' +
+            '<span style="color:#94a3b8;font-size:13px;">Novo colaborador</span>' +
+            '<kbd style="background:#1e293b;border:1px solid #334155;padding:2px 8px;border-radius:4px;font-size:11px;color:#4ade80;">Ctrl + N</kbd>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;padding:10px;background:rgba(30,41,59,0.5);border-radius:10px;">' +
+            '<span style="color:#94a3b8;font-size:13px;">Ver hist&oacute;rico</span>' +
+            '<kbd style="background:#1e293b;border:1px solid #334155;padding:2px 8px;border-radius:4px;font-size:11px;color:#4ade80;">Ctrl + H</kbd>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;padding:10px;background:rgba(30,41,59,0.5);border-radius:10px;">' +
+            '<span style="color:#94a3b8;font-size:13px;">Cancelar / Fechar modal</span>' +
+            '<kbd style="background:#1e293b;border:1px solid #334155;padding:2px 8px;border-radius:4px;font-size:11px;color:#4ade80;">Esc</kbd>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;padding:10px;background:rgba(30,41,59,0.5);border-radius:10px;">' +
+            '<span style="color:#94a3b8;font-size:13px;">Continuar</span>' +
+            '<kbd style="background:#1e293b;border:1px solid #334155;padding:2px 8px;border-radius:4px;font-size:11px;color:#4ade80;">Enter</kbd>' +
+          '</div>' +
+        '</div>' +
+        '<button id="close-shortcuts" style="margin-top:20px;width:100%;border-radius:12px;padding:12px;background:#334155;color:#f1f5f9;font-weight:600;border:none;cursor:pointer;">Fechar</button>' +
+      '</div>';
+    document.body.appendChild(modal);
+    document.getElementById('close-shortcuts').addEventListener('click', function() {
+      modal.remove();
+    });
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) modal.remove();
+    });
+  });
+
+  // Repetir departamento/cargo do ultimo colaborador (template)
+  bindAction('repeat-last', function() {
+    var hist = App.storage.loadHistory();
+    if (hist.length === 0) {
+      App.showToast('Nenhum colaborador no historico', 'info');
+      return;
+    }
+    var last = hist[hist.length - 1];
+    var fields = {
+      cargo: last.employee.cargo || '',
+      departamento: last.employee.departamento || ''
+    };
+    for (var key in fields) {
+      var inp = document.querySelector('[name="' + key + '"]');
+      if (inp) {
+        inp.value = fields[key];
+        inp.dispatchEvent(new Event('change'));
+      }
+    }
+    App.showToast('Cargo e departamento copiados do ultimo', 'success');
   });
 
   // Abrir todos os cadastros pendentes — com confirmação
@@ -1038,6 +1182,7 @@ var App = App || {};
               App.hideBotStatus();
               if (s.success) {
                 // Sucesso!
+                App.notify('ProtonMail criado!', username + '@proton.me');
                 state.platforms.protonmail = { completed: true, accountInfo: username + '@proton.me', password: password };
                 App.storage.save(state);
 
@@ -1274,6 +1419,7 @@ var App = App || {};
               clearInterval(polling);
               App.hideBotStatus();
               if (s.success) {
+                App.notify('Instagram criado!', '@' + username);
                 state.platforms.instagram = { completed: true, accountInfo: '@' + username };
                 App.storage.save(state);
                 var modal = document.getElementById('auto-modal');

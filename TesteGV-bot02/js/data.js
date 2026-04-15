@@ -334,6 +334,30 @@ App.showBotStatus = function(platform, startTime) {
   App._botStatusTimer = setInterval(updateTimer, 1000);
 };
 
+// === Notificacoes desktop ===
+App.requestNotificationPermission = function() {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission !== 'denied') {
+    Notification.requestPermission();
+  }
+  return Notification.permission === 'granted';
+};
+
+App.notify = function(title, body, icon) {
+  try {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    var n = new Notification(title, {
+      body: body || '',
+      icon: icon || '/assets/logo-gv.png',
+      tag: 'greenbot-' + Date.now(),
+      requireInteraction: false
+    });
+    setTimeout(function() { try { n.close(); } catch(e) {} }, 6000);
+  } catch (e) {}
+};
+
 App.hideBotStatus = function() {
   var badge = document.getElementById('bot-status-badge');
   if (badge) {
