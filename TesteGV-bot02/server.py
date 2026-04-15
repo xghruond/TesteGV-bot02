@@ -235,8 +235,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return self._json({'error': 'Endpoint nao encontrado'}, 404)
 
 
-class ReusableServer(socketserver.TCPServer):
+class ReusableServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
+    daemon_threads = True
 
 
 def reset_all_status():
