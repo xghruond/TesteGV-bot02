@@ -648,9 +648,9 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         # === PASSO 8: Aguardar verificação ===
         update_status(8, 'Aguardando verificacao...')
         print('\n[8/8] Aguardando verificacao...')
+        print('  -> mail_page esta ' + ('OK' if mail_page else 'NONE'))
+        print('  -> mail_logged_in esta ' + str(mail_logged_in))
 
-        mail_page = None
-        mail_logged_in = False
         code_done = False
         conta_criada = False
 
