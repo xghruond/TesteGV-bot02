@@ -1214,8 +1214,30 @@ var App = App || {};
 
   // Gerar dados de teste no formulário
   bindAction('auto-fill-form', function() {
-    var nomes = ['Lucas Oliveira', 'Maria Santos', 'Pedro Costa', 'Ana Ferreira', 'João Souza', 'Carla Lima', 'Rafael Almeida', 'Juliana Rocha'];
-    var cargos = ['Analista de Marketing', 'Desenvolvedor Web', 'Designer Gráfico', 'Gerente de Vendas', 'Assistente Administrativo', 'Analista de RH'];
+    var nomes = [
+      'Lucas Oliveira', 'Maria Santos', 'Pedro Costa', 'Ana Ferreira',
+      'João Souza', 'Carla Lima', 'Rafael Almeida', 'Juliana Rocha',
+      'Gabriel Martins', 'Beatriz Ribeiro', 'Matheus Barbosa', 'Larissa Gonçalves',
+      'Thiago Pereira', 'Fernanda Cardoso', 'Bruno Nascimento', 'Camila Araújo',
+      'Diego Monteiro', 'Patrícia Correia', 'Felipe Duarte', 'Amanda Mendes',
+      'Vinícius Teixeira', 'Isabela Machado', 'Leonardo Pinto', 'Renata Moreira',
+      'Gustavo Freitas', 'Mariana Castro', 'André Nunes', 'Carolina Azevedo',
+      'Rodrigo Lopes', 'Vanessa Dias', 'Eduardo Campos', 'Natália Vieira',
+      'Henrique Melo', 'Daniela Borges', 'Marcelo Ramos', 'Aline Fonseca',
+      'Alexandre Guimarães', 'Bianca Carvalho', 'Ricardo Pires', 'Tatiana Brito',
+      'Paulo Henrique Silva', 'Letícia da Cruz', 'Samuel de Andrade', 'Priscila Barros',
+      'Victor Hugo Rezende', 'Débora Cavalcanti', 'Caio Nogueira', 'Jéssica Moura',
+      'Murilo Siqueira', 'Sabrina Pacheco'
+    ];
+    var cargos = [
+      'Analista de Marketing', 'Desenvolvedor Web', 'Designer Gráfico',
+      'Gerente de Vendas', 'Assistente Administrativo', 'Analista de RH',
+      'Coordenador de Projetos', 'Estagiário de TI', 'Analista Financeiro',
+      'Gerente de Operações', 'Consultor de Negócios', 'Analista de Dados',
+      'Especialista em SEO', 'Social Media Manager', 'Copywriter',
+      'Suporte Técnico', 'Analista de QA', 'Product Owner',
+      'Scrum Master', 'UX Designer', 'DevOps Engineer'
+    ];
     var deptos = ['marketing', 'vendas', 'ti', 'rh', 'financeiro', 'operacoes', 'administrativo'];
 
     var nome = nomes[Math.floor(Math.random() * nomes.length)];
