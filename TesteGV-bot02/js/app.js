@@ -672,9 +672,17 @@ var App = App || {};
       return '' +
         '<div class="flex min-h-[60vh] items-center justify-center">' +
           '<div class="text-center">' +
-            '<div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-800 border border-dark-700 text-dark-500">' + App.icons.clipboard + '</div>' +
-            '<p class="text-lg text-dark-400 mb-4">Nenhum processo realizado ainda.</p>' +
-            '<button data-action="back-welcome" class="rounded-xl border border-dark-700 px-6 py-3 text-sm font-medium text-dark-300 hover:bg-dark-800 hover:text-white transition-colors">Voltar</button>' +
+            '<svg class="empty-state-illustration" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+              '<rect x="40" y="30" width="120" height="150" rx="12" stroke="#4ade80" stroke-width="3" stroke-dasharray="6 4"/>' +
+              '<line x1="60" y1="60" x2="140" y2="60" stroke="#4ade80" stroke-width="3" stroke-linecap="round"/>' +
+              '<line x1="60" y1="85" x2="140" y2="85" stroke="#4ade80" stroke-width="3" stroke-linecap="round" opacity="0.6"/>' +
+              '<line x1="60" y1="110" x2="120" y2="110" stroke="#4ade80" stroke-width="3" stroke-linecap="round" opacity="0.4"/>' +
+              '<circle cx="100" cy="150" r="15" stroke="#4ade80" stroke-width="3" fill="none"/>' +
+              '<line x1="110" y1="160" x2="125" y2="175" stroke="#4ade80" stroke-width="3" stroke-linecap="round"/>' +
+            '</svg>' +
+            '<p class="text-lg text-dark-300 mb-2 font-semibold">Nenhum processo realizado</p>' +
+            '<p class="text-sm text-dark-500 mb-6">Seu historico aparecera aqui apos o primeiro onboarding</p>' +
+            '<button data-action="back-welcome" class="rounded-xl border border-brand-500/30 bg-brand-500/10 px-6 py-3 text-sm font-medium text-brand-400 hover:bg-brand-500/20 transition-colors">Comecar agora</button>' +
           '</div>' +
         '</div>';
     }
@@ -865,7 +873,15 @@ var App = App || {};
         });
         if (countEl) countEl.textContent = filtered.length + ' eventos' + (filtered.length !== logs.length ? ' (de ' + logs.length + ')' : '');
         if (filtered.length === 0) {
-          container.innerHTML = '<p class="text-dark-500 text-center py-8">Nenhum log registrado ainda. Rode uma automacao!</p>';
+          container.innerHTML =
+            '<div class="text-center py-12">' +
+              '<svg class="empty-state-illustration" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+                '<circle cx="100" cy="100" r="60" stroke="#64748b" stroke-width="3" stroke-dasharray="4 6"/>' +
+                '<path d="M75 100 L90 115 L125 85" stroke="#4ade80" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>' +
+              '</svg>' +
+              '<p class="text-dark-300 text-sm font-medium">Nenhum log registrado ainda</p>' +
+              '<p class="text-dark-500 text-xs mt-1">Rode uma automacao para ver eventos aqui</p>' +
+            '</div>';
           return;
         }
         container.innerHTML = filtered.slice().reverse().map(function(l) {
@@ -2108,6 +2124,154 @@ var App = App || {};
 
   bindAction('view-logs', function() {
     navigateTo('logs');
+  });
+
+  bindAction('toggle-theme', function() {
+    var cur = document.documentElement.getAttribute('data-theme') || 'dark';
+    var next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('gv-theme', next); } catch (e) {}
+    App.showToast('Tema: ' + (next === 'light' ? 'Claro' : 'Escuro'), 'info');
+  });
+
+  // Init tema salvo
+  try {
+    var savedTheme = localStorage.getItem('gv-theme');
+    if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch (e) {}
+
+  // === Tour de onboarding (primeira visita) ===
+  var tourSteps = [
+    {
+      title: 'Bem-vindo ao Green BOT!',
+      body: 'Este sistema guia voce na criacao de contas profissionais para novos colaboradores. Vamos fazer um tour rapido de 4 passos.',
+      target: null
+    },
+    {
+      title: 'Iniciar onboarding',
+      body: 'Clique em <strong>Iniciar</strong> para criar contas para um novo colaborador. Voce podera escolher entre preencher automaticamente ou manualmente.',
+      target: '[data-action="start"]'
+    },
+    {
+      title: 'Importacao em massa',
+      body: 'Tem varios colaboradores? Use <strong>Importar CSV</strong> para processar em lote. O sistema carrega cada linha automaticamente.',
+      target: '#csv-import-input'
+    },
+    {
+      title: 'Atalhos de teclado',
+      body: 'Pressione <strong>Ctrl+N</strong> para novo, <strong>Ctrl+H</strong> para historico, <strong>Ctrl+Z</strong> para desfazer. Divirta-se!',
+      target: null
+    }
+  ];
+  var tourIndex = 0;
+
+  function positionTourBubble(bubble, targetSelector) {
+    if (!targetSelector) {
+      bubble.style.top = '50%';
+      bubble.style.left = '50%';
+      bubble.style.transform = 'translate(-50%, -50%)';
+      return;
+    }
+    var target = document.querySelector(targetSelector);
+    if (!target) {
+      bubble.style.top = '50%';
+      bubble.style.left = '50%';
+      bubble.style.transform = 'translate(-50%, -50%)';
+      return;
+    }
+    var rect = target.getBoundingClientRect();
+    target.style.position = target.style.position || 'relative';
+    target.style.zIndex = '9999';
+    target.style.boxShadow = '0 0 0 4px rgba(74, 222, 128, 0.5), 0 0 30px rgba(74, 222, 128, 0.4)';
+    target.style.borderRadius = '12px';
+    var top = rect.bottom + 16;
+    if (top + 220 > window.innerHeight) top = rect.top - 220;
+    if (top < 16) top = 16;
+    var left = Math.max(16, Math.min(window.innerWidth - 360, rect.left + rect.width / 2 - 170));
+    bubble.style.top = top + 'px';
+    bubble.style.left = left + 'px';
+    bubble.style.transform = 'none';
+  }
+
+  function clearTourHighlight() {
+    var els = document.querySelectorAll('[style*="box-shadow"]');
+    for (var i = 0; i < els.length; i++) {
+      if (els[i].style.boxShadow.indexOf('74, 222, 128') !== -1) {
+        els[i].style.boxShadow = '';
+        els[i].style.zIndex = '';
+      }
+    }
+  }
+
+  function showTourStep() {
+    var overlay = document.getElementById('tour-overlay');
+    var bubble = document.getElementById('tour-bubble');
+    if (!overlay || !bubble) return;
+    var step = tourSteps[tourIndex];
+    if (!step) { endTour(); return; }
+    clearTourHighlight();
+    bubble.innerHTML =
+      '<h4>' + App.escapeHtml(step.title) + '</h4>' +
+      '<p>' + step.body + '</p>' +
+      '<div class="tour-nav">' +
+        '<span class="tour-progress">' + (tourIndex + 1) + ' de ' + tourSteps.length + '</span>' +
+        '<div style="display:flex;gap:8px">' +
+          '<button class="tour-skip" id="tour-skip-btn">Pular</button>' +
+          '<button class="tour-next" id="tour-next-btn">' + (tourIndex === tourSteps.length - 1 ? 'Concluir' : 'Proximo →') + '</button>' +
+        '</div>' +
+      '</div>';
+    positionTourBubble(bubble, step.target);
+    setTimeout(function() { bubble.classList.add('active'); }, 10);
+    var skipBtn = document.getElementById('tour-skip-btn');
+    var nextBtn = document.getElementById('tour-next-btn');
+    if (skipBtn) skipBtn.onclick = endTour;
+    if (nextBtn) nextBtn.onclick = function() {
+      tourIndex++;
+      if (tourIndex >= tourSteps.length) endTour();
+      else showTourStep();
+    };
+  }
+
+  function endTour() {
+    var overlay = document.getElementById('tour-overlay');
+    var bubble = document.getElementById('tour-bubble');
+    if (overlay) overlay.classList.remove('active');
+    if (bubble) {
+      bubble.classList.remove('active');
+      setTimeout(function() {
+        if (bubble.parentNode) bubble.parentNode.removeChild(bubble);
+        if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      }, 300);
+    }
+    clearTourHighlight();
+    try { localStorage.setItem('gv-tour-seen', '1'); } catch (e) {}
+  }
+
+  function startTour() {
+    var overlay = document.createElement('div');
+    overlay.id = 'tour-overlay';
+    overlay.className = 'tour-overlay';
+    document.body.appendChild(overlay);
+    var bubble = document.createElement('div');
+    bubble.id = 'tour-bubble';
+    bubble.className = 'tour-bubble';
+    document.body.appendChild(bubble);
+    setTimeout(function() { overlay.classList.add('active'); }, 10);
+    tourIndex = 0;
+    showTourStep();
+  }
+
+  // Autostart na primeira visita (depois do render inicial)
+  try {
+    if (!localStorage.getItem('gv-tour-seen') && !hasSavedState) {
+      setTimeout(startTour, 2500);
+    }
+  } catch (e) {}
+
+  // Botao para reativar tour
+  bindAction('start-tour', function() {
+    try { localStorage.removeItem('gv-tour-seen'); } catch (e) {}
+    startTour();
   });
 
   bindAction('resume-queue', function() {

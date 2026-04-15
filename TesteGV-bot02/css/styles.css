@@ -1065,6 +1065,131 @@ input[type="tel"]::placeholder {
   .shadow-sm, .shadow-md, .shadow-lg { box-shadow: none !important; }
 }
 
+/* === Loading skeletons (D.1) === */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(51, 65, 85, 0.4) 0%,
+    rgba(71, 85, 105, 0.6) 50%,
+    rgba(51, 65, 85, 0.4) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton-line { height: 12px; margin-bottom: 8px; }
+.skeleton-line.short { width: 40%; }
+.skeleton-line.medium { width: 70%; }
+.skeleton-line.long { width: 100%; }
+.skeleton-card {
+  padding: 16px;
+  border: 1px solid rgba(51, 65, 85, 0.4);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.3);
+}
+
+/* === Tema claro/escuro (D.2) === */
+html[data-theme="light"] body {
+  background: #f8fafc;
+  color: #0f172a;
+}
+html[data-theme="light"] .text-dark-50 { color: #0f172a !important; }
+html[data-theme="light"] .text-dark-100 { color: #1e293b !important; }
+html[data-theme="light"] .text-dark-200 { color: #334155 !important; }
+html[data-theme="light"] .text-dark-300 { color: #475569 !important; }
+html[data-theme="light"] .text-dark-400 { color: #64748b !important; }
+html[data-theme="light"] .text-dark-500 { color: #94a3b8 !important; }
+html[data-theme="light"] .bg-dark-800\/40,
+html[data-theme="light"] .bg-dark-800\/80,
+html[data-theme="light"] .bg-dark-900\/30,
+html[data-theme="light"] .bg-dark-900\/50,
+html[data-theme="light"] .bg-dark-700\/50 {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+}
+html[data-theme="light"] .border-dark-700\/40,
+html[data-theme="light"] .border-dark-700\/50,
+html[data-theme="light"] .border-dark-700\/60,
+html[data-theme="light"] .border-dark-600\/50 {
+  border-color: rgba(203, 213, 225, 0.8) !important;
+}
+html[data-theme="light"] .dark-input {
+  background-color: #fff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+html[data-theme="light"] .parallax-forest,
+html[data-theme="light"] #particles-canvas {
+  opacity: 0.3;
+}
+
+/* === Empty state illustrations (D.3) === */
+.empty-state-illustration {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 20px;
+  opacity: 0.6;
+}
+
+/* === Tour overlay (D.4) === */
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 9998;
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.tour-overlay.active { opacity: 1; pointer-events: auto; }
+.tour-bubble {
+  position: fixed;
+  z-index: 9999;
+  max-width: 340px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98));
+  border: 2px solid rgba(74, 222, 128, 0.5);
+  border-radius: 16px;
+  color: #e2e8f0;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(74, 222, 128, 0.2);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+.tour-bubble.active { opacity: 1; transform: translateY(0); }
+.tour-bubble h4 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #4ade80;
+}
+.tour-bubble p { margin: 0 0 14px; font-size: 13px; line-height: 1.5; color: #cbd5e1; }
+.tour-bubble .tour-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.tour-bubble .tour-progress { font-size: 11px; color: #64748b; }
+.tour-bubble button {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+}
+.tour-bubble .tour-skip {
+  background: transparent;
+  color: #94a3b8;
+}
+.tour-bubble .tour-skip:hover { color: #f87171; }
+.tour-bubble .tour-next {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  color: #fff;
+}
+.tour-bubble .tour-next:hover { box-shadow: 0 4px 12px rgba(74, 222, 128, 0.4); }
+
 /* === Help tooltip (field contextual help) === */
 .help-tip {
   display: inline-flex;
