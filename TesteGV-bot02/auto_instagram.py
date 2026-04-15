@@ -809,42 +809,97 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                 print('  -> >>> PREENCHENDO codigo ' + code + ' no Instagram...')
                                 update_status(8, 'Codigo: ' + code + ' — preenchendo...')
 
-                                # Preencher codigo no Instagram
+                                # Trazer aba Instagram para frente antes de preencher
+                                try:
+                                    page.bring_to_front()
+                                    time.sleep(0.5)
+                                except:
+                                    pass
+
+                                filled = False
+
+                                # TENTATIVA 1: fill() direto (mais rapido e confiavel)
                                 try:
                                     ci = code_input.first
-                                    if ci.is_visible(timeout=3000):
-                                        ci.scroll_into_view_if_needed(timeout=2000)
-                                        ci.click()
-                                        time.sleep(0.5)
+                                    ci.fill(code, timeout=5000)
+                                    print('  -> Codigo preenchido via fill()')
+                                    filled = True
+                                except Exception as e:
+                                    print('  -> fill() falhou: ' + str(e)[:60])
+
+                                # TENTATIVA 2: click forcado + type
+                                if not filled:
+                                    try:
+                                        ci = code_input.first
+                                        ci.click(force=True, timeout=5000)
+                                        time.sleep(0.3)
                                         page.keyboard.press('Control+a')
                                         page.keyboard.press('Backspace')
-                                        time.sleep(0.3)
-                                        human_type(page, code)
-                                        time.sleep(1.2)
-                                        # Clicar Continuar (varios idiomas)
-                                        sent = False
-                                        for bt in ['Continuar', 'Confirmar', 'Next', 'Confirm', 'Avancar', 'Avançar']:
-                                            try:
-                                                b = page.locator('button:has-text("' + bt + '"), div[role="button"]:has-text("' + bt + '")').first
-                                                if b.is_visible(timeout=1500):
-                                                    b.click()
-                                                    print('  -> >>> CODIGO ENVIADO com botao "' + bt + '"')
-                                                    sent = True
-                                                    break
-                                            except:
-                                                continue
-                                        if not sent:
-                                            # Fallback: pressionar Enter
-                                            page.keyboard.press('Enter')
-                                            print('  -> Codigo enviado via Enter')
-                                        code_done = True
+                                        time.sleep(0.2)
+                                        page.keyboard.type(code, delay=80)
+                                        print('  -> Codigo preenchido via click forcado + type')
+                                        filled = True
+                                    except Exception as e:
+                                        print('  -> click+type falhou: ' + str(e)[:60])
+
+                                # TENTATIVA 3: JS direto (ignora overlays e pointer events)
+                                if not filled:
+                                    try:
+                                        page.evaluate("""(code) => {
+                                            const selectors = [
+                                                'input[name="email_confirmation_code"]',
+                                                'input[aria-label*="digo" i]',
+                                                'input[aria-label*="code" i]',
+                                                'input[placeholder*="digo" i]',
+                                                'input[placeholder*="code" i]',
+                                                'input[placeholder*="confirma" i]',
+                                                'input[type="text"]:not([disabled])'
+                                            ];
+                                            for (const sel of selectors) {
+                                                const inp = document.querySelector(sel);
+                                                if (inp) {
+                                                    inp.focus();
+                                                    const nativeSetter = Object.getOwnPropertyDescriptor(
+                                                        window.HTMLInputElement.prototype, 'value'
+                                                    ).set;
+                                                    nativeSetter.call(inp, code);
+                                                    inp.dispatchEvent(new Event('input', { bubbles: true }));
+                                                    inp.dispatchEvent(new Event('change', { bubbles: true }));
+                                                    return sel;
+                                                }
+                                            }
+                                            return null;
+                                        }""", code)
+                                        print('  -> Codigo preenchido via JS direto')
+                                        filled = True
+                                    except Exception as e:
+                                        print('  -> JS direto falhou: ' + str(e)[:60])
+
+                                if filled:
+                                    time.sleep(1.2)
+                                    # Clicar Continuar
+                                    sent = False
+                                    for bt in ['Continuar', 'Confirmar', 'Next', 'Confirm', 'Avancar', 'Avançar']:
                                         try:
-                                            mail_page.close()
+                                            b = page.locator('button:has-text("' + bt + '"), div[role="button"]:has-text("' + bt + '")').first
+                                            if b.is_visible(timeout=1500):
+                                                b.click(force=True, timeout=3000)
+                                                print('  -> >>> CODIGO ENVIADO com botao "' + bt + '"')
+                                                sent = True
+                                                break
                                         except:
-                                            pass
-                                        time.sleep(5)
-                                except Exception as e:
-                                    print('  -> Erro ao preencher: ' + str(e)[:80])
+                                            continue
+                                    if not sent:
+                                        page.keyboard.press('Enter')
+                                        print('  -> Codigo enviado via Enter')
+                                    code_done = True
+                                    try:
+                                        mail_page.close()
+                                    except:
+                                        pass
+                                    time.sleep(5)
+                                else:
+                                    print('  -> FALHA TOTAL ao preencher. Tentando no proximo loop...')
                         except Exception as e:
                             print('  -> Erro busca Tuta: ' + str(e)[:80])
 
