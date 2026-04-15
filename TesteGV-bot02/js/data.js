@@ -263,6 +263,79 @@ App.generateEmailVariations = function(fullName) {
     add(dim + '.' + l + yr);                        // joaozinho.silva26
   }
 
+  // ── Empresa / GV ──
+  add(f + '.gv');                                       // joao.gv
+  if (l) {
+    add(f + '.' + l + '.gv');                           // joao.silva.gv
+    add(f + l + '.gv');                                 // joaosilva.gv
+    add(f[0] + l + '.gv');                              // jsilva.gv
+    add(l + '.' + f + '.gv');                           // silva.joao.gv
+    add('gv.' + f + '.' + l);                           // gv.joao.silva
+    add('gv.' + f);                                     // gv.joao
+    add(f + '.green');                                   // joao.green
+    add(f + '.' + l + '.green');                        // joao.silva.green
+  }
+
+  // ── Combinações com hífen ──
+  if (l) {
+    add(l + '-' + f);                                   // silva-joao
+    add(f + '-' + l + yr);                              // joao-silva26
+    add(f + '-' + l + '.pro');                          // joao-silva.pro
+  }
+
+  // ── Underscore extras ──
+  if (l) {
+    add(f + '_' + l + yr);                              // joao_silva26
+    add(l + '_' + f);                                   // silva_joao
+    add(f + '_' + l + '_' + yr);                       // joao_silva_26
+    add(f[0] + '_' + l);                                // j_silva
+  }
+
+  // ── Estilo moderno / redes ──
+  if (l) {
+    add(f + 'x' + l);                                   // joaoxsilva
+    add(f + '.' + l + '.dev');                          // joao.silva.dev
+    add(f + '.' + l + '.biz');                          // joao.silva.biz
+    add(f + '.' + l + '.team');                         // joao.silva.team
+    add(f + '.' + l + '.hub');                          // joao.silva.hub
+    add('team.' + f + '.' + l);                         // team.joao.silva
+    add(f + '.' + l + '.corp');                         // joao.silva.corp
+  }
+
+  // ── Variações de data (nascimento/ano) ──
+  var prevYr = (parseInt(yr, 10) - 1).toString();
+  if (l) {
+    add(f + '.' + l + prevYr);                          // joao.silva25
+    add(f + l + '.' + yr);                              // joaosilva.26
+    add(f + '.' + yr + '.' + l);                       // joao.26.silva
+  }
+  add(f + '.' + prevYr);                                // joao.25
+
+  // ── Triplos (nome.meio.sobrenome) ──
+  if (mid.length > 0) {
+    add(f + mid[0] + '.' + l);                          // joaomaria.silva
+    add(f[0] + '.' + mid[0] + l);                      // j.mariasilva
+    add(f + '.' + mid[0] + '.' + l + yr);             // joao.maria.silva26
+    add(mid[0] + '.' + f + '.' + l);                   // maria.joao.silva
+    add(f[0] + mid[0][0] + l);                         // jmsilva
+    add(f + mid[0][0] + '.' + l);                      // joaom.silva
+  }
+
+  // ── Repetições criativas ──
+  if (l) {
+    add(f + '.' + f + '.' + l);                        // joao.joao.silva
+    add(f + '.' + l + '.' + l);                        // joao.silva.silva
+    add(f + l + l[0]);                                  // joaosilvas
+  }
+
+  // ── Apelido + empresa ──
+  if (nick) {
+    add(nick + '.gv');                                   // jota.gv
+    add(nick + '.' + l + '.gv');                        // jota.silva.gv
+    add(nick + '-' + l);                                // jota-silva
+    add(nick + '_' + l);                                // jota_silva
+  }
+
   // ── Só primeiro nome (sem sobrenome) ──
   if (!l) {
     add(f + '.oficial');

@@ -1130,21 +1130,51 @@ var App = App || {};
   });
 
   bindAction('regenerate-email', function() {
-    // Regenera os chips com novos números aleatórios
     var nameInput = document.querySelector('[name="nomeCompleto"]');
     var chipsContainer = document.getElementById('email-variations-chips');
     if (!nameInput || !chipsContainer || !nameInput.value.trim()) return;
-    var variations = App.generateEmailVariations(nameInput.value);
+    state._allVariations = App.generateEmailVariations(nameInput.value);
+    state._chipsShowing = 12;
     var emailInput = document.querySelector('[name="emailDesejado"]');
     var currentEmail = emailInput ? emailInput.value : '';
-    chipsContainer.innerHTML = variations.map(function(v) {
+    var visible = state._allVariations.slice(0, state._chipsShowing);
+    var remaining = state._allVariations.length - state._chipsShowing;
+    chipsContainer.innerHTML = visible.map(function(v) {
       var isActive = v === currentEmail;
       return '<button type="button" data-action="select-email-variation" data-email="' + App.escapeHtml(v) + '" class="rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ' +
         (isActive
           ? 'bg-brand-500 text-white'
           : 'bg-dark-800 border border-dark-600 text-dark-300 hover:border-brand-500/50 hover:text-brand-400') +
         '">' + App.escapeHtml(v) + '</button>';
-    }).join('');
+    }).join('') +
+    (remaining > 0
+      ? '<button type="button" data-action="show-more-chips" class="rounded-lg px-3 py-1 text-xs font-semibold bg-brand-500/10 border border-brand-500/30 text-brand-400 hover:bg-brand-500/20 transition-colors">+' + remaining + ' mais</button>'
+      : '') +
+    '<span class="rounded-lg px-2 py-1 text-[10px] text-dark-500">' + state._allVariations.length + ' opcoes</span>';
+    App.showToast('Novas sugestoes geradas (' + state._allVariations.length + ')', 'success');
+  });
+
+  bindAction('show-more-chips', function() {
+    state._chipsShowing = (state._chipsShowing || 12) + 12;
+    var container = document.getElementById('email-variations-chips');
+    if (container && state._allVariations) {
+      var emailInput2 = document.querySelector('[name="emailDesejado"]');
+      var currentEmail = emailInput2 ? emailInput2.value : '';
+      var visible = state._allVariations.slice(0, state._chipsShowing);
+      var remaining = state._allVariations.length - state._chipsShowing;
+      container.innerHTML = visible.map(function(v) {
+        var isActive = v === currentEmail;
+        return '<button type="button" data-action="select-email-variation" data-email="' + App.escapeHtml(v) + '" class="rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ' +
+          (isActive
+            ? 'bg-brand-500 text-white'
+            : 'bg-dark-800 border border-dark-600 text-dark-300 hover:border-brand-500/50 hover:text-brand-400') +
+          '">' + App.escapeHtml(v) + '</button>';
+      }).join('') +
+      (remaining > 0
+        ? '<button type="button" data-action="show-more-chips" class="rounded-lg px-3 py-1 text-xs font-semibold bg-brand-500/10 border border-brand-500/30 text-brand-400 hover:bg-brand-500/20 transition-colors">+' + remaining + ' mais</button>'
+        : '') +
+      '<span class="rounded-lg px-2 py-1 text-[10px] text-dark-500">' + state._allVariations.length + ' opcoes</span>';
+    }
   });
 
   bindAction('select-email-variation', function(e, el) {
@@ -2597,22 +2627,30 @@ var App = App || {};
       var nameInput = form.querySelector('[name="nomeCompleto"]');
       var chipsDebounce = null;
       if (nameInput) {
+        var chipsPageSize = 12;
         var updateEmailChips = function() {
           var chipsContainer = document.getElementById('email-variations-chips');
           if (!chipsContainer) return;
           var name = nameInput.value;
-          if (!name || name.trim().length < 3) { chipsContainer.innerHTML = ''; return; }
-          var variations = App.generateEmailVariations(name);
-          var emailInput = form.querySelector('[name="emailDesejado"]');
-          var currentEmail = emailInput ? emailInput.value : '';
-          chipsContainer.innerHTML = variations.map(function(v) {
+          if (!name || name.trim().length < 3) { chipsContainer.innerHTML = ''; state._allVariations = []; return; }
+          state._allVariations = App.generateEmailVariations(name);
+          state._chipsShowing = chipsPageSize;
+          var emailInput2 = form.querySelector('[name="emailDesejado"]');
+          var currentEmail = emailInput2 ? emailInput2.value : '';
+          var visible = state._allVariations.slice(0, state._chipsShowing);
+          var remaining = state._allVariations.length - state._chipsShowing;
+          chipsContainer.innerHTML = visible.map(function(v) {
             var isActive = v === currentEmail;
             return '<button type="button" data-action="select-email-variation" data-email="' + App.escapeHtml(v) + '" class="rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ' +
               (isActive
                 ? 'bg-brand-500 text-white'
                 : 'bg-dark-800 border border-dark-600 text-dark-300 hover:border-brand-500/50 hover:text-brand-400') +
               '">' + App.escapeHtml(v) + '</button>';
-          }).join('');
+          }).join('') +
+          (remaining > 0
+            ? '<button type="button" data-action="show-more-chips" class="rounded-lg px-3 py-1 text-xs font-semibold bg-brand-500/10 border border-brand-500/30 text-brand-400 hover:bg-brand-500/20 transition-colors">+' + remaining + ' mais</button>'
+            : '') +
+          '<span class="rounded-lg px-2 py-1 text-[10px] text-dark-500">' + state._allVariations.length + ' opcoes</span>';
         };
         nameInput.addEventListener('input', function() {
           if (chipsDebounce) clearTimeout(chipsDebounce);
