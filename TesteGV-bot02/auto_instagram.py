@@ -1385,6 +1385,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                         const inputs = document.querySelectorAll('input');
                                         for (const inp of inputs) {
                                             if (inp.type === 'hidden' || inp.type === 'submit' || inp.disabled) continue;
+                                            if (inp.offsetHeight < 10) continue;
                                             try {
                                                 inp.focus();
                                                 const setter = Object.getOwnPropertyDescriptor(
