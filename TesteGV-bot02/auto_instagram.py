@@ -1378,6 +1378,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                                 setter.call(inp, code);
                                                 inp.dispatchEvent(new Event('input', { bubbles: true }));
                                                 inp.dispatchEvent(new Event('change', { bubbles: true }));
+                                                inp.dispatchEvent(new Event('blur', { bubbles: true }));
                                                 return { ok: true, sel: sel, val: inp.value };
                                             }
                                         }
@@ -1400,39 +1401,6 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                         filled = True
                                     except Exception as e:
                                         print('  -> fill() falhou: ' + str(e)[:60])
-
-                                # TENTATIVA 3: JS direto (ignora overlays e pointer events)
-                                if not filled:
-                                    try:
-                                        page.evaluate("""(code) => {
-                                            const selectors = [
-                                                'input[name="email_confirmation_code"]',
-                                                'input[aria-label*="digo" i]',
-                                                'input[aria-label*="code" i]',
-                                                'input[placeholder*="digo" i]',
-                                                'input[placeholder*="code" i]',
-                                                'input[placeholder*="confirma" i]',
-                                                'input[type="text"]:not([disabled])'
-                                            ];
-                                            for (const sel of selectors) {
-                                                const inp = document.querySelector(sel);
-                                                if (inp) {
-                                                    inp.focus();
-                                                    const nativeSetter = Object.getOwnPropertyDescriptor(
-                                                        window.HTMLInputElement.prototype, 'value'
-                                                    ).set;
-                                                    nativeSetter.call(inp, code);
-                                                    inp.dispatchEvent(new Event('input', { bubbles: true }));
-                                                    inp.dispatchEvent(new Event('change', { bubbles: true }));
-                                                    return sel;
-                                                }
-                                            }
-                                            return null;
-                                        }""", code)
-                                        print('  -> Codigo preenchido via JS direto')
-                                        filled = True
-                                    except Exception as e:
-                                        print('  -> JS direto falhou: ' + str(e)[:60])
 
                                 if filled:
                                     time.sleep(1.2)
