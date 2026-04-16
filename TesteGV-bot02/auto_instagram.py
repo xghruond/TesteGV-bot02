@@ -1418,10 +1418,6 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                         page.keyboard.press('Enter')
                                         print('  -> Codigo enviado via Enter')
                                     code_done = True
-                                    try:
-                                        mail_page.close()
-                                    except:
-                                        pass
                                     time.sleep(5)
                                 else:
                                     print('  -> FALHA TOTAL ao preencher. Tentando no proximo loop...')
