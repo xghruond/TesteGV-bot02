@@ -1344,31 +1344,48 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                 print('  -> >>> PREENCHENDO codigo ' + code + ' no Instagram...')
                                 update_status(8, 'Codigo: ' + code + ' — preenchendo...')
 
-                                # Trazer aba Instagram para frente e ESPERAR input renderizar
+                                # Trazer Instagram pra frente
                                 try:
                                     page.bring_to_front()
-                                    time.sleep(3)
                                 except:
                                     pass
 
                                 filled = False
 
-                                # METODO PRINCIPAL: JS direto — SEM check de visibilidade
+                                # DIAGNOSTICO: screenshot + dump de inputs
+                                try:
+                                    page.screenshot(path=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'debug_fill.png'))
+                                    diag = page.evaluate("""() => {
+                                        const inputs = document.querySelectorAll('input');
+                                        const out = [];
+                                        for (const inp of inputs) {
+                                            out.push({
+                                                type: inp.type, name: inp.name,
+                                                placeholder: inp.placeholder,
+                                                aria: inp.getAttribute('aria-label') || '',
+                                                disabled: inp.disabled,
+                                                h: inp.offsetHeight, w: inp.offsetWidth
+                                            });
+                                        }
+                                        return { url: location.href, title: document.title, inputCount: inputs.length, inputs: out };
+                                    }""")
+                                    print('  -> [DIAG] URL: ' + str(diag.get('url', '?'))[:60])
+                                    print('  -> [DIAG] Titulo: ' + str(diag.get('title', '?'))[:40])
+                                    print('  -> [DIAG] Inputs encontrados: ' + str(diag.get('inputCount', 0)))
+                                    for idx, inp in enumerate(diag.get('inputs', [])[:5]):
+                                        print('  -> [DIAG]   [' + str(idx) + '] type=' + str(inp.get('type')) + ' name=' + str(inp.get('name')) + ' placeholder=' + str(inp.get('placeholder', ''))[:20] + ' h=' + str(inp.get('h')) + ' disabled=' + str(inp.get('disabled')))
+                                except Exception as e:
+                                    print('  -> [DIAG] Erro: ' + str(e)[:80])
+
+                                time.sleep(2)
+
+                                # PREENCHER: tentar TODOS os inputs visiveis ate um aceitar
                                 try:
                                     result = page.evaluate("""(code) => {
-                                        const selectors = [
-                                            'input[type="text"]:not([disabled])',
-                                            'input[name="email_confirmation_code"]',
-                                            'input[aria-label*="digo" i]',
-                                            'input[aria-label*="code" i]',
-                                            'input[placeholder*="digo" i]',
-                                            'input[placeholder*="code" i]',
-                                            'input[placeholder*="confirma" i]',
-                                            'input[type="number"]:not([disabled])'
-                                        ];
-                                        for (const sel of selectors) {
-                                            const inp = document.querySelector(sel);
-                                            if (inp) {
+                                        const inputs = document.querySelectorAll('input');
+                                        for (const inp of inputs) {
+                                            if (inp.type === 'hidden' || inp.type === 'submit' || inp.disabled) continue;
+                                            try {
                                                 inp.focus();
                                                 const setter = Object.getOwnPropertyDescriptor(
                                                     window.HTMLInputElement.prototype, 'value'
@@ -1377,28 +1394,38 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                                 inp.dispatchEvent(new Event('input', { bubbles: true }));
                                                 inp.dispatchEvent(new Event('change', { bubbles: true }));
                                                 inp.dispatchEvent(new Event('blur', { bubbles: true }));
-                                                return { ok: true, sel: sel, val: inp.value };
-                                            }
+                                                if (inp.value === code) {
+                                                    return { ok: true, type: inp.type, name: inp.name, val: inp.value };
+                                                }
+                                            } catch(e) {}
                                         }
-                                        return { ok: false };
+                                        return { ok: false, total: inputs.length };
                                     }""", code)
                                     if result and result.get('ok'):
-                                        print('  -> Codigo preenchido via JS (' + result.get('sel', '?')[:30] + ') val=' + str(result.get('val', ''))[:10])
+                                        print('  -> Codigo preenchido via JS (type=' + str(result.get('type')) + ' name=' + str(result.get('name')) + ') val=' + str(result.get('val', ''))[:10])
                                         filled = True
                                     else:
-                                        print('  -> JS: nenhum input encontrado no DOM')
+                                        print('  -> JS: NENHUM input aceitou o valor (total inputs: ' + str(result.get('total', 0)) + ')')
                                 except Exception as e:
                                     print('  -> JS falhou: ' + str(e)[:60])
 
-                                # FALLBACK: fill() do Playwright
+                                # FALLBACK: Playwright locator
                                 if not filled:
                                     try:
-                                        ci = code_input.first
-                                        ci.fill(code, timeout=5000)
-                                        print('  -> Codigo preenchido via fill()')
-                                        filled = True
+                                        all_inputs = page.locator('input:visible')
+                                        count = all_inputs.count()
+                                        print('  -> [FALLBACK] Playwright ve ' + str(count) + ' inputs visiveis')
+                                        for idx in range(min(count, 5)):
+                                            try:
+                                                inp = all_inputs.nth(idx)
+                                                inp.fill(code, timeout=3000)
+                                                print('  -> Preenchido via Playwright input[' + str(idx) + ']')
+                                                filled = True
+                                                break
+                                            except:
+                                                continue
                                     except Exception as e:
-                                        print('  -> fill() falhou: ' + str(e)[:60])
+                                        print('  -> Playwright fallback falhou: ' + str(e)[:60])
 
                                 if filled:
                                     time.sleep(1.2)
