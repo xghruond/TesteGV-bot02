@@ -528,8 +528,19 @@ var App = App || {};
       if (cc === tt) completedCount++;
     }
 
+    var rate = historyCount > 0 ? Math.round(completedCount / historyCount * 100) : 0;
+    var totalT = 0, withT = 0;
+    for (var ht = 0; ht < historyArr.length; ht++) {
+      var hr = historyArr[ht];
+      if (hr.startedAt && hr.completedAt) {
+        var dT = new Date(hr.completedAt) - new Date(hr.startedAt);
+        if (dT > 0 && dT < 3600000) { totalT += dT; withT++; }
+      }
+    }
+    var avgMin = withT > 0 ? Math.round(totalT / withT / 60000) : 0;
+
     var dashboardHtml = historyCount > 0
-      ? '<div class="mb-6 grid grid-cols-3 gap-2 max-w-md mx-auto">' +
+      ? '<div class="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-2xl mx-auto">' +
           '<div class="rounded-xl border border-brand-500/20 bg-brand-500/5 backdrop-blur-sm p-3 text-center hover:border-brand-500/40 hover:bg-brand-500/10 transition-all">' +
             '<div class="text-2xl font-bold text-brand-400">' + historyCount + '</div>' +
             '<div class="text-[10px] text-dark-400 uppercase tracking-wider">Onboardings</div>' +
@@ -539,8 +550,12 @@ var App = App || {};
             '<div class="text-[10px] text-dark-400 uppercase tracking-wider">Completos</div>' +
           '</div>' +
           '<div class="rounded-xl border border-amber-500/20 bg-amber-500/5 backdrop-blur-sm p-3 text-center hover:border-amber-500/40 hover:bg-amber-500/10 transition-all">' +
-            '<div class="text-2xl font-bold text-amber-400">' + accountsCreated + '</div>' +
-            '<div class="text-[10px] text-dark-400 uppercase tracking-wider">Contas</div>' +
+            '<div class="text-2xl font-bold text-amber-400">' + rate + '%</div>' +
+            '<div class="text-[10px] text-dark-400 uppercase tracking-wider">Sucesso</div>' +
+          '</div>' +
+          '<div class="rounded-xl border border-blue-500/20 bg-blue-500/5 backdrop-blur-sm p-3 text-center hover:border-blue-500/40 hover:bg-blue-500/10 transition-all">' +
+            '<div class="text-2xl font-bold text-blue-400">' + (avgMin > 0 ? avgMin + 'm' : '-') + '</div>' +
+            '<div class="text-[10px] text-dark-400 uppercase tracking-wider">Tempo Médio</div>' +
           '</div>' +
         '</div>'
       : '';
@@ -631,9 +646,12 @@ var App = App || {};
           '<button data-action="manage-platforms" class="mt-2 w-full rounded-xl border border-indigo-500/30 bg-indigo-500/5 px-8 py-3 text-sm font-medium text-indigo-300 hover:bg-indigo-500/10 hover:border-indigo-500/50 transition-colors flex items-center justify-center gap-2">' +
             '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>' +
             ' Gerenciar Plataformas</button>' +
+          '<button data-action="open-monitor" class="mt-2 w-full rounded-xl border border-brand-500/40 bg-brand-500/10 px-8 py-3 text-sm font-semibold text-brand-400 backdrop-blur-sm transition-all hover:bg-brand-500/20 hover:border-brand-500/60 flex items-center justify-center gap-2">' +
+            '<span class="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>' +
+            'Monitor ao Vivo</button>' +
           '<button data-action="view-logs" class="mt-2 w-full rounded-xl border border-dark-700/50 bg-dark-800/40 px-8 py-3 text-sm font-medium text-dark-400 backdrop-blur-sm transition-all hover:bg-dark-800/60 hover:border-brand-500/30 hover:text-brand-400">' +
             '<svg class="inline-block w-4 h-4 mr-1.5 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>' +
-            'Logs de Automacao</button>' +
+            'Histórico de Logs</button>' +
 
           // Versão com separador
           '<div class="futuristic-separator mt-8"><span class="dot"></span></div>' +
@@ -1746,6 +1764,8 @@ var App = App || {};
         overlay.remove();
         return;
       }
+      // Abrir monitor ao vivo automaticamente
+      setTimeout(function() { App.LiveMonitor.open('instagram', 8); }, 2000);
 
       polling = setInterval(function() {
         if (cancelled) return;
@@ -2210,6 +2230,26 @@ var App = App || {};
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     App.showToast('CSV exportado (' + history.length + ' registros)', 'success');
+  });
+
+  bindAction('open-monitor', function() {
+    App.LiveMonitor.open('instagram', 8);
+  });
+
+  bindAction('close-monitor', function() {
+    App.LiveMonitor.close();
+  });
+
+  bindAction('cancel-bot', function() {
+    if (!confirm('Tem certeza que quer cancelar o onboarding em andamento?')) return;
+    fetch('/api/cancel', { method: 'POST' })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        App.showToast('Cancelamento solicitado', 'info');
+      })
+      .catch(function(e) {
+        App.showToast('Erro ao cancelar: ' + e, 'error');
+      });
   });
 
   bindAction('view-logs', function() {

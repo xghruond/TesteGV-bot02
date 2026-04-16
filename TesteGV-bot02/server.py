@@ -120,7 +120,26 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return self._json(result)
 
         if path == '/api/logs':
-            return self._json({'logs': bot_utils.get_logs()})
+            # Opcao de limit para pegar so os N ultimos
+            limit = int(params.get('limit', '50'))
+            logs = bot_utils.get_logs()
+            return self._json({'logs': logs[-limit:] if limit > 0 else logs})
+
+        if path == '/api/screenshot':
+            # Screenshot ao vivo do bot (se houver page ativa)
+            try:
+                import base64
+                from io import BytesIO
+                platform = params.get('platform', 'instagram')
+                target = auto_instagram if platform == 'instagram' else (auto_protonmail if platform == 'protonmail' else auto_tutanota)
+                page = getattr(target, '_current_page', None)
+                if page and not page.is_closed():
+                    img_bytes = page.screenshot(type='jpeg', quality=50)
+                    b64 = base64.b64encode(img_bytes).decode()
+                    return self._json({'img': 'data:image/jpeg;base64,' + b64})
+                return self._json({'error': 'No active page'}, 404)
+            except Exception as e:
+                return self._json({'error': str(e)[:100]}, 500)
 
         if path == '/api/check-username':
             username = params.get('username', '').strip()
@@ -162,6 +181,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if path == '/api/logs/clear':
             bot_utils.clear_logs()
             return self._json({'ok': True})
+
+        if path == '/api/cancel':
+            # Sinaliza cancel para os bots (setam flag _cancel_requested)
+            auto_instagram._cancel_requested = True
+            auto_protonmail._cancel_requested = True
+            auto_tutanota._cancel_requested = True
+            return self._json({'ok': True, 'msg': 'Cancelamento solicitado'})
 
         if path == '/api/create-protonmail':
             username = data.get('username', '')

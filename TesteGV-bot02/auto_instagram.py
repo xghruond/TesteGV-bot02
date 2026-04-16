@@ -744,6 +744,9 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         # === Agora abrir Instagram (SEM VPN — IP real) ===
         page = context.new_page()
         page.set_default_timeout(20000)
+        # Expor page para /api/screenshot (UI monitor)
+        import sys as _sys
+        _sys.modules[__name__]._current_page = page
 
         # === PASSO 1.5: Aquecer sessao — navegar em sites normais primeiro ===
         print('[1.5/8] Aquecendo sessao (simular humano)...')

@@ -1386,3 +1386,34 @@ html[data-theme="light"] #particles-canvas {
     font-size: 10.5px;
   }
 }
+
+/* === Live Monitor === */
+#live-monitor {
+  animation: monitorFadeIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes monitorFadeIn {
+  0% { opacity: 0; backdrop-filter: blur(0); }
+  100% { opacity: 1; backdrop-filter: blur(8px); }
+}
+#live-monitor > div {
+  animation: monitorScaleIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes monitorScaleIn {
+  0% { opacity: 0; transform: scale(0.92) translateY(20px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+#monitor-logs::-webkit-scrollbar { width: 6px; }
+#monitor-logs::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+#monitor-logs::-webkit-scrollbar-thumb { background: rgba(74,222,128,0.3); border-radius: 3px; }
+#monitor-logs::-webkit-scrollbar-thumb:hover { background: rgba(74,222,128,0.5); }
+#monitor-progress-bar {
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+}
+
+/* === Hover polish nos stats cards === */
+.stats-card {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s, background 0.25s;
+}
+.stats-card:hover {
+  transform: translateY(-3px);
+}
