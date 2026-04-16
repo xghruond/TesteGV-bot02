@@ -70,14 +70,16 @@ def safe_goto_ig(page, url, label='goto'):
 
 
 def get_cdp_context(p):
-    """Tenta conectar ao Chrome CDP (localhost:9222). Retorna (browser, context) ou (None, None)."""
-    try:
-        cdp_browser = p.chromium.connect_over_cdp('http://localhost:9222', timeout=3000)
-        if cdp_browser.contexts:
-            print('  -> [CDP] Conectado ao Chrome externo em localhost:9222')
-            return cdp_browser, cdp_browser.contexts[0]
-    except Exception as e:
-        print('  -> [CDP] Nao disponivel: ' + str(e)[:80])
+    """Tenta conectar ao Chrome CDP (127.0.0.1:9222). Retorna (browser, context) ou (None, None)."""
+    # Usar 127.0.0.1 explicitamente (localhost as vezes resolve pra IPv6 ::1 e falha)
+    for host in ['127.0.0.1', 'localhost']:
+        try:
+            cdp_browser = p.chromium.connect_over_cdp('http://' + host + ':9222', timeout=5000)
+            if cdp_browser.contexts:
+                print('  -> [CDP] Conectado ao Chrome externo em ' + host + ':9222')
+                return cdp_browser, cdp_browser.contexts[0]
+        except Exception as e:
+            print('  -> [CDP] Falhou em ' + host + ': ' + str(e)[:60])
     return None, None
 
 
@@ -1449,6 +1451,24 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                     except Exception as e:
                                         print('  -> [SMS] Erro preencher: ' + str(e)[:80])
                                         continue
+
+                                    # Checar rate-limit Instagram (conta bloqueada 24h)
+                                    try:
+                                        rate_limited = page.evaluate("""() => {
+                                            const t = (document.body.innerText || '').toLowerCase();
+                                            return t.includes('excessivo') && t.includes('24 horas') ||
+                                                   t.includes('too many') && t.includes('24 hours') ||
+                                                   t.includes('aguarde 24 horas');
+                                        }""")
+                                        if rate_limited:
+                                            print('\n  !!! INSTAGRAM BLOQUEOU A CONTA POR 24H (excesso de SMS) !!!')
+                                            print('  !!! Desistindo desta conta. Crie outro colaborador.')
+                                            update_status(8, 'ERRO: conta rate-limited 24h', done=True, error='rate_limited')
+                                            create_account._sms_manual_fallback = True
+                                            create_account._sms_handler_running = False
+                                            break  # sai do loop de tentativas
+                                    except:
+                                        pass
 
                                     # Checar rejeicao
                                     try:
