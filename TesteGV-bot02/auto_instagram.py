@@ -1347,15 +1347,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                 # Trazer aba Instagram para frente e ESPERAR input renderizar
                                 try:
                                     page.bring_to_front()
-                                    time.sleep(0.5)
-                                    # Esperar ate 8s pelo input aparecer
-                                    for _wi in range(10):
-                                        has_input = page.evaluate("""() => {
-                                            return !!document.querySelector('input[type="text"], input[name="email_confirmation_code"]');
-                                        }""")
-                                        if has_input:
-                                            break
-                                        time.sleep(0.5)
+                                    time.sleep(3)
                                 except:
                                     pass
 
