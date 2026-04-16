@@ -1160,29 +1160,63 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                         attempt = i + 1
                         elapsed = int(time.time() - getattr(create_account, '_code_start_time', time.time()))
 
-                        # Forcar refresh do inbox do Tuta SEM reload (clica em "Entrada"/Inbox)
+                        # Forcar refresh do inbox Tuta
                         if attempt % 3 == 0:
                             try:
                                 if not tuta_is_logged_in(mail_page):
                                     print('  -> [' + str(elapsed) + 's] Tuta deslogou! Re-logando...')
-                                    tuta_relogin(mail_page)
+                                    if tuta_relogin(mail_page):
+                                        mail_logged_in = True
                                 else:
-                                    # Clicar na pasta Entrada para forcar atualizacao
-                                    mail_page.evaluate(r"""() => {
-                                        // Clicar em "Entrada" ou "Inbox" na sidebar
-                                        const links = document.querySelectorAll('*');
-                                        for (const el of links) {
-                                            const t = (el.textContent || '').trim().toLowerCase();
-                                            if ((t === 'entrada' || t === 'inbox') && el.offsetHeight > 0 && el.offsetHeight < 60) {
-                                                el.click();
-                                                return true;
+                                    # Metodo 1: clicar link especifico da sidebar (rapido)
+                                    refreshed = mail_page.evaluate(r"""() => {
+                                        // Seletores especificos do Tuta (sidebar)
+                                        const sels = [
+                                            'a[href*="mail"]', 'a[href*="inbox"]',
+                                            '[data-folder-id]', '[class*="folder"]',
+                                            'button[title*="Entrada" i]', 'button[title*="Inbox" i]',
+                                            'nav a', '[role="navigation"] a'
+                                        ];
+                                        for (const sel of sels) {
+                                            const els = document.querySelectorAll(sel);
+                                            for (const el of els) {
+                                                const t = (el.textContent || '').trim().toLowerCase();
+                                                if ((t.includes('entrada') || t.includes('inbox')) && el.offsetHeight > 0) {
+                                                    el.click();
+                                                    return 'sidebar: ' + t.substring(0, 20);
+                                                }
                                             }
                                         }
-                                        // Fallback: pressionar F5 na area do app (nao no browser)
-                                        return false;
+                                        // Fallback: clicar qualquer texto "Entrada" visivel
+                                        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+                                        let node;
+                                        while ((node = walker.nextNode())) {
+                                            const t = (node.textContent || '').trim().toLowerCase();
+                                            if (t === 'entrada' || t === 'inbox') {
+                                                const el = node.parentElement;
+                                                if (el && el.offsetHeight > 0 && el.offsetHeight < 80) {
+                                                    el.click();
+                                                    return 'text: ' + t;
+                                                }
+                                            }
+                                        }
+                                        return null;
                                     }""")
                                     if attempt % 6 == 0:
-                                        print('  -> [' + str(elapsed) + 's] Tuta inbox refreshed (click Entrada)')
+                                        print('  -> [' + str(elapsed) + 's] Tuta refresh: ' + str(refreshed or 'nenhum match'))
+
+                                    # Metodo 2: se > 2min sem codigo, arrriscar reload (ultimo recurso)
+                                    if elapsed > 120 and attempt % 15 == 0:
+                                        print('  -> [' + str(elapsed) + 's] Ultimo recurso: reload Tuta')
+                                        try:
+                                            mail_page.reload(timeout=15000)
+                                            time.sleep(5)
+                                            if not tuta_is_logged_in(mail_page):
+                                                print('  -> Tuta deslogou apos reload, re-logando...')
+                                                if tuta_relogin(mail_page):
+                                                    mail_logged_in = True
+                                        except:
+                                            pass
                             except Exception as e:
                                 print('  -> Erro refresh Tuta: ' + str(e)[:60])
 
