@@ -1463,6 +1463,32 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                     except:
                                         pass
 
+                                    # Detectar se Instagram mandou pro WhatsApp em vez de SMS
+                                    # Se sim, clicar em "Enviar código por SMS" para forcar SMS
+                                    try:
+                                        is_whatsapp = page.evaluate("""() => {
+                                            const t = (document.body.innerText || '').toLowerCase();
+                                            return t.includes('whatsapp') && (t.includes('c\u00f3digo') || t.includes('code'));
+                                        }""")
+                                        if is_whatsapp:
+                                            print('  -> [SMS] Instagram tentou WhatsApp. Clicando "Enviar por SMS"...')
+                                            switched = False
+                                            for sms_bt in ['Enviar c\u00f3digo por SMS', 'c\u00f3digo por SMS', 'Receive SMS', 'Get code via SMS', 'por SMS']:
+                                                try:
+                                                    b = page.locator('button:has-text("' + sms_bt + '"), div[role="button"]:has-text("' + sms_bt + '"), a:has-text("' + sms_bt + '")').first
+                                                    if b.is_visible(timeout=1500):
+                                                        b.click(force=True, timeout=3000)
+                                                        print('  -> [SMS] Switched para SMS via: "' + sms_bt + '"')
+                                                        switched = True
+                                                        time.sleep(3)
+                                                        break
+                                                except:
+                                                    continue
+                                            if not switched:
+                                                print('  -> [SMS] Nao achou botao para trocar para SMS (tentando polling WhatsApp mesmo assim)')
+                                    except Exception as e:
+                                        print('  -> [SMS] Erro check WhatsApp: ' + str(e)[:80])
+
                                     print('  -> [SMS] Aguardando SMS (90s max)...')
                                     sms_code = None
                                     poll_start = time.time()
