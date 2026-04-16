@@ -1442,28 +1442,41 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                     if not sent:
                                         page.keyboard.press('Enter')
                                         print('  -> Codigo enviado via Enter')
-                                    time.sleep(2)
-                                    # Verificar se Instagram aceitou ou rejeitou o codigo
-                                    try:
-                                        rejection = page.evaluate("""() => {
-                                            const t = (document.body.innerText || '').toLowerCase();
-                                            if (t.includes('verifique o email') || t.includes('inválido') ||
-                                                t.includes('invalid') || t.includes('incorreto') ||
-                                                t.includes('incorrect') || t.includes('expirou') ||
-                                                t.includes('expired') || t.includes('try again')) {
-                                                return true;
-                                            }
-                                            return false;
-                                        }""")
-                                        if rejection:
-                                            print('  -> !!! Instagram REJEITOU o codigo ' + code + ' !!!')
-                                            print('  -> Adicionando ao seen_codes e buscando novo...')
-                                            seen_codes.add(code)
-                                            code_done = False
-                                        else:
-                                            print('  -> Instagram aceitou o codigo (ou mudou de tela)')
-                                            code_done = True
-                                    except:
+                                    # Esperar ate 8s checando se Instagram rejeitou ou aceitou
+                                    rejection = False
+                                    accepted = False
+                                    for _wc in range(8):
+                                        time.sleep(1)
+                                        try:
+                                            result = page.evaluate(r"""() => {
+                                                const t = (document.body.innerText || '');
+                                                const tNorm = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+                                                const rejected = tNorm.includes('invalido') || tNorm.includes('expirou') ||
+                                                                 tNorm.includes('incorreto') || tNorm.includes('verifique o email') ||
+                                                                 tNorm.includes('invalid') || tNorm.includes('incorrect') ||
+                                                                 tNorm.includes('expired') || tNorm.includes('try again');
+                                                return { url: location.href, rejected: rejected };
+                                            }""")
+                                            if result.get('rejected'):
+                                                rejection = True
+                                                break
+                                            if 'emailsignup' not in result.get('url', ''):
+                                                accepted = True
+                                                break
+                                        except:
+                                            pass
+
+                                    if rejection:
+                                        print('  -> !!! Instagram REJEITOU o codigo ' + code + ' !!!')
+                                        print('  -> Adicionando ao seen_codes e buscando novo...')
+                                        seen_codes.add(code)
+                                        code_done = False
+                                    elif accepted:
+                                        print('  -> Instagram aceitou (URL mudou)')
+                                        code_done = True
+                                    else:
+                                        print('  -> Timeout 8s, assumindo rejeicao pra tentar novamente')
+                                        seen_codes.add(code)
                                         code_done = False
                                 else:
                                     print('  -> FALHA TOTAL ao preencher. Tentando no proximo loop...')
