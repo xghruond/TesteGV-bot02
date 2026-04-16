@@ -69,8 +69,49 @@ def safe_goto_ig(page, url, label='goto'):
                  label='instagram.' + label, bot='instagram')
 
 
+def ensure_chrome_cdp():
+    """
+    Garante que Chrome CDP esteja rodando na porta 9222.
+    Se nao estiver, executa abrir-chrome-bot.bat automaticamente.
+    Returns: True se CDP esta acessivel, False caso contrario.
+    """
+    import urllib.request
+    import os
+    try:
+        urllib.request.urlopen('http://127.0.0.1:9222/json/version', timeout=2)
+        print('  -> [CDP] Chrome ja rodando em :9222')
+        return True
+    except:
+        pass
+
+    print('  -> [CDP] Chrome nao esta aberto. Executando abrir-chrome-bot.bat...')
+    bat_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'abrir-chrome-bot.bat')
+    if not os.path.exists(bat_path):
+        print('  -> [CDP] ERRO: abrir-chrome-bot.bat nao encontrado')
+        return False
+    try:
+        subprocess.Popen(['cmd', '/c', 'start', '', bat_path], shell=False)
+    except Exception as e:
+        print('  -> [CDP] Erro executando .bat: ' + str(e)[:80])
+        return False
+
+    # Aguardar Chrome abrir (ate 15s)
+    for i in range(15):
+        time.sleep(1)
+        try:
+            urllib.request.urlopen('http://127.0.0.1:9222/json/version', timeout=1)
+            print('  -> [CDP] Chrome abriu apos ' + str(i + 1) + 's!')
+            return True
+        except:
+            continue
+    print('  -> [CDP] Timeout aguardando Chrome abrir (15s)')
+    return False
+
+
 def get_cdp_context(p):
     """Tenta conectar ao Chrome CDP (127.0.0.1:9222). Retorna (browser, context) ou (None, None)."""
+    # Garantir que Chrome CDP esta rodando (abre .bat automaticamente se precisar)
+    ensure_chrome_cdp()
     # Usar 127.0.0.1 explicitamente (localhost as vezes resolve pra IPv6 ::1 e falha)
     for host in ['127.0.0.1', 'localhost']:
         try:
@@ -517,6 +558,12 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
     create_account._sms_done = False
     create_account._sms_start_time = 0
     create_account._sms_initial_len = 0
+    create_account._sms_handler_running = False
+    create_account._sms_manual_fallback = False
+
+    # Garantir Chrome CDP aberto LOGO NO INICIO (da tempo pro user resolver Cloudflare)
+    print('[0/8] Verificando Chrome CDP (sms24.me)...')
+    ensure_chrome_cdp()
 
     with sync_playwright() as p:
         # === PASSO 1: Abrir Chrome ===
