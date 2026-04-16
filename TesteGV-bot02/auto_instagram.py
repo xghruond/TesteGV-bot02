@@ -30,7 +30,7 @@ def disconnect_vpn():
                    capture_output=True)
     subprocess.run(['taskkill', '/F', '/IM', 'ProtonVPNService.exe'],
                    capture_output=True)
-    time.sleep(4)
+    time.sleep(2)
     print('  -> [VPN] Desconectado!')
 
 
@@ -41,7 +41,7 @@ def reconnect_vpn():
     # Abrir o client para trigger reconexao
     subprocess.run(['start', '', 'C:/Program Files/Proton/VPN/v4.3.13/ProtonVPN.Client.exe'],
                    shell=True, capture_output=True)
-    time.sleep(10)
+    time.sleep(5)
     print('  -> [VPN] Reconectado!')
 
 # Status global (lido pelo server.py)
@@ -285,7 +285,7 @@ def get_receive_smss_numbers(bot_context):
         sms_page = bot_context.new_page()
         sms_page.set_default_timeout(15000)
         sms_page.goto('https://receive-smss.com/', timeout=20000)
-        time.sleep(3)
+        time.sleep(1.5)
         numbers = sms_page.evaluate(r"""() => {
             const results = [];
             const links = document.querySelectorAll('a[href*="/sms/"]');
@@ -339,7 +339,7 @@ def open_sms_number_page(number_info, cdp_context=None, bot_context=None):
             sms_page = bot_context.new_page()
             sms_page.set_default_timeout(15000)
             sms_page.goto(number_info['href'], timeout=20000)
-            time.sleep(3)
+            time.sleep(1.5)
             return sms_page
     except Exception as e:
         print('  -> [SMS] Erro open_sms_number_page: ' + str(e)[:80])
@@ -445,24 +445,24 @@ def tuta_relogin(mail_page):
     print('  -> [TUTA] Detectado logout, re-logando...')
     try:
         mail_page.goto('https://app.tuta.com/login', timeout=30000)
-        time.sleep(6)
+        time.sleep(4)
         inputs = mail_page.locator('input:visible')
         if inputs.count() >= 1:
             inputs.nth(0).click()
-            time.sleep(0.3)
+            time.sleep(0.15)
             mail_page.keyboard.press('Control+a')
             mail_page.keyboard.press('Backspace')
-            time.sleep(0.2)
+            time.sleep(0.1)
             for ch in os.environ.get('TUTA_EMAIL', 'teste.greenvillage@tutamail.com'):
-                mail_page.keyboard.type(ch, delay=50)
-        time.sleep(0.8)
+                mail_page.keyboard.type(ch, delay=30)
+        time.sleep(0.3)
         pw = mail_page.locator('input[type="password"]:visible')
         if pw.count() >= 1:
             pw.first.click()
-            time.sleep(0.3)
+            time.sleep(0.15)
             for ch in os.environ.get('TUTA_PASS', 'Waxdwaxdw134679852'):
-                mail_page.keyboard.type(ch, delay=50)
-        time.sleep(0.5)
+                mail_page.keyboard.type(ch, delay=30)
+        time.sleep(0.3)
         mail_page.evaluate(r"""() => {
             const btns = document.querySelectorAll('button');
             for (const b of btns) {
@@ -473,7 +473,7 @@ def tuta_relogin(mail_page):
             }
             return false;
         }""")
-        time.sleep(10)
+        time.sleep(6)
         if tuta_is_logged_in(mail_page):
             print('  -> [TUTA] Re-login OK!')
             return True
@@ -489,25 +489,25 @@ def human_type(page, text):
     char_count = 0
     for char in text:
         page.keyboard.type(char)
-        time.sleep(random.uniform(0.06, 0.18))
+        time.sleep(random.uniform(0.03, 0.08))
         char_count += 1
         if char_count >= random.randint(5, 9):
-            time.sleep(random.uniform(0.3, 0.6))
+            time.sleep(random.uniform(0.15, 0.3))
             char_count = 0
-    time.sleep(random.uniform(0.3, 0.8))
+    time.sleep(random.uniform(0.15, 0.3))
 
 
 def human_wiggle(page):
     """Movimentos aleatorios de mouse + scroll para parecer humano."""
     try:
-        for _ in range(random.randint(2, 4)):
+        for _ in range(random.randint(1, 2)):
             x = random.randint(200, 1200)
             y = random.randint(200, 700)
-            page.mouse.move(x, y, steps=random.randint(5, 15))
-            time.sleep(random.uniform(0.1, 0.3))
+            page.mouse.move(x, y, steps=random.randint(3, 8))
+            time.sleep(random.uniform(0.05, 0.15))
         if random.random() > 0.5:
             page.mouse.wheel(0, random.randint(-100, 100))
-            time.sleep(random.uniform(0.2, 0.5))
+            time.sleep(random.uniform(0.1, 0.2))
     except:
         pass
 
@@ -517,14 +517,14 @@ def react_fill(page, selector, value):
     try:
         el = page.locator(selector).first
         el.scroll_into_view_if_needed()
-        time.sleep(0.3)
+        time.sleep(0.15)
         el.click()
-        time.sleep(0.5)
+        time.sleep(0.2)
         page.keyboard.press('Control+a')
         page.keyboard.press('Backspace')
-        time.sleep(0.3)
+        time.sleep(0.15)
         human_type(page, value)
-        time.sleep(0.5)
+        time.sleep(0.2)
         return True
     except:
         # Fallback: React native setter
@@ -665,7 +665,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             mail_page = context.new_page()
             mail_page.set_default_timeout(30000)
             mail_page.goto('https://app.tuta.com/login', timeout=30000)
-            time.sleep(8)
+            time.sleep(4)
 
             tuta_email = os.environ.get('TUTA_EMAIL', 'teste.greenvillage@tutamail.com')
             tuta_pass_val = os.environ.get('TUTA_PASS', 'Waxdwaxdw134679852')
@@ -674,22 +674,22 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             inputs = mail_page.locator('input:visible')
             if inputs.count() >= 1:
                 inputs.nth(0).click()
-                time.sleep(0.5)
+                time.sleep(0.2)
                 mail_page.keyboard.press('Control+a')
                 mail_page.keyboard.press('Backspace')
-                time.sleep(0.3)
+                time.sleep(0.15)
                 human_type(mail_page, tuta_email)
                 print('  -> Email preenchido')
-            time.sleep(1)
+            time.sleep(0.4)
 
             # Senha
             pw = mail_page.locator('input[type="password"]:visible')
             if pw.count() >= 1:
                 pw.first.click()
-                time.sleep(0.5)
+                time.sleep(0.2)
                 human_type(mail_page, tuta_pass_val)
                 print('  -> Senha preenchida')
-            time.sleep(1)
+            time.sleep(0.4)
 
             # Entrar via JS
             mail_page.evaluate("""() => {
@@ -703,7 +703,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                 return false;
             }""")
             print('  -> Login enviado!')
-            time.sleep(10)
+            time.sleep(6)
 
             # Verificar inbox
             for w in range(10):
@@ -727,7 +727,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             seen_codes = set()
             if mail_logged_in:
                 try:
-                    time.sleep(2)
+                    time.sleep(1)
                     existing = mail_page.evaluate(r"""() => {
                         const t = document.body.innerText || '';
                         const matches = t.match(/(\d{6})\s+is\s+your\s+Instagram\s+code/gi) || [];
@@ -755,9 +755,9 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         update_status(2, 'Aquecendo sessao...')
         try:
             page.goto('https://www.google.com', timeout=15000)
-            time.sleep(random.uniform(1.5, 3))
+            time.sleep(1)
             page.mouse.wheel(0, random.randint(100, 400))
-            time.sleep(random.uniform(1, 2))
+            time.sleep(0.5)
         except:
             pass
 
@@ -767,9 +767,9 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         try:
             page.goto('https://www.instagram.com/', timeout=30000)
             page.wait_for_load_state('domcontentloaded')
-            time.sleep(random.uniform(2, 4))
-            page.mouse.wheel(0, random.randint(200, 500))
             time.sleep(random.uniform(1, 2))
+            page.mouse.wheel(0, random.randint(200, 500))
+            time.sleep(random.uniform(0.5, 1))
         except:
             pass
 
@@ -777,14 +777,14 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         print('[2/8] Navegando para signup...')
         safe_goto_ig(page, 'https://www.instagram.com/accounts/emailsignup/', label='signup')
         page.wait_for_load_state('domcontentloaded')
-        time.sleep(random.uniform(2, 4))
+        time.sleep(random.uniform(1, 2))
 
         # Aceitar cookies se aparecer
         try:
             cookies = page.locator('button:has-text("Permitir"), button:has-text("Allow"), button:has-text("Accept")')
             if cookies.first.is_visible(timeout=3000):
                 cookies.first.click()
-                time.sleep(2)
+                time.sleep(1)
         except:
             pass
 
@@ -833,7 +833,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                     """Clica combobox e seleciona opcao."""
                     try:
                         comboboxes.nth(cb_idx).click(force=True)
-                        time.sleep(1.5)
+                        time.sleep(0.5)
                         opts = page.locator('[role="option"]')
                         for oi in range(opts.count()):
                             opt = opts.nth(oi)
@@ -856,18 +856,18 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                         return False
 
                 click_combobox_option(dia_idx, birth_day)
-                time.sleep(random.uniform(0.5, 1))
+                time.sleep(random.uniform(0.3, 0.5))
                 click_combobox_option(mes_idx, mes_nome)
-                time.sleep(random.uniform(0.5, 1))
+                time.sleep(random.uniform(0.3, 0.5))
                 click_combobox_option(ano_idx, birth_year)
-                time.sleep(random.uniform(0.5, 1))
+                time.sleep(random.uniform(0.3, 0.5))
                 print('  -> Nascimento: ' + birth_day + '/' + birth_month + '/' + birth_year)
             else:
                 print('  -> Sem comboboxes de nascimento (' + str(cb_count) + ')')
         except Exception as e:
             print('  -> Erro nascimento: ' + str(e))
 
-        time.sleep(random.uniform(1, 2))
+        time.sleep(random.uniform(0.3, 0.5))
 
         # === PASSO 3: Preencher email ===
         update_status(3, 'Preenchendo email: ' + email)
@@ -896,13 +896,13 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             if not filled:
                 # Fallback: 1o input[type=text] visível
                 page.locator('input[type="text"]').first.click()
-                time.sleep(0.5)
+                time.sleep(0.2)
                 human_type(page, email)
                 print('  -> Email preenchido (fallback 1o input)!')
         except Exception as e:
             print('  -> ERRO email: ' + str(e))
 
-        time.sleep(random.uniform(2.5, 4.5))
+        time.sleep(random.uniform(0.5, 1))
 
         # === PASSO 4: Preencher nome completo ===
         update_status(4, 'Preenchendo nome: ' + full_name)
@@ -941,10 +941,10 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                     aria = (inp.get_attribute('aria-label') or '').lower()
                     if 'nome completo' in ph or 'full name' in ph or ('nome' in aria and 'usu' not in aria):
                         inp.click()
-                        time.sleep(0.5)
+                        time.sleep(0.2)
                         page.keyboard.press('Control+a')
                         page.keyboard.press('Backspace')
-                        time.sleep(0.3)
+                        time.sleep(0.15)
                         human_type(page, full_name)
                         filled = True
                         print('  -> Nome preenchido (fallback scan)!')
@@ -952,7 +952,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         except Exception as e:
             print('  -> ERRO nome: ' + str(e))
 
-        time.sleep(random.uniform(2.5, 4.5))
+        time.sleep(random.uniform(0.5, 1))
 
         # === PASSO 5: Preencher username ===
         update_status(5, 'Preenchendo username: ' + username)
@@ -981,13 +981,13 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                 search_input = page.locator('input[type="search"]').first
                 if search_input.is_visible(timeout=2000):
                     search_input.click()
-                    time.sleep(0.5)
+                    time.sleep(0.2)
                     human_type(page, username)
                     print('  -> Username preenchido (fallback search)!')
         except Exception as e:
             print('  -> ERRO username: ' + str(e))
 
-        time.sleep(random.uniform(2.5, 4.5))
+        time.sleep(random.uniform(0.5, 1))
 
         # === PASSO 6: Preencher senha ===
         update_status(6, 'Preenchendo senha...')
@@ -1013,12 +1013,12 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         except Exception as e:
             print('  -> ERRO senha: ' + str(e))
 
-        time.sleep(random.uniform(1.5, 2.5))
+        time.sleep(random.uniform(0.5, 1))
 
         # === Pausa longa antes do submit (reduz deteccao de SMS) ===
         print('  -> Pausa pre-submit (parecer humano revisando o form)...')
         human_wiggle(page)
-        time.sleep(random.uniform(1, 2))
+        time.sleep(random.uniform(0.5, 1))
         human_wiggle(page)
 
         # === PASSO 7: Clicar em Cadastre-se / Sign up ===
@@ -1053,7 +1053,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         except Exception as e:
             print('  -> ERRO submit: ' + str(e))
 
-        time.sleep(5)
+        time.sleep(2)
 
         # === PASSO 7.5: Data de nascimento pos-submit (se aparecer tela separada) ===
         print('  -> Verificando se nascimento aparece pos-submit...')
@@ -1078,7 +1078,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                             break
                     except:
                         continue
-                time.sleep(5)
+                time.sleep(2)
             else:
                 print('  -> Nascimento ja preenchido na tela principal')
         except:
@@ -1103,7 +1103,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         conta_criada = False
 
         for i in range(300):  # 10 min
-            time.sleep(3)
+            time.sleep(2)
             try:
                 url = page.url
 
@@ -1208,7 +1208,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                         print('  -> [' + str(elapsed) + 's] Ultimo recurso: reload Tuta')
                                         try:
                                             mail_page.reload(timeout=15000)
-                                            time.sleep(5)
+                                            time.sleep(3)
                                             if not tuta_is_logged_in(mail_page):
                                                 print('  -> Tuta deslogou apos reload, re-logando...')
                                                 if tuta_relogin(mail_page):
@@ -1314,7 +1314,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                         }
                                         return 'nenhum';
                                     }""")
-                                    time.sleep(2)
+                                    time.sleep(1)
                                     # Tentar regex novamente apos abrir email
                                     code_after = mail_page.evaluate(r"""() => {
                                         const t = document.body.innerText || '';
@@ -1377,7 +1377,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                 except Exception as e:
                                     print('  -> [DIAG] Erro: ' + str(e)[:80])
 
-                                time.sleep(2)
+                                time.sleep(0.5)
 
                                 # PREENCHER: tentar TODOS os inputs visiveis ate um aceitar
                                 try:
@@ -1429,7 +1429,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                         print('  -> Playwright fallback falhou: ' + str(e)[:60])
 
                                 if filled:
-                                    time.sleep(1.2)
+                                    time.sleep(0.5)
                                     # Clicar Continuar
                                     sent = False
                                     for bt in ['Continuar', 'Confirmar', 'Next', 'Confirm', 'Avancar', 'Avançar']:
@@ -1445,7 +1445,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                     if not sent:
                                         page.keyboard.press('Enter')
                                         print('  -> Codigo enviado via Enter')
-                                    time.sleep(5)
+                                    time.sleep(2)
                                     # Verificar se Instagram aceitou ou rejeitou o codigo
                                     try:
                                         rejection = page.evaluate("""() => {
@@ -1552,7 +1552,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                                         bb.click(force=True, timeout=3000)
                                                         print('  -> [SMS] Voltou pra tela de telefone via: "' + back_bt + '"')
                                                         clicked_back = True
-                                                        time.sleep(3)
+                                                        time.sleep(1.5)
                                                         break
                                                 except:
                                                     continue
@@ -1564,7 +1564,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                                         back_arrow.click(force=True, timeout=2000)
                                                         print('  -> [SMS] Voltou via seta de voltar')
                                                         clicked_back = True
-                                                        time.sleep(3)
+                                                        time.sleep(1.5)
                                                 except:
                                                     pass
                                             if not clicked_back:
@@ -1620,7 +1620,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                             except:
                                                 print('  -> [SMS] ERRO: nao conseguiu preencher numero')
                                                 continue
-                                        time.sleep(1.5)
+                                        time.sleep(0.5)
 
                                         for bt in ['Enviar c', 'Send Code', 'Send', 'Enviar', 'Continuar', 'Next', 'Avan']:
                                             try:
@@ -1631,7 +1631,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                                     break
                                             except:
                                                 continue
-                                        time.sleep(4)
+                                        time.sleep(2)
                                     except Exception as e:
                                         print('  -> [SMS] Erro preencher: ' + str(e)[:80])
                                         continue
@@ -1684,7 +1684,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                                         b.click(force=True, timeout=3000)
                                                         print('  -> [SMS] Switched para SMS via: "' + sms_bt + '"')
                                                         switched = True
-                                                        time.sleep(3)
+                                                        time.sleep(1.5)
                                                         break
                                                 except:
                                                     continue
@@ -1706,7 +1706,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                                 last_reload = elapsed_poll
                                                 try:
                                                     sms_page.reload()
-                                                    time.sleep(3)
+                                                    time.sleep(1.5)
                                                 except:
                                                     pass
                                             # Aos 40s, clicar "Não recebi o código" no Instagram para forcar reenvio
@@ -1744,11 +1744,11 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                                 break
                                         except:
                                             pass
-                                        time.sleep(4)
+                                        time.sleep(2)
 
                                     if sms_code:
                                         page.bring_to_front()
-                                        time.sleep(1)
+                                        time.sleep(0.5)
                                         code_input2 = page.locator('input[type="text"][maxlength="6"], input[name*="code" i], input[aria-label*="digo" i], input[type="tel"]')
                                         try:
                                             code_input2.first.fill(sms_code, timeout=4000)
@@ -1765,7 +1765,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                                     return true;
                                                 }
                                             }""", sms_code)
-                                        time.sleep(1)
+                                        time.sleep(0.5)
                                         for bt in ['Continuar', 'Next', 'Confirm', 'Avan', 'Confirmar']:
                                             try:
                                                 b = page.locator('button:has-text("' + bt + '"), div[role="button"]:has-text("' + bt + '")').first
@@ -1778,7 +1778,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                                 continue
                                         if success:
                                             create_account._sms_done = True
-                                            time.sleep(5)
+                                            time.sleep(2)
                                             break
                                     else:
                                         print('  -> [SMS] Timeout, tentando proximo numero...')
@@ -1804,7 +1804,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                             if skip.first.is_visible(timeout=300):
                                 skip.first.click()
                                 print('  -> Pulou: ' + txt)
-                                time.sleep(2)
+                                time.sleep(1)
                                 break
                     except:
                         pass
@@ -1824,7 +1824,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             reconnect_vpn()
         except:
             pass
-        time.sleep(10)
+        time.sleep(3)
         browser.close()
 
     return status
