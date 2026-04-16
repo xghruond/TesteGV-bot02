@@ -81,10 +81,49 @@ def get_cdp_context(p):
     return None, None
 
 
-def get_sms24_numbers(cdp_context, country='ca', max_check=12):
+def check_cloudflare_and_wait(sms_page, label='pagina', max_wait=120):
+    """
+    Se detectar Cloudflare, mostra mensagem grande e aguarda ate max_wait seg.
+    Polling: checa a cada 2s se o titulo/corpo mudou (Cloudflare resolvido).
+    Returns: True se carregou OK, False se timeout
+    """
+    try:
+        title = sms_page.title()
+    except:
+        title = ''
+    if 'cloudflare' not in title.lower() and 'attention required' not in title.lower():
+        return True
+    # Bloqueado!
+    print('')
+    print('  ' + '!' * 58)
+    print('  !!  CLOUDFLARE DETECTADO em ' + label)
+    print('  !!  FAÇA F5 NA ABA DO CHROME (sms24.me) AGORA')
+    print('  !!  Aguardando ate ' + str(max_wait) + 's...')
+    print('  ' + '!' * 58)
+    # Tentar trazer aba pra frente
+    try:
+        sms_page.bring_to_front()
+    except:
+        pass
+    start = time.time()
+    while time.time() - start < max_wait:
+        time.sleep(2)
+        try:
+            t = sms_page.title()
+            if 'cloudflare' not in t.lower() and 'attention required' not in t.lower():
+                print('  -> [SMS24] Cloudflare resolvido! Continuando...')
+                time.sleep(1)
+                return True
+        except:
+            pass
+    print('  -> [SMS24] Timeout Cloudflare — usuario nao fez F5')
+    return False
+
+
+def get_sms24_numbers(cdp_context, country='ca', max_check=8):
     """
     Lista numeros de sms24.me/en/countries/<country> via CDP e RANKEIA:
-    1) Visita cada numero para ler timestamp + historico Instagram
+    1) Visita numeros em PARALELO (abas separadas) para ler timestamp + IG
     2) Prioriza: tem Instagram > ativo recente
     3) Filtra: descarta mortos (> 6h)
     Returns: lista rankeada de {number, href, no_prefix, age_min, ig_count}
@@ -103,7 +142,11 @@ def get_sms24_numbers(cdp_context, country='ca', max_check=12):
 
         print('  -> [SMS24] Carregando lista de numeros ' + country.upper() + '...')
         sms_page.goto('https://sms24.me/en/countries/' + country, timeout=30000)
-        time.sleep(3)
+        time.sleep(2)
+
+        # Aguardar Cloudflare se estiver bloqueado
+        if not check_cloudflare_and_wait(sms_page, 'lista ' + country.upper()):
+            return []
 
         numbers = sms_page.evaluate(r"""() => {
             const results = [];
@@ -119,15 +162,27 @@ def get_sms24_numbers(cdp_context, country='ca', max_check=12):
         if not numbers:
             return []
 
-        print('  -> [SMS24] ' + str(len(numbers)) + ' numeros listados, analisando atividade...')
+        print('  -> [SMS24] ' + str(len(numbers)) + ' numeros listados, analisando atividade em paralelo...')
 
-        # Visitar cada numero para coletar info (limitado a max_check)
-        analyzed = []
-        for idx, n in enumerate(numbers[:max_check]):
+        # PARALELIZAR: abrir N abas simultaneas
+        batch = numbers[:max_check]
+        extra_pages = []
+        for n in batch:
             try:
-                sms_page.goto(n['href'], timeout=15000)
-                time.sleep(1.8)
-                info = sms_page.evaluate(r"""() => {
+                pg = cdp_context.new_page()
+                pg.goto(n['href'], timeout=10000, wait_until='domcontentloaded')
+                extra_pages.append((n, pg))
+            except:
+                continue
+
+        # Esperar todas carregarem
+        time.sleep(2.5)
+
+        # Coletar dados
+        analyzed = []
+        for n, pg in extra_pages:
+            try:
+                info = pg.evaluate(r"""() => {
                     const body = (document.body.innerText || '');
                     const tMatch = body.match(/(\d+)\s+(minute|hour|day|week|second)s?\s+ago/i);
                     let ageMin = 999999;
@@ -149,7 +204,11 @@ def get_sms24_numbers(cdp_context, country='ca', max_check=12):
                     'age_min': info.get('ageMin', 999999),
                     'ig_count': info.get('igCount', 0)
                 })
+                # Fechar aba pra liberar memoria
+                pg.close()
             except:
+                try: pg.close()
+                except: pass
                 continue
 
         # Filtrar mortos (>= 6 horas)
@@ -218,15 +277,19 @@ def open_sms_number_page(number_info, cdp_context=None, bot_context=None):
     try:
         if cdp_context:
             # sms24.me via CDP
+            target = None
             for pg in cdp_context.pages:
                 if 'sms24.me' in pg.url:
-                    pg.goto(number_info['href'], timeout=30000)
-                    time.sleep(3)
-                    return pg
-            sms_page = cdp_context.new_page()
-            sms_page.goto(number_info['href'], timeout=30000)
-            time.sleep(3)
-            return sms_page
+                    target = pg
+                    break
+            if not target:
+                target = cdp_context.new_page()
+            target.goto(number_info['href'], timeout=30000)
+            time.sleep(2)
+            # Checar Cloudflare
+            if not check_cloudflare_and_wait(target, 'numero ' + number_info.get('number', '?')):
+                return None
+            return target
         elif bot_context:
             # receive-smss.com via bot context
             sms_page = bot_context.new_page()
