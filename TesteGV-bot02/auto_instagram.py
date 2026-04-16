@@ -544,22 +544,17 @@ def react_fill(page, selector, value):
             return False
 
 
-def create_account(email, password, full_name, username, birth_day='1', birth_month='1', birth_year='2000', tuta_pass=''):
-    """Cria conta Instagram. Retorna status dict.
-    tuta_pass: senha do email Tutanota (para buscar codigo de verificacao)."""
+def create_account(email, password, full_name, username, birth_day='1', birth_month='1', birth_year='2000'):
+    """Cria conta Instagram. Retorna status dict."""
     # Limpar estado residual de chamadas anteriores
     create_account._code_done = False
-    create_account._mail_page = None
-    create_account._mail_attempts = 0
-    create_account._tuta_pass = tuta_pass
-    create_account._vpn_off_for_code = False
     create_account._code_search_started = False
-    create_account._sms_detected = False
     create_account._sms_done = False
-    create_account._sms_start_time = 0
-    create_account._sms_initial_len = 0
     create_account._sms_handler_running = False
     create_account._sms_manual_fallback = False
+
+    MESES_PT = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
     # Garantir Chrome CDP aberto LOGO NO INICIO (da tempo pro user resolver Cloudflare)
     print('[0/8] Verificando Chrome CDP (sms24.me)...')
@@ -1061,8 +1056,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             # Verificar se tem tela separada de nascimento (layout antigo)
             selects = page.locator('select:visible')
             if selects.count() >= 3:
-                meses_pt = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+                meses_pt = MESES_PT
                 print('  -> Tela separada de nascimento (selects)!')
                 for idx, val in [(0, birth_month), (1, birth_day), (2, birth_year)]:
                     try:

@@ -6,7 +6,6 @@ Utilitarios compartilhados pelos bots Playwright.
 import time
 import threading
 import datetime
-import functools
 
 
 # Buffer circular de logs estruturados (lido por /api/logs)
@@ -70,12 +69,3 @@ def retry(op, tries=3, backoff=1.5, initial_delay=0.5, label='op', bot='unknown'
     raise last_exc
 
 
-def with_retry(tries=3, backoff=1.5, label=None, bot='unknown'):
-    """Decorator: transforma f em f wrapped by retry()."""
-    def decorator(f):
-        nm = label or f.__name__
-        @functools.wraps(f)
-        def wrapper(*args, **kwargs):
-            return retry(lambda: f(*args, **kwargs), tries=tries, backoff=backoff, label=nm, bot=bot)
-        return wrapper
-    return decorator
