@@ -7,6 +7,7 @@ Uso CLI: python auto_instagram.py <email> <password> <full_name> <username> <bir
 Import: from auto_instagram import create_account
 """
 import sys
+import os
 import time
 import random
 import functools
@@ -452,14 +453,14 @@ def tuta_relogin(mail_page):
             mail_page.keyboard.press('Control+a')
             mail_page.keyboard.press('Backspace')
             time.sleep(0.2)
-            for ch in 'teste.greenvillage@tutamail.com':
+            for ch in os.environ.get('TUTA_EMAIL', 'teste.greenvillage@tutamail.com'):
                 mail_page.keyboard.type(ch, delay=50)
         time.sleep(0.8)
         pw = mail_page.locator('input[type="password"]:visible')
         if pw.count() >= 1:
             pw.first.click()
             time.sleep(0.3)
-            for ch in 'Waxdwaxdw134679852':
+            for ch in os.environ.get('TUTA_PASS', 'Waxdwaxdw134679852'):
                 mail_page.keyboard.type(ch, delay=50)
         time.sleep(0.5)
         mail_page.evaluate(r"""() => {
@@ -666,8 +667,8 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             mail_page.goto('https://app.tuta.com/login', timeout=30000)
             time.sleep(8)
 
-            tuta_email = 'teste.greenvillage@tutamail.com'
-            tuta_pass_val = 'Waxdwaxdw134679852'
+            tuta_email = os.environ.get('TUTA_EMAIL', 'teste.greenvillage@tutamail.com')
+            tuta_pass_val = os.environ.get('TUTA_PASS', 'Waxdwaxdw134679852')
 
             # Preencher email
             inputs = mail_page.locator('input:visible')
