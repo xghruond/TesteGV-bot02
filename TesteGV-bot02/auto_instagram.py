@@ -1742,23 +1742,31 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
 
                                     if sms_code:
                                         page.bring_to_front()
-                                        time.sleep(0.5)
-                                        code_input2 = page.locator('input[type="text"][maxlength="6"], input[name*="code" i], input[aria-label*="digo" i], input[type="tel"]')
+                                        time.sleep(2)
+                                        # Mesmo fix do email: pular inputs invisiveis (h < 10)
                                         try:
-                                            code_input2.first.fill(sms_code, timeout=4000)
-                                        except:
-                                            page.evaluate("""(code) => {
+                                            result = page.evaluate("""(code) => {
                                                 const inputs = document.querySelectorAll('input');
                                                 for (const inp of inputs) {
-                                                    if (inp.type === 'hidden' || inp.disabled || inp.offsetHeight === 0) continue;
+                                                    if (inp.type === 'hidden' || inp.type === 'submit' || inp.disabled) continue;
+                                                    if (inp.offsetHeight < 10) continue;
                                                     inp.focus();
                                                     const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
                                                     setter.call(inp, code);
                                                     inp.dispatchEvent(new Event('input', { bubbles: true }));
                                                     inp.dispatchEvent(new Event('change', { bubbles: true }));
-                                                    return true;
+                                                    inp.dispatchEvent(new Event('blur', { bubbles: true }));
+                                                    if (inp.value === code) return { ok: true, h: inp.offsetHeight };
                                                 }
+                                                return { ok: false };
                                             }""", sms_code)
+                                            if result and result.get('ok'):
+                                                print('  -> [SMS] Codigo preenchido via JS (h=' + str(result.get('h', '?')) + ')')
+                                            else:
+                                                print('  -> [SMS] JS nao achou input visivel, tentando fill()...')
+                                                page.locator('input:visible').first.fill(sms_code, timeout=3000)
+                                        except Exception as e:
+                                            print('  -> [SMS] Erro fill SMS code: ' + str(e)[:60])
                                         time.sleep(0.5)
                                         for bt in ['Continuar', 'Next', 'Confirm', 'Avan', 'Confirmar']:
                                             try:
