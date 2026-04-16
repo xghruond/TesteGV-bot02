@@ -1321,29 +1321,51 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
 
                                 filled = False
 
-                                # TENTATIVA 1: fill() direto (mais rapido e confiavel)
+                                # METODO PRINCIPAL: JS direto (mais confiavel — ignora overlays)
                                 try:
-                                    ci = code_input.first
-                                    ci.fill(code, timeout=5000)
-                                    print('  -> Codigo preenchido via fill()')
-                                    filled = True
+                                    result = page.evaluate("""(code) => {
+                                        const selectors = [
+                                            'input[name="email_confirmation_code"]',
+                                            'input[aria-label*="digo" i]',
+                                            'input[aria-label*="code" i]',
+                                            'input[placeholder*="digo" i]',
+                                            'input[placeholder*="code" i]',
+                                            'input[placeholder*="confirma" i]',
+                                            'input[type="text"]:not([disabled])',
+                                            'input[type="number"]:not([disabled])'
+                                        ];
+                                        for (const sel of selectors) {
+                                            const inp = document.querySelector(sel);
+                                            if (inp && inp.offsetHeight > 0) {
+                                                inp.focus();
+                                                const setter = Object.getOwnPropertyDescriptor(
+                                                    window.HTMLInputElement.prototype, 'value'
+                                                ).set;
+                                                setter.call(inp, code);
+                                                inp.dispatchEvent(new Event('input', { bubbles: true }));
+                                                inp.dispatchEvent(new Event('change', { bubbles: true }));
+                                                return { ok: true, sel: sel, val: inp.value };
+                                            }
+                                        }
+                                        return { ok: false };
+                                    }""", code)
+                                    if result and result.get('ok'):
+                                        print('  -> Codigo preenchido via JS (' + result.get('sel', '?')[:30] + ') val=' + str(result.get('val', ''))[:10])
+                                        filled = True
+                                    else:
+                                        print('  -> JS nao encontrou input visivel')
                                 except Exception as e:
-                                    print('  -> fill() falhou: ' + str(e)[:60])
+                                    print('  -> JS falhou: ' + str(e)[:60])
 
-                                # TENTATIVA 2: click forcado + type
+                                # FALLBACK: fill() do Playwright
                                 if not filled:
                                     try:
                                         ci = code_input.first
-                                        ci.click(force=True, timeout=5000)
-                                        time.sleep(0.3)
-                                        page.keyboard.press('Control+a')
-                                        page.keyboard.press('Backspace')
-                                        time.sleep(0.2)
-                                        page.keyboard.type(code, delay=80)
-                                        print('  -> Codigo preenchido via click forcado + type')
+                                        ci.fill(code, timeout=5000)
+                                        print('  -> Codigo preenchido via fill()')
                                         filled = True
                                     except Exception as e:
-                                        print('  -> click+type falhou: ' + str(e)[:60])
+                                        print('  -> fill() falhou: ' + str(e)[:60])
 
                                 # TENTATIVA 3: JS direto (ignora overlays e pointer events)
                                 if not filled:
