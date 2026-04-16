@@ -1445,8 +1445,29 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                     if not sent:
                                         page.keyboard.press('Enter')
                                         print('  -> Codigo enviado via Enter')
-                                    code_done = True
                                     time.sleep(5)
+                                    # Verificar se Instagram aceitou ou rejeitou o codigo
+                                    try:
+                                        rejection = page.evaluate("""() => {
+                                            const t = (document.body.innerText || '').toLowerCase();
+                                            if (t.includes('verifique o email') || t.includes('inválido') ||
+                                                t.includes('invalid') || t.includes('incorreto') ||
+                                                t.includes('incorrect') || t.includes('expirou') ||
+                                                t.includes('expired') || t.includes('try again')) {
+                                                return true;
+                                            }
+                                            return false;
+                                        }""")
+                                        if rejection:
+                                            print('  -> !!! Instagram REJEITOU o codigo ' + code + ' !!!')
+                                            print('  -> Adicionando ao seen_codes e buscando novo...')
+                                            seen_codes.add(code)
+                                            code_done = False
+                                        else:
+                                            print('  -> Instagram aceitou o codigo (ou mudou de tela)')
+                                            code_done = True
+                                    except:
+                                        code_done = True
                                 else:
                                     print('  -> FALHA TOTAL ao preencher. Tentando no proximo loop...')
                         except Exception as e:
