@@ -1671,7 +1671,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                         if is_whatsapp:
                                             print('  -> [SMS] Instagram tentou WhatsApp. Clicando "Enviar por SMS"...')
                                             switched = False
-                                            for sms_bt in ['Enviar c\u00f3digo por SMS', 'c\u00f3digo por SMS', 'Receive SMS', 'Get code via SMS', 'por SMS']:
+                                            for sms_bt in ['Enviar c\u00f3digo por SMS', 'c\u00f3digo por SMS', 'por SMS', 'Receive SMS', 'Get code via SMS', 'Send code via SMS', 'Solicitar novo', 'Enviar SMS']:
                                                 try:
                                                     b = page.locator('button:has-text("' + sms_bt + '"), div[role="button"]:has-text("' + sms_bt + '"), a:has-text("' + sms_bt + '")').first
                                                     if b.is_visible(timeout=1500):
@@ -1687,12 +1687,12 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                     except Exception as e:
                                         print('  -> [SMS] Erro check WhatsApp: ' + str(e)[:80])
 
-                                    print('  -> [SMS] Aguardando SMS (90s max)...')
+                                    print('  -> [SMS] Aguardando SMS (45s max)...')
                                     sms_code = None
                                     poll_start = time.time()
                                     last_reload = 0
                                     resend_done = False
-                                    while time.time() - poll_start < 90:
+                                    while time.time() - poll_start < 45:
                                         try:
                                             elapsed_poll = int(time.time() - poll_start)
                                             # Reload sms_page a cada 12s
@@ -1704,7 +1704,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                                 except:
                                                     pass
                                             # Aos 40s, clicar "Não recebi o código" no Instagram para forcar reenvio
-                                            if not resend_done and elapsed_poll >= 40:
+                                            if not resend_done and elapsed_poll >= 20:
                                                 resend_done = True
                                                 try:
                                                     page.bring_to_front()
