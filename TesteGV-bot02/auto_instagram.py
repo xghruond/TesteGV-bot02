@@ -1160,17 +1160,31 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                         attempt = i + 1
                         elapsed = int(time.time() - getattr(create_account, '_code_start_time', time.time()))
 
-                        # Verificar se Tuta ainda esta logado (reload causa logout, nao fazer!)
-                        if attempt % 5 == 0:
+                        # Forcar refresh do inbox do Tuta SEM reload (clica em "Entrada"/Inbox)
+                        if attempt % 3 == 0:
                             try:
                                 if not tuta_is_logged_in(mail_page):
                                     print('  -> [' + str(elapsed) + 's] Tuta deslogou! Re-logando...')
                                     tuta_relogin(mail_page)
                                 else:
-                                    # Sem reload — apenas log de confirmacao
-                                    print('  -> [' + str(elapsed) + 's] Tuta ainda logado, aguardando email...')
+                                    # Clicar na pasta Entrada para forcar atualizacao
+                                    mail_page.evaluate(r"""() => {
+                                        // Clicar em "Entrada" ou "Inbox" na sidebar
+                                        const links = document.querySelectorAll('*');
+                                        for (const el of links) {
+                                            const t = (el.textContent || '').trim().toLowerCase();
+                                            if ((t === 'entrada' || t === 'inbox') && el.offsetHeight > 0 && el.offsetHeight < 60) {
+                                                el.click();
+                                                return true;
+                                            }
+                                        }
+                                        // Fallback: pressionar F5 na area do app (nao no browser)
+                                        return false;
+                                    }""")
+                                    if attempt % 6 == 0:
+                                        print('  -> [' + str(elapsed) + 's] Tuta inbox refreshed (click Entrada)')
                             except Exception as e:
-                                print('  -> Erro check login: ' + str(e)[:60])
+                                print('  -> Erro refresh Tuta: ' + str(e)[:60])
 
                         try:
                             # ESTRATEGIA 1: Pega o PRIMEIRO email visivel da lista (sempre o mais recente)
@@ -1278,10 +1292,14 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                         if (m) return m[1];
                                         return null;
                                     }""")
-                                    if code_after:
+                                    if code_after and code_after not in seen_codes:
                                         codes = [code_after]
                                         has_ig = True
                                         print('  -> CODIGO ENCONTRADO apos abrir email: ' + code_after)
+                                    elif code_after:
+                                        print('  -> Codigo ' + code_after + ' encontrado mas JA ESTAVA no seen_codes (ignorado)')
+                                        codes = []
+                                        has_ig = False
                                     else:
                                         codes = []
                                         has_ig = False
