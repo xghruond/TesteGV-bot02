@@ -1349,10 +1349,9 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                     page.bring_to_front()
                                     time.sleep(0.5)
                                     # Esperar ate 8s pelo input aparecer
-                                    for _wi in range(16):
+                                    for _wi in range(10):
                                         has_input = page.evaluate("""() => {
-                                            const inp = document.querySelector('input[type="text"], input[name="email_confirmation_code"], input[aria-label*="digo" i]');
-                                            return inp && inp.offsetParent !== null;
+                                            return !!document.querySelector('input[type="text"], input[name="email_confirmation_code"]');
                                         }""")
                                         if has_input:
                                             break
@@ -1362,7 +1361,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
 
                                 filled = False
 
-                                # METODO PRINCIPAL: JS direto (mais confiavel — ignora overlays)
+                                # METODO PRINCIPAL: JS direto — SEM check de visibilidade
                                 try:
                                     result = page.evaluate("""(code) => {
                                         const selectors = [
@@ -1377,7 +1376,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                         ];
                                         for (const sel of selectors) {
                                             const inp = document.querySelector(sel);
-                                            if (inp && inp.offsetParent !== null) {
+                                            if (inp) {
                                                 inp.focus();
                                                 const setter = Object.getOwnPropertyDescriptor(
                                                     window.HTMLInputElement.prototype, 'value'
@@ -1395,7 +1394,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                         print('  -> Codigo preenchido via JS (' + result.get('sel', '?')[:30] + ') val=' + str(result.get('val', ''))[:10])
                                         filled = True
                                     else:
-                                        print('  -> JS nao encontrou input visivel')
+                                        print('  -> JS: nenhum input encontrado no DOM')
                                 except Exception as e:
                                     print('  -> JS falhou: ' + str(e)[:60])
 
