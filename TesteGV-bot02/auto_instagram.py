@@ -1453,6 +1453,40 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                     print('\n  ===== Tentativa ' + str(try_idx + 1) + '/' + str(max_tries) + ': ' + full_num + ' =====')
                                     update_status(8, 'SMS tentativa ' + str(try_idx + 1) + ': ' + full_num)
 
+                                    # Se nao for a primeira tentativa, VOLTAR pra tela de telefone
+                                    if try_idx > 0:
+                                        try:
+                                            page.bring_to_front()
+                                            time.sleep(0.5)
+                                            # Clicar "Atualizar numero de celular" ou "Change phone number"
+                                            clicked_back = False
+                                            for back_bt in ['Atualizar n', 'numero de celular', 'Change phone', 'Update phone', 'Use a different']:
+                                                try:
+                                                    bb = page.locator('button:has-text("' + back_bt + '"), a:has-text("' + back_bt + '"), div[role="button"]:has-text("' + back_bt + '")').first
+                                                    if bb.is_visible(timeout=1500):
+                                                        bb.click(force=True, timeout=3000)
+                                                        print('  -> [SMS] Voltou pra tela de telefone via: "' + back_bt + '"')
+                                                        clicked_back = True
+                                                        time.sleep(3)
+                                                        break
+                                                except:
+                                                    continue
+                                            if not clicked_back:
+                                                # Fallback: tentar voltar clicando no icone "<" (seta voltar)
+                                                try:
+                                                    back_arrow = page.locator('svg[aria-label*="Voltar"], svg[aria-label*="Back"], [aria-label*="Voltar"], [aria-label*="Back"]').first
+                                                    if back_arrow.is_visible(timeout=1000):
+                                                        back_arrow.click(force=True, timeout=2000)
+                                                        print('  -> [SMS] Voltou via seta de voltar')
+                                                        clicked_back = True
+                                                        time.sleep(3)
+                                                except:
+                                                    pass
+                                            if not clicked_back:
+                                                print('  -> [SMS] Nao conseguiu voltar pra tela de telefone, tentando preencher mesmo assim')
+                                        except Exception as e:
+                                            print('  -> [SMS] Erro ao voltar: ' + str(e)[:60])
+
                                     sms_page = open_sms_number_page(
                                         num_info,
                                         cdp_context=cdp_ctx if is_sms24 else None,
@@ -1468,24 +1502,42 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                     try:
                                         page.bring_to_front()
                                         time.sleep(0.5)
+                                        # Preencher telefone (no campo tel ou qualquer input visivel)
+                                        phone_filled = False
                                         try:
-                                            sms_input.first.fill(no_prefix, timeout=4000)
+                                            tel_input = page.locator('input[type="tel"], input[name="phone_number"], input[aria-label*="telefone" i], input[aria-label*="celular" i], input[aria-label*="phone" i]')
+                                            tel_input.first.fill(no_prefix, timeout=4000)
+                                            phone_filled = True
                                             print('  -> [SMS] Numero preenchido')
                                         except:
-                                            page.evaluate("""(num) => {
-                                                const inp = document.querySelector('input[type="tel"], input[name="phone_number"], input[aria-label*="telefone" i]');
-                                                if (inp) {
-                                                    inp.focus();
-                                                    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-                                                    setter.call(inp, num);
-                                                    inp.dispatchEvent(new Event('input', { bubbles: true }));
-                                                    inp.dispatchEvent(new Event('change', { bubbles: true }));
-                                                }
-                                            }""", no_prefix)
-                                            print('  -> [SMS] Numero preenchido via JS')
+                                            pass
+                                        if not phone_filled:
+                                            try:
+                                                page.evaluate("""(num) => {
+                                                    const selectors = ['input[type="tel"]', 'input[name="phone_number"]',
+                                                                       'input[aria-label*="telefone" i]', 'input[aria-label*="celular" i]',
+                                                                       'input[aria-label*="phone" i]'];
+                                                    for (const sel of selectors) {
+                                                        const inp = document.querySelector(sel);
+                                                        if (inp && inp.offsetHeight > 0) {
+                                                            inp.focus();
+                                                            const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                                                            setter.call(inp, num);
+                                                            inp.dispatchEvent(new Event('input', { bubbles: true }));
+                                                            inp.dispatchEvent(new Event('change', { bubbles: true }));
+                                                            return true;
+                                                        }
+                                                    }
+                                                    return false;
+                                                }""", no_prefix)
+                                                phone_filled = True
+                                                print('  -> [SMS] Numero preenchido via JS')
+                                            except:
+                                                print('  -> [SMS] ERRO: nao conseguiu preencher numero')
+                                                continue
                                         time.sleep(1.5)
 
-                                        for bt in ['Enviar c', 'Send Code', 'Send', 'Enviar', 'Continuar', 'Next']:
+                                        for bt in ['Enviar c', 'Send Code', 'Send', 'Enviar', 'Continuar', 'Next', 'Avan']:
                                             try:
                                                 b = page.locator('button:has-text("' + bt + '"), div[role="button"]:has-text("' + bt + '")').first
                                                 if b.is_visible(timeout=1500):
@@ -1591,6 +1643,19 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                                     pass
                                             sms_code = extract_instagram_code_from_page(sms_page, existing_codes, is_sms24)
                                             if sms_code:
+                                                break
+                                        except:
+                                            pass
+                                        # Checar se Instagram mostrou "codigo incorreto" (abortar esse numero)
+                                        try:
+                                            wrong_code = page.evaluate("""() => {
+                                                const t = (document.body.innerText || '').toLowerCase();
+                                                return t.includes('incorreto') || t.includes('incorrect') ||
+                                                       t.includes('wrong code') || t.includes('not valid');
+                                            }""")
+                                            if wrong_code:
+                                                print('  -> [SMS] Instagram disse CODIGO INCORRETO. Proximo numero...')
+                                                sms_code = None
                                                 break
                                         except:
                                             pass
