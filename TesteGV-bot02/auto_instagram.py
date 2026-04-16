@@ -1344,10 +1344,19 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                 print('  -> >>> PREENCHENDO codigo ' + code + ' no Instagram...')
                                 update_status(8, 'Codigo: ' + code + ' — preenchendo...')
 
-                                # Trazer aba Instagram para frente antes de preencher
+                                # Trazer aba Instagram para frente e ESPERAR input renderizar
                                 try:
                                     page.bring_to_front()
                                     time.sleep(0.5)
+                                    # Esperar ate 8s pelo input aparecer
+                                    for _wi in range(16):
+                                        has_input = page.evaluate("""() => {
+                                            const inp = document.querySelector('input[type="text"], input[name="email_confirmation_code"], input[aria-label*="digo" i]');
+                                            return inp && inp.offsetParent !== null;
+                                        }""")
+                                        if has_input:
+                                            break
+                                        time.sleep(0.5)
                                 except:
                                     pass
 
@@ -1357,18 +1366,18 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                 try:
                                     result = page.evaluate("""(code) => {
                                         const selectors = [
+                                            'input[type="text"]:not([disabled])',
                                             'input[name="email_confirmation_code"]',
                                             'input[aria-label*="digo" i]',
                                             'input[aria-label*="code" i]',
                                             'input[placeholder*="digo" i]',
                                             'input[placeholder*="code" i]',
                                             'input[placeholder*="confirma" i]',
-                                            'input[type="text"]:not([disabled])',
                                             'input[type="number"]:not([disabled])'
                                         ];
                                         for (const sel of selectors) {
                                             const inp = document.querySelector(sel);
-                                            if (inp && inp.offsetHeight > 0) {
+                                            if (inp && inp.offsetParent !== null) {
                                                 inp.focus();
                                                 const setter = Object.getOwnPropertyDescriptor(
                                                     window.HTMLInputElement.prototype, 'value'
