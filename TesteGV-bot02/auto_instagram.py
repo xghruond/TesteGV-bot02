@@ -1372,9 +1372,8 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
 
                             if cdp_ctx:
                                 print('  -> [SMS] Usando sms24.me via CDP')
-                                # Cascata de paises: CA (mais Instagram) > US > BR
-                                # Todos usam +1 ou similar, Instagram aceita bem
-                                country_priority = ['ca', 'us', 'br']
+                                # Cascata de paises: US primeiro (solicitado), depois CA e BR
+                                country_priority = ['us', 'ca', 'br']
                                 for try_country in country_priority:
                                     update_status(8, 'Buscando numero sms24.me (' + try_country.upper() + ')...')
                                     numbers_list = get_sms24_numbers(cdp_ctx, try_country)
