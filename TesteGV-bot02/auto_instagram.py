@@ -1413,8 +1413,11 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                         for idx in range(min(count, 5)):
                                             try:
                                                 inp = all_inputs.nth(idx)
+                                                box = inp.bounding_box()
+                                                if box and box['height'] < 10:
+                                                    continue
                                                 inp.fill(code, timeout=3000)
-                                                print('  -> Preenchido via Playwright input[' + str(idx) + ']')
+                                                print('  -> Preenchido via Playwright input[' + str(idx) + '] h=' + str(box['height'] if box else '?'))
                                                 filled = True
                                                 break
                                             except:
@@ -1461,7 +1464,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                             print('  -> Instagram aceitou o codigo (ou mudou de tela)')
                                             code_done = True
                                     except:
-                                        code_done = True
+                                        code_done = False
                                 else:
                                     print('  -> FALHA TOTAL ao preencher. Tentando no proximo loop...')
                         except Exception as e:
@@ -1584,10 +1587,11 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                                         # Preencher telefone (no campo tel ou qualquer input visivel)
                                         phone_filled = False
                                         try:
-                                            tel_input = page.locator('input[type="tel"], input[name="phone_number"], input[aria-label*="telefone" i], input[aria-label*="celular" i], input[aria-label*="phone" i]')
-                                            tel_input.first.fill(no_prefix, timeout=4000)
-                                            phone_filled = True
-                                            print('  -> [SMS] Numero preenchido')
+                                            tel_input = page.locator('input[type="tel"]:visible, input[name="phone_number"]:visible')
+                                            if tel_input.count() > 0:
+                                                tel_input.first.fill(no_prefix, timeout=4000)
+                                                phone_filled = True
+                                                print('  -> [SMS] Numero preenchido')
                                         except:
                                             pass
                                         if not phone_filled:
