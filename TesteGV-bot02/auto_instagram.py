@@ -488,13 +488,12 @@ def human_type(page, text):
     char_count = 0
     for char in text:
         page.keyboard.type(char)
-        time.sleep(random.uniform(0.12, 0.35))
+        time.sleep(random.uniform(0.06, 0.18))
         char_count += 1
-        # A cada 4-7 chars, pausa mais longa (pensando)
-        if char_count >= random.randint(4, 7):
-            time.sleep(random.uniform(0.5, 1.2))
+        if char_count >= random.randint(5, 9):
+            time.sleep(random.uniform(0.3, 0.6))
             char_count = 0
-    time.sleep(random.uniform(0.5, 1.5))
+    time.sleep(random.uniform(0.3, 0.8))
 
 
 def human_wiggle(page):
@@ -703,7 +702,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                 return false;
             }""")
             print('  -> Login enviado!')
-            time.sleep(15)
+            time.sleep(10)
 
             # Verificar inbox
             for w in range(10):
@@ -755,10 +754,9 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         update_status(2, 'Aquecendo sessao...')
         try:
             page.goto('https://www.google.com', timeout=15000)
-            time.sleep(random.uniform(3, 5))
-            # Scroll aleatorio
+            time.sleep(random.uniform(1.5, 3))
             page.mouse.wheel(0, random.randint(100, 400))
-            time.sleep(random.uniform(2, 4))
+            time.sleep(random.uniform(1, 2))
         except:
             pass
 
@@ -768,10 +766,9 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         try:
             page.goto('https://www.instagram.com/', timeout=30000)
             page.wait_for_load_state('domcontentloaded')
-            time.sleep(random.uniform(4, 7))
-            # Scroll para parecer humano
-            page.mouse.wheel(0, random.randint(200, 500))
             time.sleep(random.uniform(2, 4))
+            page.mouse.wheel(0, random.randint(200, 500))
+            time.sleep(random.uniform(1, 2))
         except:
             pass
 
@@ -779,7 +776,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         print('[2/8] Navegando para signup...')
         safe_goto_ig(page, 'https://www.instagram.com/accounts/emailsignup/', label='signup')
         page.wait_for_load_state('domcontentloaded')
-        time.sleep(random.uniform(5, 8))
+        time.sleep(random.uniform(2, 4))
 
         # Aceitar cookies se aparecer
         try:
@@ -1020,7 +1017,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         # === Pausa longa antes do submit (reduz deteccao de SMS) ===
         print('  -> Pausa pre-submit (parecer humano revisando o form)...')
         human_wiggle(page)
-        time.sleep(random.uniform(3, 6))
+        time.sleep(random.uniform(1, 2))
         human_wiggle(page)
 
         # === PASSO 7: Clicar em Cadastre-se / Sign up ===
