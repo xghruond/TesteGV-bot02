@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [master]
 
+defaults:
+  run:
+    working-directory: TesteGV-bot02
+
 jobs:
   python-tests:
     name: Python smoke tests
@@ -18,19 +22,17 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install Playwright (for import checks in smoke tests)
+      - name: Install Playwright (for import checks)
         run: |
           python -m pip install --upgrade pip
           pip install playwright
-          # Browsers nao sao necessarios para testes de import/unit
 
       - name: Validate Python syntax (all .py)
         run: |
           python -c "
           import ast, os
-          root = '.'
           failed = []
-          for dp, _, fs in os.walk(root):
+          for dp, _, fs in os.walk('.'):
               if '.git' in dp or 'node_modules' in dp or '__pycache__' in dp:
                   continue
               for f in fs:
