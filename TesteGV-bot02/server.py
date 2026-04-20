@@ -26,6 +26,10 @@ def _parse_port():
 PORT = _parse_port()
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Auth opt-in: se GV_API_TOKEN setado, POST /api/* exige header X-API-Token
+# Se nao setado, endpoints ficam abertos (compatibilidade com uso local)
+API_TOKEN = os.environ.get('GV_API_TOKEN', '').strip()
+
 # Importar bots
 sys.path.insert(0, ROOT_DIR)
 import auto_protonmail
@@ -45,7 +49,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def _cors(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, X-API-Token')
+
+    def _auth_ok(self):
+        """True se auth desabilitada OU header X-API-Token bate com GV_API_TOKEN."""
+        if not API_TOKEN:
+            return True
+        provided = (self.headers.get('X-API-Token') or '').strip()
+        return provided == API_TOKEN
 
     def _json(self, data, code=200):
         self.send_response(code)
@@ -169,6 +180,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         path = urlparse(self.path).path
         print('[API] POST ' + path)
+
+        if not self._auth_ok():
+            return self._json({'error': 'Token invalido ou ausente (X-API-Token)'}, 401)
 
         length = int(self.headers.get('Content-Length', 0))
         body = self.rfile.read(length).decode() if length > 0 else '{}'
@@ -330,6 +344,10 @@ if __name__ == '__main__':
     print('=' * 50)
     print('  Green BOT Server')
     print('  http://localhost:' + str(PORT))
+    if API_TOKEN:
+        print('  [AUTH] POST /api/* exige header X-API-Token')
+    else:
+        print('  [AUTH] Desabilitada (sete GV_API_TOKEN para ativar)')
     print('=' * 50)
 
     try:

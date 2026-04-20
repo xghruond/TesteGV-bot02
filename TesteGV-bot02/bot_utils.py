@@ -1,8 +1,11 @@
 """
 Utilitarios compartilhados pelos bots Playwright.
 - retry(): tenta operacao N vezes com backoff exponencial
-- log_event(): escreve em buffer circular lido por /api/logs
+- log_event(): escreve em buffer circular (lido por /api/logs) + arquivo rotativo
+  em logs/botlog-YYYY-MM-DD.jsonl (persistencia entre reinicios)
 """
+import os
+import json
 import time
 import threading
 import datetime
@@ -13,9 +16,29 @@ LOGS_MAX = 200
 logs_buffer = []
 logs_lock = threading.Lock()
 
+# Persistencia em arquivo (JSONL rotativo por dia)
+LOGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
+_logs_dir_ensured = False
+
+
+def _ensure_logs_dir():
+    global _logs_dir_ensured
+    if _logs_dir_ensured:
+        return
+    try:
+        os.makedirs(LOGS_DIR, exist_ok=True)
+        _logs_dir_ensured = True
+    except OSError:
+        # Se nao conseguir criar, desiste silenciosamente (buffer em memoria ainda funciona)
+        _logs_dir_ensured = True  # nao tenta de novo
+
+
+def _log_file_path():
+    return os.path.join(LOGS_DIR, 'botlog-' + datetime.date.today().isoformat() + '.jsonl')
+
 
 def log_event(bot, level, message, step=None, extra=None):
-    """Registra evento no buffer. level: info | warn | error"""
+    """Registra evento no buffer + arquivo. level: info | warn | error"""
     entry = {
         'ts': datetime.datetime.now().isoformat(timespec='seconds'),
         'bot': bot,
@@ -28,6 +51,13 @@ def log_event(bot, level, message, step=None, extra=None):
         logs_buffer.append(entry)
         if len(logs_buffer) > LOGS_MAX:
             logs_buffer.pop(0)
+    # Persistencia em arquivo (fora do lock pra nao bloquear leitores)
+    _ensure_logs_dir()
+    try:
+        with open(_log_file_path(), 'a', encoding='utf-8') as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+    except OSError:
+        pass  # disco cheio / permissao — buffer em memoria ainda funciona
 
 
 def get_logs():

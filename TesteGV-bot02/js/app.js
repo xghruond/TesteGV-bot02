@@ -1513,7 +1513,7 @@ var App = App || {};
     var stallWarningShown = false;
 
     // Iniciar automação no servidor
-    fetch('/api/create-protonmail', {
+    App.apiFetch('/api/create-protonmail', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: username, password: password, displayName: displayName })
@@ -1748,7 +1748,7 @@ var App = App || {};
       App.hideBotStatus();
     });
 
-    fetch('/api/create-instagram', {
+    App.apiFetch('/api/create-instagram', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -2242,7 +2242,7 @@ var App = App || {};
 
   bindAction('cancel-bot', function() {
     if (!confirm('Tem certeza que quer cancelar o onboarding em andamento?')) return;
-    fetch('/api/cancel', { method: 'POST' })
+    App.apiFetch('/api/cancel', { method: 'POST' })
       .then(function(r) { return r.json(); })
       .then(function(d) {
         App.showToast('Cancelamento solicitado', 'info');
@@ -2632,7 +2632,7 @@ var App = App || {};
 
   bindAction('clear-logs', function() {
     if (!confirm('Limpar todos os logs?')) return;
-    fetch('/api/logs/clear', { method: 'POST' }).then(function() {
+    App.apiFetch('/api/logs/clear', { method: 'POST' }).then(function() {
       loadAndRenderLogs();
       App.showToast('Logs limpos', 'success');
     });

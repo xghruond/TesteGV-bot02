@@ -16,6 +16,27 @@ App.escapeHtml = function(text) {
   return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
 };
 
+// Token API opt-in: se localStorage['gv-api-token'] setado, e enviado em POSTs.
+// Server so exige se env GV_API_TOKEN estiver setado. Sem token, endpoint fica aberto.
+App.getApiToken = function() {
+  try { return localStorage.getItem('gv-api-token') || ''; } catch (e) { return ''; }
+};
+
+App.setApiToken = function(token) {
+  try {
+    if (token) localStorage.setItem('gv-api-token', String(token).trim());
+    else localStorage.removeItem('gv-api-token');
+  } catch (e) {}
+};
+
+App.apiFetch = function(url, opts) {
+  opts = opts || {};
+  opts.headers = opts.headers || {};
+  var token = App.getApiToken();
+  if (token) opts.headers['X-API-Token'] = token;
+  return fetch(url, opts);
+};
+
 App.formatDateBR = function(isoString) {
   if (!isoString || !/^\d{4}-\d{2}-\d{2}$/.test(isoString)) return '-';
   var parts = isoString.split('-');

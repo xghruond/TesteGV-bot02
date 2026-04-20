@@ -17,3 +17,6 @@ debug*.png
 # Ambiente
 .env
 node_modules/
+
+# Logs persistentes dos bots
+logs/
