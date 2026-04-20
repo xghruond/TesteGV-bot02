@@ -14,7 +14,16 @@ from urllib.parse import urlparse
 
 print = functools.partial(print, flush=True)
 
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
+# Parse PORT so que quando rodando como script (evita quebrar imports em testes)
+def _parse_port():
+    if len(sys.argv) > 1:
+        try:
+            return int(sys.argv[1])
+        except ValueError:
+            return 8080
+    return 8080
+
+PORT = _parse_port()
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Importar bots
@@ -22,32 +31,10 @@ sys.path.insert(0, ROOT_DIR)
 import auto_protonmail
 import auto_instagram
 import auto_tutanota
+import auto_facebook
+import auto_tiktok
 import bot_utils
-
-
-PROTON_RESERVED = {
-    'admin', 'root', 'test', 'info', 'contact', 'support', 'help',
-    'noreply', 'no-reply', 'postmaster', 'abuse', 'webmaster',
-    'hostmaster', 'security', 'ceo', 'sales', 'proton', 'protonmail'
-}
-
-
-def validate_proton_username(username):
-    """Validacao local: regex + tamanho + reservados."""
-    import re
-    if not username:
-        return {'ok': False, 'reason': 'Username vazio'}
-    if len(username) < 3:
-        return {'ok': False, 'reason': 'Muito curto (minimo 3 caracteres)'}
-    if len(username) > 40:
-        return {'ok': False, 'reason': 'Muito longo (maximo 40 caracteres)'}
-    if not re.match(r'^[a-z0-9][a-z0-9._-]*[a-z0-9]$', username.lower()):
-        return {'ok': False, 'reason': 'Formato invalido. Use letras, numeros, ponto, traco, underscore'}
-    if username.lower() in PROTON_RESERVED:
-        return {'ok': False, 'reason': 'Username reservado. Escolha outro'}
-    if '..' in username or '--' in username or '__' in username:
-        return {'ok': False, 'reason': 'Sem caracteres especiais repetidos'}
-    return {'ok': True, 'reason': 'Username valido'}
+from validators import validate_proton_username
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -131,10 +118,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
             # por isso o try interno especifico captura o caso.
             import base64
             platform = params.get('platform', 'instagram')
-            if platform not in ('instagram', 'protonmail', 'tutanota'):
+            if platform not in ('instagram', 'protonmail', 'tutanota', 'facebook', 'tiktok'):
                 return self._json({'error': 'platform invalido'}, 400)
             target = {'instagram': auto_instagram, 'protonmail': auto_protonmail,
-                      'tutanota': auto_tutanota}[platform]
+                      'tutanota': auto_tutanota, 'facebook': auto_facebook,
+                      'tiktok': auto_tiktok}[platform]
             page = getattr(target, '_current_page', None)
             if not page:
                 return self._json({'error': 'no_active_page'}, 404)
@@ -158,6 +146,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 return self._json(auto_instagram.status)
             if platform == 'tutanota':
                 return self._json(auto_tutanota.status)
+            if platform == 'facebook':
+                return self._json(auto_facebook.status)
+            if platform == 'tiktok':
+                return self._json(auto_tiktok.status)
             return self._json(auto_protonmail.status)
 
         # === Arquivos estaticos ===
@@ -195,8 +187,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             auto_instagram._cancel_requested = True
             auto_protonmail._cancel_requested = True
             auto_tutanota._cancel_requested = True
+            auto_facebook._cancel_requested = True
+            auto_tiktok._cancel_requested = True
             # Feedback imediato no status (UI atualiza antes do bot reagir de fato)
-            for mod in (auto_instagram, auto_protonmail, auto_tutanota):
+            for mod in (auto_instagram, auto_protonmail, auto_tutanota, auto_facebook, auto_tiktok):
                 if not mod.status.get('done'):
                     mod.status.update({'message': 'Cancelando...'})
             return self._json({'ok': True, 'msg': 'Cancelamento solicitado'})
@@ -248,6 +242,56 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
             return self._json({'started': True, 'message': 'Automacao Instagram iniciada!'})
 
+        elif path == '/api/create-facebook':
+            # SCAFFOLD — seletores nao testados contra live site
+            email = data.get('email', '')
+            password = data.get('password', '')
+            first_name = data.get('firstName', '')
+            last_name = data.get('lastName', '')
+            birth_day = data.get('birthDay', '15')
+            birth_month = data.get('birthMonth', '6')
+            birth_year = data.get('birthYear', '2000')
+
+            if not email or not password or not first_name:
+                return self._json({'error': 'email, password e firstName obrigatorios'}, 400)
+
+            auto_facebook.status.update({
+                'step': 0, 'message': 'Iniciando...', 'done': False,
+                'success': False, 'error': None, 'email': email, 'password': password
+            })
+
+            threading.Thread(
+                target=auto_facebook.create_account,
+                args=(email, password, first_name, last_name, birth_day, birth_month, birth_year),
+                daemon=True
+            ).start()
+
+            return self._json({'started': True, 'message': 'Automacao Facebook iniciada (BETA)!'})
+
+        elif path == '/api/create-tiktok':
+            # SCAFFOLD — seletores nao testados contra live site
+            email = data.get('email', '')
+            password = data.get('password', '')
+            birth_month = data.get('birthMonth', '6')
+            birth_day = data.get('birthDay', '15')
+            birth_year = data.get('birthYear', '2000')
+
+            if not email or not password:
+                return self._json({'error': 'email e password obrigatorios'}, 400)
+
+            auto_tiktok.status.update({
+                'step': 0, 'message': 'Iniciando...', 'done': False,
+                'success': False, 'error': None, 'email': email, 'password': password
+            })
+
+            threading.Thread(
+                target=auto_tiktok.create_account,
+                args=(email, password, birth_month, birth_day, birth_year),
+                daemon=True
+            ).start()
+
+            return self._json({'started': True, 'message': 'Automacao TikTok iniciada (BETA)!'})
+
         else:
             return self._json({'error': 'Endpoint nao encontrado'}, 404)
 
@@ -268,6 +312,14 @@ def reset_all_status():
         'success': False, 'error': None
     })
     auto_tutanota.status.update({
+        'step': 0, 'total': 5, 'message': 'Aguardando...', 'done': False,
+        'success': False, 'error': None, 'email': '', 'password': ''
+    })
+    auto_facebook.status.update({
+        'step': 0, 'total': 6, 'message': 'Aguardando...', 'done': False,
+        'success': False, 'error': None, 'email': '', 'password': ''
+    })
+    auto_tiktok.status.update({
         'step': 0, 'total': 5, 'message': 'Aguardando...', 'done': False,
         'success': False, 'error': None, 'email': '', 'password': ''
     })

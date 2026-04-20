@@ -24,34 +24,40 @@ SPA que guia novos funcionários de multinacional na criação de contas profiss
 
 ---
 
-## 2. Estrutura de Arquivos (5.911 linhas)
+## 2. Estrutura de Arquivos (10.605 linhas)
 
 ```
 TesteGV-bot02/
-├── index.html              (94)    — SPA shell + splash screen
-├── server.py               (185)   — Servidor Python (static + API bots)
-├── auto_protonmail.py      (331)   — Bot Playwright ProtonMail (semi-auto)
-├── auto_instagram.py       (595)   — Bot Playwright Instagram
+├── index.html              (98)    — SPA shell + splash screen
+├── server.py               (292)   — Servidor HTTP multi-threaded + API bots
+├── bot_utils.py            (71)    — retry + log_event compartilhado
+├── auto_protonmail.py      (764)   — Bot Playwright ProtonMail + login Tuta verificacao
+├── auto_instagram.py       (1900)  — Bot Instagram + SMS via sms24.me + ProtonMail login
+├── auto_tutanota.py        (395)   — Bot Tutanota (uso interno p/ verificacao ProtonMail)
+├── auto_facebook.py        (-)     — Scaffold (nao testado contra live site)
+├── auto_tiktok.py          (-)     — Scaffold (nao testado contra live site)
 ├── css/
-│   └── styles.css          (1017)  — Animações, print, dark theme, parallax
+│   └── styles.css          (1419)  — Animacoes, print, dark theme, parallax
 ├── js/
-│   ├── data.js             (736)   — Plataformas, ícones SVG, helpers
-│   ├── storage.js          (76)    — localStorage + version check + histórico
-│   ├── particles.js        (200)   — Canvas de partículas (welcome screen)
-│   ├── app.js              (1825)  — Controlador principal (estado, rotas, eventos, automação)
+│   ├── data.js             (1049)  — Plataformas, icones SVG, helpers
+│   ├── storage.js          (148)   — localStorage + favoritos + fila CSV + version 6
+│   ├── particles.js        (200)   — Canvas de particulas (welcome screen)
+│   ├── app.js              (3158)  — Controlador principal (estado, rotas, eventos)
 │   └── components/
-│       ├── header.js       (65)    — Stepper de progresso
-│       ├── form.js         (87)    — Formulário de dados + chips de email
-│       ├── platform-card.js(176)   — Cards de plataformas com cores
+│       ├── header.js       (73)    — Stepper de progresso
+│       ├── form.js         (99)    — Formulario de dados + chips de email
+│       ├── platform-card.js(184)   — Cards de plataformas com cores
 │       ├── guide-viewer.js (131)   — Guia passo-a-passo + ferramenta de senha
-│       ├── wizard.js       (172)   — Assistente automático (modo wizard)
+│       ├── wizard.js       (170)   — Assistente automatico (modo wizard)
 │       ├── checklist.js    (69)    — FAB + drawer de progresso
-│       └── summary.js      (152)   — Resumo final + export TXT/PDF
+│       ├── monitor.js      (227)   — Monitor ao Vivo (logs + progresso + screenshot)
+│       └── summary.js      (158)   — Resumo final + export TXT/PDF/QR
+├── tests/                          — pytest smoke tests (server + bots)
 ├── assets/
 │   └── logo-gv.png                 — Logo oficial HD (1536x1024)
-├── CLAUDE.md                       — Instruções para Claude Code
+├── CLAUDE.md                       — Instrucoes para Claude Code
 ├── ARCHITECTURE.md                 — Este documento
-├── MEMORY.md                       — Contexto de negócio e decisões
+├── MEMORY.md                       — Contexto de negocio e decisoes
 └── .claude/skills/                 — Skills customizadas (/audit, /deploy, etc.)
 ```
 

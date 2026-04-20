@@ -13,21 +13,22 @@ Sistema de onboarding para **Green Village Mobile Homes** (multinacional). Cada 
 | **Branch** | `master` |
 | **Git root** | `C:\` com `core.worktree` → `TesteGV-bot02/` |
 | **Stack** | HTML5 + Tailwind CSS 3 (CDN) + JS vanilla (ES5) |
-| **Backend** | Python `http.server` + Playwright (opcional) |
-| **Persistência** | localStorage (`gv-onboarding-state`, VERSION 4) |
+| **Backend** | Python `http.server` multi-threaded + Playwright |
+| **Persistência** | localStorage (`gv-onboarding-state`, VERSION 6) |
 | **Build** | Nenhum |
-| **Cache** | `?v=93` |
-| **Total** | 17 arquivos, 5.911 linhas |
+| **Cache** | `?v=128` |
+| **Total** | 10.605 linhas |
 | **Idioma** | Português BR |
 
 ## Plataformas e Automação
 
 | Plataforma | Steps (guide) | Bot Playwright | Status |
 |------------|:---:|:---:|---|
-| **ProtonMail** | 6 | `auto_protonmail.py` (semi-auto, 6 steps) | Funcional — humano resolve CAPTCHA |
-| **Instagram** | 5 | `auto_instagram.py` (semi-auto, 8 steps) | Funcional — humano resolve CAPTCHA |
-| **Facebook** | 4 | — | Manual apenas |
-| **TikTok** | 5 | — | Manual apenas |
+| **ProtonMail** | 6 | `auto_protonmail.py` (6 steps) | Funcional — humano resolve CAPTCHA |
+| **Instagram** | 5 | `auto_instagram.py` (8 steps + SMS via sms24.me) | Funcional — humano resolve CAPTCHA |
+| **Tutanota** | — | `auto_tutanota.py` (5 steps) | Uso interno (verificação ProtonMail) |
+| **Facebook** | 4 | `auto_facebook.py` | Scaffold — não testado contra live site |
+| **TikTok** | 5 | `auto_tiktok.py` | Scaffold — não testado contra live site |
 
 ### Modo Semi-Automático
 

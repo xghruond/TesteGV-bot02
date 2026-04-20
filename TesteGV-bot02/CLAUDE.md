@@ -1,7 +1,7 @@
 # Green BOT — Sistema de Onboarding
 
 ## Resumo
-SPA que guia novos funcionarios de multinacional na criacao de contas Gmail, Instagram, Facebook e TikTok. Interface com tema dark, floresta parallax, animacoes cinematicas.
+SPA que guia novos funcionarios de multinacional na criacao de contas em redes sociais e e-mail corporativo. Interface com tema dark, floresta parallax, animacoes cinematicas. Automacao via Playwright (bots Python) para ProtonMail + Instagram. Scaffolds (nao testados) para Facebook e TikTok.
 
 ## Stack
 - HTML5 + Tailwind CSS v3 (CDN) + JavaScript vanilla (ES5)
@@ -24,33 +24,35 @@ SPA que guia novos funcionarios de multinacional na criacao de contas Gmail, Ins
 - **Caminhos git**: usar relativos a `C:\` (ex: `git add TesteGV-bot02/js/app.js`)
 - **Commits**: em portugues, prefixos feat/fix/chore
 
-## Estrutura (6.834 linhas)
+## Estrutura (10.605 linhas)
 ```
 TesteGV-bot02/
-├── index.html              (94 linhas)  — SPA shell + splash screen
+├── index.html              (98 linhas)   — SPA shell + splash screen
 ├── CLAUDE.md               — Este arquivo
 ├── ARCHITECTURE.md         — Documentacao tecnica detalhada
 ├── MEMORY.md               — Contexto de negocio e decisoes
 ├── .gitignore
-├── server.py               (213 linhas) — Servidor Python (static + API bots)
-├── auto_protonmail.py      (728 linhas) — Bot ProtonMail + login Tutanota para verificacao
-├── auto_instagram.py       (734 linhas) — Bot Instagram + busca codigo no ProtonMail
-├── auto_tutanota.py        (353 linhas) — Bot Tutanota standalone
+├── server.py               (292 linhas)  — Servidor HTTP multi-threaded + API bots
+├── bot_utils.py            (71 linhas)   — retry + log_event compartilhado
+├── auto_protonmail.py      (764 linhas)  — Bot ProtonMail + login Tutanota para verificacao
+├── auto_instagram.py       (1900 linhas) — Bot Instagram + ProtonMail login + SMS via sms24.me
+├── auto_tutanota.py        (395 linhas)  — Bot Tutanota (usado para verificacao ProtonMail)
 ├── css/
-│   └── styles.css          (1017 linhas) — Animacoes, print, dark theme
+│   └── styles.css          (1419 linhas) — Animacoes, print, dark theme
 ├── js/
-│   ├── data.js             (736 linhas)  — Plataformas, icones, helpers
-│   ├── storage.js          (76 linhas)   — localStorage + version check (VERSION 6)
+│   ├── data.js             (1049 linhas) — Plataformas, icones, helpers
+│   ├── storage.js          (148 linhas)  — localStorage + favoritos + fila CSV + version 6
 │   ├── particles.js        (200 linhas)  — Canvas de particulas
-│   ├── app.js              (1831 linhas) — Controlador principal
+│   ├── app.js              (3158 linhas) — Controlador principal (IIFE + event delegation)
 │   └── components/
-│       ├── header.js       (65 linhas)   — Stepper de progresso
-│       ├── form.js         (87 linhas)   — Formulario de dados
-│       ├── platform-card.js(176 linhas)  — Cards de plataformas
+│       ├── header.js       (73 linhas)   — Stepper de progresso
+│       ├── form.js         (99 linhas)   — Formulario de dados
+│       ├── platform-card.js(184 linhas)  — Cards de plataformas
 │       ├── guide-viewer.js (131 linhas)  — Guia passo-a-passo
-│       ├── wizard.js       (172 linhas)  — Assistente automatico
+│       ├── wizard.js       (170 linhas)  — Assistente automatico
 │       ├── checklist.js    (69 linhas)   — FAB + drawer de progresso
-│       └── summary.js      (152 linhas)  — Resumo final + export
+│       ├── monitor.js      (227 linhas)  — Monitor ao vivo (logs + progresso + screenshot)
+│       └── summary.js      (158 linhas)  — Resumo final + export + QR code
 └── assets/
     └── logo-gv.png         — Logo oficial HD (1536x1024)
 ```
@@ -58,11 +60,32 @@ TesteGV-bot02/
 ## Telas (6)
 welcome → form → platforms → guide/wizard → summary → history
 
+## Bots Playwright
+| Plataforma | Arquivo | Steps | Status |
+|------------|---------|-------|--------|
+| ProtonMail | auto_protonmail.py | 6 | Funcional |
+| Instagram  | auto_instagram.py  | 8 | Funcional (c/ SMS via sms24.me) |
+| Tutanota   | auto_tutanota.py   | 5 | Interno (verificacao ProtonMail) |
+| Facebook   | auto_facebook.py   | - | Scaffold (nao testado) |
+| TikTok     | auto_tiktok.py     | - | Scaffold (nao testado) |
+
+Endpoints `POST /api/create-<platform>` no server.py (exceto tutanota, que e uso interno).
+`POST /api/cancel` seta `_cancel_requested=True` nos 3 bots principais (verificado via `_check_cancel()`).
+
+## Env Vars
+- `TUTA_EMAIL` / `TUTA_PASS` — credenciais Tutanota (fallback: teste.greenvillage@tutamail.com)
+
 ## Como rodar
 ```bash
 cd c:\TesteGV-bot02
-python -m http.server 5500
-# Abrir http://localhost:5500
+python server.py 8080
+# Abrir http://localhost:8080
+```
+
+## Testes
+```bash
+cd c:\TesteGV-bot02
+python -m pytest tests/ -v
 ```
 
 ## Skills Disponiveis
