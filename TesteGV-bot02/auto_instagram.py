@@ -54,6 +54,18 @@ status = {
     'error': None
 }
 
+# Flag de cancelamento (setado por server.py via POST /api/cancel)
+_cancel_requested = False
+
+
+class _CancelError(Exception):
+    pass
+
+
+def _check_cancel():
+    if _cancel_requested:
+        raise _CancelError()
+
 
 def update_status(step, message, done=False, success=False, error=None):
     status['step'] = step
@@ -546,6 +558,8 @@ def react_fill(page, selector, value):
 
 def create_account(email, password, full_name, username, birth_day='1', birth_month='1', birth_year='2000'):
     """Cria conta Instagram. Retorna status dict."""
+    global _cancel_requested
+    _cancel_requested = False  # reset no inicio de cada chamada
     # Limpar estado residual de chamadas anteriores
     create_account._code_done = False
     create_account._code_search_started = False
@@ -560,7 +574,8 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
     print('[0/8] Verificando Chrome CDP (sms24.me)...')
     ensure_chrome_cdp()
 
-    with sync_playwright() as p:
+    try:
+      with sync_playwright() as p:
         # === PASSO 1: Abrir Chrome ===
         update_status(1, 'Abrindo navegador...')
         print('[1/8] Abrindo Instagram...')
@@ -1100,6 +1115,7 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
         conta_criada = False
 
         for i in range(300):  # 10 min
+            _check_cancel()
             time.sleep(2)
             try:
                 url = page.url
@@ -1848,6 +1864,9 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
             pass
         time.sleep(3)
         browser.close()
+    except _CancelError:
+      print('[CANCEL] Instagram: cancelado pelo usuario')
+      update_status(status['step'], 'Cancelado pelo usuario', done=True, error='Cancelado pelo usuario')
 
     return status
 

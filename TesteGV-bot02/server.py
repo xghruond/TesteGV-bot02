@@ -175,18 +175,23 @@ class Handler(http.server.BaseHTTPRequestHandler):
         body = self.rfile.read(length).decode() if length > 0 else '{}'
         try:
             data = json.loads(body)
-        except:
-            data = {}
+        except json.JSONDecodeError as e:
+            print('[API] JSON invalido em ' + path + ': ' + str(e)[:80])
+            return self._json({'error': 'JSON invalido'}, 400)
 
         if path == '/api/logs/clear':
             bot_utils.clear_logs()
             return self._json({'ok': True})
 
         if path == '/api/cancel':
-            # Sinaliza cancel para os bots (setam flag _cancel_requested)
+            # Sinaliza cancel para os bots (flag verificada em _check_cancel())
             auto_instagram._cancel_requested = True
             auto_protonmail._cancel_requested = True
             auto_tutanota._cancel_requested = True
+            # Feedback imediato no status (UI atualiza antes do bot reagir de fato)
+            for mod in (auto_instagram, auto_protonmail, auto_tutanota):
+                if not mod.status.get('done'):
+                    mod.status.update({'message': 'Cancelando...'})
             return self._json({'ok': True, 'msg': 'Cancelamento solicitado'})
 
         if path == '/api/create-protonmail':
@@ -235,27 +240,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
             ).start()
 
             return self._json({'started': True, 'message': 'Automacao Instagram iniciada!'})
-
-        elif path == '/api/create-tutanota':
-            username = data.get('username', '')
-            password = data.get('password', '')
-
-            if not username or not password:
-                return self._json({'error': 'username e password obrigatorios'}, 400)
-
-            auto_tutanota.status.update({
-                'step': 0, 'message': 'Iniciando...', 'done': False,
-                'success': False, 'error': None,
-                'email': username + '@tuta.com', 'password': password
-            })
-
-            threading.Thread(
-                target=auto_tutanota.create_account,
-                args=(username, password),
-                daemon=True
-            ).start()
-
-            return self._json({'started': True, 'message': 'Automacao Tutanota iniciada!'})
 
         else:
             return self._json({'error': 'Endpoint nao encontrado'}, 404)

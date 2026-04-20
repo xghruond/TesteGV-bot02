@@ -30,6 +30,18 @@ status = {
     'password': ''
 }
 
+# Flag de cancelamento (setado por server.py via POST /api/cancel)
+_cancel_requested = False
+
+
+class _CancelError(Exception):
+    pass
+
+
+def _check_cancel():
+    if _cancel_requested:
+        raise _CancelError()
+
 
 def update_status(step, message, done=False, success=False, error=None):
     status['step'] = step
@@ -81,10 +93,13 @@ def get_active_info(page):
 
 def create_account(username, password):
     """Cria conta Tutanota standalone. Retorna status dict."""
+    global _cancel_requested
+    _cancel_requested = False  # reset no inicio de cada chamada
     status['email'] = username + '@tutamail.com'
     status['password'] = password
 
-    with sync_playwright() as p:
+    try:
+      with sync_playwright() as p:
         update_status(1, 'Abrindo navegador...')
         print('[1/5] Abrindo Tutanota...')
 
@@ -108,6 +123,9 @@ def create_account(username, password):
 
         time.sleep(10)
         browser.close()
+    except _CancelError:
+      print('[CANCEL] Tutanota: cancelado pelo usuario')
+      update_status(status['step'], 'Cancelado pelo usuario', done=True, error='Cancelado pelo usuario')
 
     return status
 
@@ -292,6 +310,7 @@ def _create_tutanota_on_page(page, username, password):
     # === STEP 5: Recovery code screen ===
     print('  -> [Tuta] Verificando tela de recovery...')
     for _ in range(20):
+        _check_cancel()
         try:
             body_text = page.evaluate("() => (document.body.textContent || '').toLowerCase()")
             if 'chave' in body_text or 'recovery' in body_text or 'recupera' in body_text:
@@ -344,6 +363,7 @@ def _create_tutanota_on_page(page, username, password):
 
     # === Verificar sucesso ===
     for _ in range(15):
+        _check_cancel()
         try:
             url = page.url
             if '/mail' in url or '/inbox' in url:

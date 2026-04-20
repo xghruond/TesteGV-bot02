@@ -488,9 +488,9 @@ var App = App || {};
 
     // Esc — voltar / fechar modal
     if (e.key === 'Escape') {
-      var modal = document.getElementById('automation-overlay');
+      var modal = document.querySelector('[id^="automation-overlay"]');
       if (modal) {
-        var cancelBtn = document.getElementById('auto-cancel');
+        var cancelBtn = modal.querySelector('[id^="auto-cancel"]');
         if (cancelBtn) cancelBtn.click();
         return;
       }
@@ -1442,7 +1442,7 @@ var App = App || {};
 
     // Mostrar modal de progresso
     var overlay = document.createElement('div');
-    overlay.id = 'automation-overlay';
+    overlay.id = 'automation-overlay-protonmail';
     overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;padding:1rem;';
 
     var stepLabels = [
@@ -1500,7 +1500,7 @@ var App = App || {};
     // Mostrar badge no header
     App.showBotStatus('ProtonMail', Date.now());
 
-    document.getElementById('auto-cancel').addEventListener('click', function() {
+    overlay.querySelector('#auto-cancel').addEventListener('click', function() {
       cancelled = true;
       if (polling) clearInterval(polling);
       overlay.remove();
@@ -1541,7 +1541,7 @@ var App = App || {};
               if (sw) sw.remove();
             } else if (!stallWarningShown && !s.done && Date.now() - lastStepChange > 30000) {
               stallWarningShown = true;
-              var stepsElW = document.getElementById('auto-steps');
+              var stepsElW = overlay.querySelector('#auto-steps');
               if (stepsElW) {
                 var warn = document.createElement('div');
                 warn.id = 'stall-warning';
@@ -1552,7 +1552,7 @@ var App = App || {};
             }
 
             // Atualizar modal
-            var stepsEl = document.getElementById('auto-steps');
+            var stepsEl = overlay.querySelector('#auto-steps');
             if (stepsEl) stepsEl.innerHTML = buildStepsHTML(s.step, s.message);
 
             if (s.done) {
@@ -1566,7 +1566,7 @@ var App = App || {};
                 state.platforms.protonmail = { completed: true, accountInfo: username + '@proton.me', password: password };
                 App.storage.save(state);
 
-                var modal = document.getElementById('auto-modal');
+                var modal = overlay.querySelector('#auto-modal');
                 if (modal) {
                   modal.innerHTML =
                     '<div style="text-align:center;padding:20px;">' +
@@ -1576,7 +1576,7 @@ var App = App || {};
                       '<p style="font-size:12px;color:#94a3b8;margin-top:4px;">Senha: ' + App.escapeHtml(password) + '</p>' +
                       '<button id="auto-close-success" class="btn-futuristic" style="margin-top:20px;width:100%;border-radius:12px;padding:14px;font-size:15px;font-weight:700;color:#fff;border:none;cursor:pointer;">Continuar</button>' +
                     '</div>';
-                  document.getElementById('auto-close-success').addEventListener('click', function() {
+                  overlay.querySelector('#auto-close-success').addEventListener('click', function() {
                     overlay.remove();
                     App.showToast('ProtonMail criado com sucesso!', 'success');
                     // Avançar para próxima plataforma pendente
@@ -1590,7 +1590,7 @@ var App = App || {};
                 }
               } else {
                 // Erro ou timeout
-                var modal = document.getElementById('auto-modal');
+                var modal = overlay.querySelector('#auto-modal');
                 if (modal) {
                   modal.innerHTML =
                     '<div style="text-align:center;padding:20px;">' +
@@ -1602,8 +1602,8 @@ var App = App || {};
                         '<button id="auto-done-manual" class="btn-futuristic" style="flex:2;border-radius:12px;padding:12px;font-size:14px;font-weight:700;color:#fff;border:none;cursor:pointer;">Conta Criada (manual)</button>' +
                       '</div>' +
                     '</div>';
-                  document.getElementById('auto-close-error').addEventListener('click', function() { overlay.remove(); });
-                  document.getElementById('auto-done-manual').addEventListener('click', function() {
+                  overlay.querySelector('#auto-close-error').addEventListener('click', function() { overlay.remove(); });
+                  overlay.querySelector('#auto-done-manual').addEventListener('click', function() {
                     state.platforms.protonmail = { completed: true, accountInfo: username + '@proton.me' };
                     App.storage.save(state);
                     overlay.remove();
@@ -1618,7 +1618,7 @@ var App = App || {};
             pollErrors++;
             if (pollErrors >= 5) {
               clearInterval(polling);
-              var stepsEl = document.getElementById('auto-steps');
+              var stepsEl = overlay.querySelector('#auto-steps');
               if (stepsEl) stepsEl.innerHTML += '<div style="margin-top:8px;color:#ef4444;font-size:12px;">Conexão com servidor perdida. Feche e tente novamente.</div>';
             }
           });
@@ -1686,7 +1686,7 @@ var App = App || {};
     }
 
     var overlay = document.createElement('div');
-    overlay.id = 'automation-overlay';
+    overlay.id = 'automation-overlay-instagram';
     overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;padding:1rem;';
 
     var stepLabels = [
@@ -1741,7 +1741,7 @@ var App = App || {};
     // Mostrar badge no header
     App.showBotStatus('Instagram', Date.now());
 
-    document.getElementById('auto-cancel').addEventListener('click', function() {
+    overlay.querySelector('#auto-cancel').addEventListener('click', function() {
       cancelled = true;
       if (polling) clearInterval(polling);
       overlay.remove();
@@ -1772,11 +1772,11 @@ var App = App || {};
         fetch('/api/status?platform=instagram')
           .then(function(r) { return r.json(); })
           .then(function(s) {
-            var stepsEl = document.getElementById('auto-steps');
+            var stepsEl = overlay.querySelector('#auto-steps');
             if (stepsEl) stepsEl.innerHTML = buildStepsHTML(s.step, s.message);
 
             // Banner pulsante quando SMS necessario
-            var modal = document.getElementById('auto-modal');
+            var modal = overlay.querySelector('#auto-modal');
             var msg = (s.message || '').toUpperCase();
             var needsAction = msg.indexOf('ACAO NECESSARIA') > -1 || msg.indexOf('SMS') > -1;
             var existingBanner = document.getElementById('sms-banner');
@@ -1804,7 +1804,7 @@ var App = App || {};
                 App.notify('Instagram criado!', '@' + username);
                 state.platforms.instagram = { completed: true, accountInfo: '@' + username };
                 App.storage.save(state);
-                var modal = document.getElementById('auto-modal');
+                var modal = overlay.querySelector('#auto-modal');
                 if (modal) {
                   modal.innerHTML =
                     '<div style="text-align:center;padding:20px;">' +
@@ -1813,14 +1813,14 @@ var App = App || {};
                       '<p style="font-size:14px;color:#f1f5f9;">@' + App.escapeHtml(username) + '</p>' +
                       '<button id="auto-close-success" class="btn-futuristic" style="margin-top:20px;width:100%;border-radius:12px;padding:14px;font-size:15px;font-weight:700;color:#fff;border:none;cursor:pointer;">Continuar</button>' +
                     '</div>';
-                  document.getElementById('auto-close-success').addEventListener('click', function() {
+                  overlay.querySelector('#auto-close-success').addEventListener('click', function() {
                     overlay.remove();
                     App.showToast('Instagram criado!', 'success');
                     render();
                   });
                 }
               } else {
-                var modal = document.getElementById('auto-modal');
+                var modal = overlay.querySelector('#auto-modal');
                 if (modal) {
                   modal.innerHTML =
                     '<div style="text-align:center;padding:20px;">' +
@@ -1832,8 +1832,8 @@ var App = App || {};
                         '<button id="auto-done-manual" class="btn-futuristic" style="flex:2;border-radius:12px;padding:12px;font-size:14px;font-weight:700;color:#fff;border:none;cursor:pointer;">Conta Criada (manual)</button>' +
                       '</div>' +
                     '</div>';
-                  document.getElementById('auto-close-error').addEventListener('click', function() { overlay.remove(); });
-                  document.getElementById('auto-done-manual').addEventListener('click', function() {
+                  overlay.querySelector('#auto-close-error').addEventListener('click', function() { overlay.remove(); });
+                  overlay.querySelector('#auto-done-manual').addEventListener('click', function() {
                     state.platforms.instagram = { completed: true, accountInfo: '@' + username };
                     App.storage.save(state);
                     overlay.remove();
@@ -1848,7 +1848,7 @@ var App = App || {};
             pollErrors++;
             if (pollErrors >= 5) {
               clearInterval(polling);
-              var stepsEl = document.getElementById('auto-steps');
+              var stepsEl = overlay.querySelector('#auto-steps');
               if (stepsEl) stepsEl.innerHTML += '<div style="margin-top:8px;color:#ef4444;font-size:12px;">Conexão com servidor perdida. Feche e tente novamente.</div>';
             }
           });

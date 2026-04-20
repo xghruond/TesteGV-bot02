@@ -32,6 +32,18 @@ status = {
     'password': ''
 }
 
+# Flag de cancelamento (setado por server.py via POST /api/cancel)
+_cancel_requested = False
+
+
+class _CancelError(Exception):
+    pass
+
+
+def _check_cancel():
+    if _cancel_requested:
+        raise _CancelError()
+
 
 def update_status(step, message, done=False, success=False, error=None):
     status['step'] = step
@@ -313,10 +325,13 @@ def fill_code_in_page(page, code):
 
 def create_account(username, password, display_name):
     """Cria conta ProtonMail. Retorna dict status."""
+    global _cancel_requested
+    _cancel_requested = False  # reset no inicio de cada chamada
     status['email'] = username + '@proton.me'
     status['password'] = password
 
-    with sync_playwright() as p:
+    try:
+      with sync_playwright() as p:
         # === STEP 1: Abrir navegador ===
         update_status(1, 'Abrindo navegador...')
         print('[1/6] Abrindo ProtonMail...')
@@ -492,6 +507,7 @@ def create_account(username, password, display_name):
         conta_criada = False
 
         for i in range(600):  # 20 min
+            _check_cancel()
             time.sleep(2)
             try:
                 url = page.url
@@ -728,6 +744,9 @@ def create_account(username, password, display_name):
         print('Navegador aberto por 5 min...')
         time.sleep(10)
         browser.close()
+    except _CancelError:
+      print('[CANCEL] ProtonMail: cancelado pelo usuario')
+      update_status(status['step'], 'Cancelado pelo usuario', done=True, error='Cancelado pelo usuario')
 
     return status
 
