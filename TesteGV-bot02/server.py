@@ -126,20 +126,27 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return self._json({'logs': logs[-limit:] if limit > 0 else logs})
 
         if path == '/api/screenshot':
-            # Screenshot ao vivo do bot (se houver page ativa)
+            # Screenshot ao vivo do bot (se houver page ativa).
+            # Race condition: page pode ser fechada entre is_closed() e screenshot()
+            # por isso o try interno especifico captura o caso.
+            import base64
+            platform = params.get('platform', 'instagram')
+            if platform not in ('instagram', 'protonmail', 'tutanota'):
+                return self._json({'error': 'platform invalido'}, 400)
+            target = {'instagram': auto_instagram, 'protonmail': auto_protonmail,
+                      'tutanota': auto_tutanota}[platform]
+            page = getattr(target, '_current_page', None)
+            if not page:
+                return self._json({'error': 'no_active_page'}, 404)
             try:
-                import base64
-                from io import BytesIO
-                platform = params.get('platform', 'instagram')
-                target = auto_instagram if platform == 'instagram' else (auto_protonmail if platform == 'protonmail' else auto_tutanota)
-                page = getattr(target, '_current_page', None)
-                if page and not page.is_closed():
-                    img_bytes = page.screenshot(type='jpeg', quality=50)
-                    b64 = base64.b64encode(img_bytes).decode()
-                    return self._json({'img': 'data:image/jpeg;base64,' + b64})
-                return self._json({'error': 'No active page'}, 404)
+                if page.is_closed():
+                    return self._json({'error': 'page_closed'}, 404)
+                img_bytes = page.screenshot(type='jpeg', quality=50)
             except Exception as e:
-                return self._json({'error': str(e)[:100]}, 500)
+                # Page fechou entre check e screenshot, ou erro de rede
+                return self._json({'error': 'screenshot_failed', 'detail': str(e)[:120]}, 503)
+            b64 = base64.b64encode(img_bytes).decode()
+            return self._json({'img': 'data:image/jpeg;base64,' + b64})
 
         if path == '/api/check-username':
             username = params.get('username', '').strip()

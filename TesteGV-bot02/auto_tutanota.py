@@ -105,7 +105,7 @@ def create_account(username, password):
 
         browser = p.chromium.launch(
             headless=False,
-            executable_path='C:/Program Files/Google/Chrome/Application/chrome.exe',
+            channel='chrome',
             args=['--start-maximized', '--window-position=0,0']
         )
         context = browser.new_context(no_viewport=True, locale='pt-BR', timezone_id='America/Sao_Paulo')

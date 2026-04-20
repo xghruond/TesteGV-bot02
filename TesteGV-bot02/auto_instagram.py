@@ -12,6 +12,7 @@ import time
 import random
 import functools
 import subprocess
+import glob
 from playwright.sync_api import sync_playwright
 try:
     from bot_utils import retry, log_event
@@ -34,13 +35,25 @@ def disconnect_vpn():
     print('  -> [VPN] Desconectado!')
 
 
+def _find_protonvpn_client():
+    """Descobre dinamicamente o ProtonVPN.Client.exe (pega qualquer versao instalada)."""
+    candidates = glob.glob('C:/Program Files/Proton/VPN/v*/ProtonVPN.Client.exe')
+    if candidates:
+        # Pega o mais recente (sort alfabetico funciona pra versoes v4.3.x)
+        return sorted(candidates)[-1]
+    return None
+
+
 def reconnect_vpn():
     """Reconecta ProtonVPN."""
     print('  -> [VPN] Reconectando...')
     subprocess.run(['net', 'start', 'ProtonVPN Service'], capture_output=True)
     # Abrir o client para trigger reconexao
-    subprocess.run(['start', '', 'C:/Program Files/Proton/VPN/v4.3.13/ProtonVPN.Client.exe'],
-                   shell=True, capture_output=True)
+    client_path = _find_protonvpn_client()
+    if client_path:
+        subprocess.run(['start', '', client_path], shell=True, capture_output=True)
+    else:
+        print('  -> [VPN] AVISO: ProtonVPN.Client.exe nao encontrado em C:/Program Files/Proton/VPN/')
     time.sleep(5)
     print('  -> [VPN] Reconectado!')
 
@@ -1847,8 +1860,12 @@ def create_account(email, password, full_name, username, birth_day='1', birth_mo
                     except:
                         pass
 
-            except:
-                pass
+            except _CancelError:
+                raise  # propagar cancel sem engolir
+            except Exception as e:
+                # Log periodico pra nao poluir (300 iteracoes)
+                if i % 30 == 0:
+                    log_event('instagram', 'warn', 'iter_error: ' + str(e)[:120], step=status['step'])
 
         if conta_criada:
             update_status(8, 'Conta Instagram criada com sucesso!', done=True, success=True)

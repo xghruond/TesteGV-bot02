@@ -7,6 +7,7 @@ CLI: python auto_protonmail.py <username> <password> <display_name>
 Import: from auto_protonmail import create_account
 """
 import sys
+import os
 import time
 import random
 import re
@@ -85,8 +86,8 @@ def clear_and_type(page, selector, text):
 # TUTANOTA — login na conta existente para verificacao
 # =====================================================
 
-TUTA_EMAIL = 'teste.greenvillage@tutamail.com'
-TUTA_PASS = 'Waxdwaxdw134679852'
+TUTA_EMAIL = os.environ.get('TUTA_EMAIL', 'teste.greenvillage@tutamail.com')
+TUTA_PASS = os.environ.get('TUTA_PASS', 'Waxdwaxdw134679852')
 
 
 def login_tutanota(browser):
@@ -338,7 +339,7 @@ def create_account(username, password, display_name):
 
         browser = p.chromium.launch(
             headless=False,
-            executable_path='C:/Program Files/Google/Chrome/Application/chrome.exe',
+            channel='chrome',
             args=['--start-maximized', '--window-position=0,0']
         )
         context = browser.new_context(
@@ -730,8 +731,12 @@ def create_account(username, password, display_name):
                     mins = (i * 2) // 60
                     print('  -> Aguardando... (' + str(mins) + ' min)')
 
-            except:
-                pass
+            except _CancelError:
+                raise  # propagar cancel sem engolir
+            except Exception as e:
+                # Log periodico pra nao poluir logs (600 iteracoes)
+                if i % 30 == 0:
+                    log_event('protonmail', 'warn', 'iter_error: ' + str(e)[:120], step=status['step'])
 
         # === RESULTADO ===
         if conta_criada:
